@@ -1,2 +1,0 @@
-- [유저 학습 스타일](user_learning_style.md) — 납득 안 되면 끝까지 파고드는 집요한 질문 패턴, 억지 예시 바로 잡아냄
-- [OOP 스터디 진행 현황](project_oop_study.md) — 오브젝트(조영호) 기반, 06챕터까지 완료, docs/study/oop/ 위치
