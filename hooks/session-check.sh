@@ -13,7 +13,29 @@ if [ "$FAIL_COUNT" -gt 0 ]; then
   MESSAGES+=("⚠ 미처리 실패 패턴 ${FAIL_COUNT}건 — 하네스 자가 점검 권장 (/harness-check)")
 fi
 
-# 2) 스킬 동기화 날짜 체크 (versions.md 기준 7일 초과 시 경고)
+# 2) 최근 24시간 내 저장된 컨텍스트 안내 (자동 로드 X, 안내만 — R1 정책)
+GSTACK_SLUG=""
+GSTACK_SLUG_BIN="${HOME}/.claude/skills/gstack/bin/gstack-slug"
+if [ -x "$GSTACK_SLUG_BIN" ]; then
+  # gstack-slug는 'SLUG=...' 형태로 export 명령을 출력
+  eval "$("$GSTACK_SLUG_BIN" 2>/dev/null)" 2>/dev/null || true
+  GSTACK_SLUG="${SLUG:-}"
+fi
+if [ -z "$GSTACK_SLUG" ]; then
+  GSTACK_SLUG=$(basename "$PROJECT_DIR")
+fi
+CHECKPOINT_DIR="${HOME}/.gstack/projects/${GSTACK_SLUG}/checkpoints"
+if [ -d "$CHECKPOINT_DIR" ]; then
+  # -mtime -1 = 24시간 이내 (GNU find, BSD find 모두 지원)
+  RECENT=$(find "$CHECKPOINT_DIR" -maxdepth 1 -name "*.md" -mtime -1 -type f 2>/dev/null | sort -r | head -1)
+  if [ -n "$RECENT" ]; then
+    # 파일명에서 제목 추출 (형식: YYYYMMDD-HHMMSS-제목.md)
+    TITLE=$(basename "$RECENT" .md | sed 's/^[0-9]\{8\}-[0-9]\{6\}-//')
+    MESSAGES+=("📌 최근 저장 컨텍스트 있음: ${TITLE} — 이어가시려면 /context-restore")
+  fi
+fi
+
+# 3) 스킬 동기화 날짜 체크 (versions.md 기준 7일 초과 시 경고)
 VERSIONS="$PROJECT_DIR/.claude/skills/versions.md"
 if [ -f "$VERSIONS" ]; then
   LAST_SYNC=$(grep -o '[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}' "$VERSIONS" | head -1)

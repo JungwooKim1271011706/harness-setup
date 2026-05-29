@@ -9,6 +9,7 @@ tools:
   - Grep
   - Skill
   - Write
+  - Bash
 permissionMode: default
 memory: project
 ---
@@ -21,6 +22,7 @@ memory: project
 - 직접 구현 금지
 - 직접 코드 수정 금지
 - 직접 테스트 실행 금지
+- Bash 도구는 스킬 preamble 실행 및 환경 점검 전용. 직접 git commit/build/test/배포 명령 금지 (해당 작업은 finalizer/tester-* 위임)
 - 항상 가장 좁은 역할의 agent부터 호출
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend 우선, 이후 tester-runtime으로 빌드 최종 확인
@@ -181,6 +183,26 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 
 학습 게이트가 "학습 게이트 완료. 계속 진행해."를 반환하면 다음 단계로 진행한다.
 
+## 작업 컨텍스트 보존 (context-save / context-restore)
+
+세션 끊김에 대비해 두 시점에 `/context-save`를 Skill 도구로 자동 호출한다.
+
+| 시점 | 호출 위치 |
+|------|---------|
+| planner 결과 출력 후 → 사용자 승인 요청 전 | 학습 게이트(plan_approval) 다음, 승인 게이트 직전 |
+| tester FAIL `[LOOP n/3]` 발생 시 | tester FAIL 판정 후, /investigate 호출 직후 |
+
+### 자동 save 시 컨텍스트
+- 현재 단계 (planner 출력 후 / tester FAIL 시)
+- 보관 중인 스킬 출력 (/office-hours, /grill-with-docs, /co-plan)
+- 현재 루프 카운트 `[LOOP n/3]`
+- 직전 단계 산출물 요약
+
+### restore 정책 (자동 로드 X)
+- session-check.sh 훅이 24시간 이내 저장된 컨텍스트 있으면 **안내만** 출력 ("이어가시려면 /context-restore")
+- 사용자가 `/context-restore`를 명시 호출하면 그때 복원
+- 자동 로드는 다른 작업 시작 시 옛 컨텍스트 끼어드는 사고 위험 때문에 금지
+
 ## Tester 루프 제한 (Escalation 정책)
 
 tester → developer → tester 루프는 최대 3회로 제한한다.
@@ -286,3 +308,5 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
+| 작업 컨텍스트 보존 (planner 결과 후, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
+| 세션 끊김 후 작업 이어가기 | `/context-restore` | 사용자 명시 호출 시 |
