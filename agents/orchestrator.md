@@ -24,7 +24,7 @@ memory: project
 - 항상 가장 좁은 역할의 agent부터 호출
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend 우선, 이후 tester-runtime으로 빌드 최종 확인
-- tester-runtime PASS 후 /review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
+- tester-runtime PASS 후 /review → /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일
@@ -114,9 +114,9 @@ memory: project
 ## 라우팅 규칙
 - 신규 기능 개발 시: planner 후 tester-design 필수 (developer 호출 전 반드시 실행). 단순 버그 수정·1~2줄 수정은 생략 가능
 - 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> /co-plan(인터랙티브 설계) -> planner-* -> 승인 -> ...
-- 프론트 전용: planner-frontend -> 승인 -> tester-design -> developer-frontend -> tester-frontend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 백엔드 전용: planner-backend -> 승인 -> tester-design -> developer-backend -> tester-backend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> tester-design -> 도메인별 developer/tester 분리 -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 프론트 전용: planner-frontend -> 승인 -> tester-design -> developer-frontend -> tester-frontend -> tester-runtime -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 백엔드 전용: planner-backend -> 승인 -> tester-design -> developer-backend -> tester-backend -> tester-runtime -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> tester-design -> 도메인별 developer/tester 분리 -> tester-runtime -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 테스트 설계만 필요: tester-design
 - 빌드/기동 확인만 필요: tester-runtime (단독)
 - 마무리 문서화/커밋: finalizer
@@ -267,7 +267,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
       │ (또는 developer-* 직접)
       ▼
  tester-*
-      ├── PASS → tester-runtime → /review (필수) → /cso (인증/권한/암호화 변경 시 필수) → finalizer
+      ├── PASS → tester-runtime → /review (필수) → /codex review (필수) → /cso (인증/권한/암호화 변경 시 필수) → finalizer
       └── FAIL → /investigate → developer-* (재수정)
 ```
 
@@ -282,6 +282,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 구현을 이해하며 함께 진행 | `/pair-impl` | 선택 |
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
 | tester-runtime PASS 후 소스코드 리뷰 | `/review` | 필수 |
+| /review 통과 후 독립 코드 검증 (200 IQ 두 번째 의견) | `/codex review` | 필수 |
 | 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
