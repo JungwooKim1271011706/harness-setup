@@ -1,39 +1,24 @@
 ---
 name: harness-audit-inprogress
-description: 하네스 점검 작업 큐 (P2/P3 남음). 임시 파일 — 작업 완료 후 이 파일과 MEMORY.md 인덱스 항목 둘 다 삭제할 것
+description: 하네스 점검 작업 큐 (P3-2만 남음). 임시 파일 — P3-2 완료 후 이 파일과 MEMORY.md 인덱스 항목 둘 다 삭제할 것
 metadata:
   type: project
 ---
 
 # 작업 큐 — 하네스 점검
 
-> **임시 파일** — 다음 세션에서 P2/P3 완료 후 이 파일과 MEMORY.md 인덱스 항목 둘 다 삭제할 것 (orchestrator 시스템 프롬프트의 ephemeral task details 저장 금지 라인 준수)
+> **임시 파일** — P3-2 완료 후 이 파일과 MEMORY.md 인덱스 항목 둘 다 삭제할 것 (orchestrator 시스템 프롬프트의 ephemeral task details 저장 금지 라인 준수)
 
 ## 완료된 작업
 - **P0~P1** — 커밋 5개 푸시: `9b10e78` (tester-design 필수), `75ac82b` (/co-plan 필수), `6805f3e` (learning-gate 경로), `502c8df` (/codex review 필수), `ceaa7d2` (Bash 부여 + context-save 도입)
 - 글로벌 학습 게이트 SKILL.md도 동일 패턴 수정 (git 추적 X)
+- **P2-1** (2026-05-29) — `/verify-implementation` 라우팅 6곳 동기화. **"verify-* 스킬 등록 시" 조건부**로 추가 (현재 등록 verify 스킬 0개라 무조건 필수는 빈 실행 유발하므로). 위치: `tester-runtime PASS → /verify-implementation → /review`
+- **P2-2** (2026-05-29) — 미등록 훅 2개 삭제(git rm): `commit-session.sh`(자동 커밋이 승인 게이트와 충돌), `load-recent-changes.sh`(python3 의존 + SessionStart는 session-check.sh로 일원화)
+- **P3-1** (2026-05-29) — 누락 메모리 디렉터리 8개 생성: planner×3, developer×2, tester-design/frontend, finalizer (각 빈 MEMORY.md)
 
 ## 남은 작업
 
-### P2-1 — `/verify-implementation` 라우팅 추가 (작업량 작음)
-- 이미 `.claude/skills/verify-implementation/` 설치되어 있음
-- 위치: `tester-runtime PASS → /verify-implementation → /review` (orchestrator.md 5곳 동기화 필요: 핵심 규칙, 라우팅 규칙 3곳, 흐름도, 라우팅 표)
-
-### P2-2 — 미등록 훅 2개 정책 결정 (결정만, 구현 작음)
-- `.claude/hooks/commit-session.sh`
-- `.claude/hooks/load-recent-changes.sh`
-- 두 훅의 내용 먼저 읽어보고 의도 비활성화인지 잊혀진 건지 확인 → 등록 or 삭제
-
-### P3-1 — 누락 에이전트 메모리 디렉터리 초기화 (8개)
-대상:
-- planner-frontend, planner-backend, planner-high-complexity
-- developer-frontend, developer-backend
-- tester-design, tester-frontend
-- finalizer
-
-각 에이전트의 `.claude/agent-memory/{agent}/MEMORY.md`만 빈 인덱스로 생성
-
-### P3-2 — `/health` 도입 (수동 호출 전용)
+### P3-2 — `/health` 도입 (수동 호출 전용) — 별도 세션 진행 예정
 - 자동 라우팅 X
 - 모듈별 점수 추적 (tocFramework/tocProcess/tocServer)
 - 도구 설치 + 가중치 결정 필요
