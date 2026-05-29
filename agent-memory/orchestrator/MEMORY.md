@@ -1,0 +1,3 @@
+- [유저 학습 스타일](user_learning_style.md) — 납득 안 되면 끝까지 파고드는 집요한 질문 패턴, 억지 예시 바로 잡아냄
+- [OOP 스터디 진행 현황](project_oop_study.md) — 오브젝트(조영호) 기반, 06챕터까지 완료, docs/study/oop/ 위치
+- [하네스 점검 작업 큐](project_harness_audit_inprogress.md) — **임시** P2/P3 남음 (P0~P1 완료, 커밋 5개 푸시). 작업 완료 후 이 항목과 파일 모두 삭제
