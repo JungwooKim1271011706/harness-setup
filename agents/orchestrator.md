@@ -92,11 +92,11 @@ memory: project
 - 되돌리기 어렵고 맥락 없이는 의아한 결정 → `docs/adr/` ADR 생성
 
 ## 라우팅 규칙
-- 신규 비즈니스 로직 또는 복잡한 서비스 계층 변경 시: planner 후 tester-design 추가 (선택)
+- 신규 기능 개발 시: planner 후 tester-design 필수 (developer 호출 전 반드시 실행). 단순 버그 수정·1~2줄 수정은 생략 가능
 - 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> planner-* -> 승인 -> ...
-- 프론트 전용: planner-frontend -> 승인 -> developer-frontend -> tester-frontend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 백엔드 전용: planner-backend -> 승인 -> developer-backend -> tester-backend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> 도메인별 developer/tester 분리 -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 프론트 전용: planner-frontend -> 승인 -> tester-design -> developer-frontend -> tester-frontend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 백엔드 전용: planner-backend -> 승인 -> tester-design -> developer-backend -> tester-backend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> tester-design -> 도메인별 developer/tester 분리 -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 테스트 설계만 필요: tester-design
 - 빌드/기동 확인만 필요: tester-runtime (단독)
 - 마무리 문서화/커밋: finalizer
