@@ -91,9 +91,29 @@ memory: project
 - 용어 확정 시 `CONTEXT.md` 자동 업데이트 (도메인 용어집 유지)
 - 되돌리기 어렵고 맥락 없이는 의아한 결정 → `docs/adr/` ADR 생성
 
+## 인터랙티브 설계 단계 (co-plan)
+
+/grill-with-docs 완료 후, planner 호출 전에 `/co-plan` 스킬로 유저 시나리오 → 에러 시나리오 → API 계약 → 클래스 설계 → 메서드 설계 순서로 단계별 합의한다.
+
+### 호출 조건 (/office-hours와 동일 조건)
+아래 중 하나라도 해당하면 /co-plan 실행:
+- 새 기능 개발 요청
+- 요구사항이 모호하거나 범위가 불명확한 경우
+- 여러 구현 방향이 가능한 경우
+
+### 건너뛰는 조건
+- 단순 버그 수정 (에러 로그 첨부된 경우)
+- 명확한 1~2줄 수정
+- 문서 갱신만 필요한 경우
+- 사용자가 명시적으로 스킵 요청한 경우
+
+### 출력 활용
+- 단계별 합의 결과 → 시나리오/계약/설계 초안으로 planner에 전달
+- /co-plan 출력은 planner 호출 시까지 보관한다 (기능 문서 설계 초안 섹션에 사용)
+
 ## 라우팅 규칙
 - 신규 기능 개발 시: planner 후 tester-design 필수 (developer 호출 전 반드시 실행). 단순 버그 수정·1~2줄 수정은 생략 가능
-- 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> planner-* -> 승인 -> ...
+- 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> /co-plan(인터랙티브 설계) -> planner-* -> 승인 -> ...
 - 프론트 전용: planner-frontend -> 승인 -> tester-design -> developer-frontend -> tester-frontend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 백엔드 전용: planner-backend -> 승인 -> tester-design -> developer-backend -> tester-backend -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> tester-design -> 도메인별 developer/tester 분리 -> tester-runtime -> /review -> /cso(인증/권한/암호화 변경 시) -> finalizer
@@ -122,7 +142,8 @@ memory: project
 planner 호출 시 아래 정보를 프롬프트에 포함한다:
 - `/office-hours 출력`: (보관된 요구사항 정리 결과)
 - `/grill-with-docs 출력`: (보관된 설계 결정 결과)
-- 두 스킬이 모두 생략된 경우에도 해당 항목을 "해당 단계 생략됨"으로 명시한다
+- `/co-plan 출력`: (보관된 시나리오/API/클래스/메서드 설계 초안)
+- 세 스킬 중 생략된 항목은 "해당 단계 생략됨"으로 명시한다
 
 planner는 이 컨텍스트를 `docs/features/YYYY-MM-DD-<기능명>.md`에 기록한다.
 
@@ -230,7 +251,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
  /grill-with-docs      ← 새 기능 개발 요청 시 (필수, office-hours 후)
       │
       ▼
- /co-plan              ← 설계를 같이 만들고 싶을 때 (선택)
+ /co-plan              ← 새 기능 개발 요청 시 (필수, grill-with-docs 후)
       │
       ▼
  planner-*
@@ -256,7 +277,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 |------|------|------|
 | 새 기능 개발 요청 | `/office-hours` | 필수 |
 | 새 기능 설계 방향 검증 (코드베이스 교차 검증) | `/grill-with-docs` | 필수 (office-hours 후) |
-| 새 기능 설계를 같이 만들고 싶을 때 | `/co-plan` | 선택 |
+| 새 기능 인터랙티브 설계 (시나리오/API/클래스/메서드) | `/co-plan` | 필수 (grill-with-docs 후) |
 | 고복잡도 계획 후 아키텍처 검증 | `/plan-eng-review` | 필수 |
 | 구현을 이해하며 함께 진행 | `/pair-impl` | 선택 |
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
