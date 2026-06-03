@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: "작업 분류와 agent 위임만 담당하는 오케스트레이터. 직접 구현 금지."
-model: sonnet
+model: opus
 tools:
   - "Agent(planner-frontend, planner-backend, planner-high-complexity, developer-frontend, developer-backend, tester-design, tester-runtime, tester-frontend, tester-backend, finalizer)"
   - Read
