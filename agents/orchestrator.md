@@ -52,6 +52,79 @@ memory: project
 
 경고가 주입됐지만 사용자가 긴급 작업을 요청한 경우 → 해당 작업 완료 후 경고 제안.
 
+## 0단계: 진입 분기 (요구사항 수신 직후 필수)
+
+사용자 요청을 수신한 직후, 어떤 단계보다 먼저 아래 세 가지를 순서대로 판정한다.
+
+### ① 복잡도 판정
+
+| 트랙 | 판정 기준 |
+|------|----------|
+| **단순수정** | 버그 수정 또는 1~2줄 변경, 보안 관련 아님 |
+| **신규기능** | 새 기능 개발, 요구사항 모호, 여러 구현 방향 가능 |
+| **고복잡도** | 다중 도메인 충돌, 영향 범위 10파일 초과, 런타임·설정·계약 위험 동시 혼재 |
+
+### ② 보안 2차 스캔
+
+요청 텍스트에 아래 키워드 중 하나라도 포함되면 **단순트랙 금지 → 신규기능 트랙으로 강제 승격**한다.
+
+- 세션, 권한, 암호, 로그인, 인증, 입력검증
+- session, auth, password, login, permission, validation
+
+### ③ 모듈 판정 및 rule 경로 확정
+
+변경 대상 모듈(tocFramework / tocProcess / tocServer)을 판정하고, 해당 rule 경로를 확정한다.
+확정된 rule 경로는 **이후 모든 단계(planner, developer, tester, gstack/codex 스킬)에 주입**한다.
+
+```
+rule 경로 예시:
+  tocServer  → .claude/rules/package/tocServer/backend.md (+ frontend.md)
+  tocProcess → .claude/rules/package/tocProcess/backend.md
+  tocFramework → .claude/rules/package/tocFramework/backend.md
+```
+
+gstack/codex 단계(co-plan, 설계패널, 7b, 7.5, review, codex review)에는 호출 시 컨텍스트에 "아래 rule 경로를 Read하고 준수하라"를 명시 주입한다.
+planner/developer/tester agent md는 기존 자동 Read 로직으로 처리하므로 별도 주입 불필요.
+
+---
+
+## 3트랙 라우팅
+
+0단계 판정 결과에 따라 아래 세 트랙 중 하나로 진행한다.
+
+### 단순수정 트랙
+
+조건: 복잡도=단순수정 AND 보안 스캔 미해당
+
+```
+0단계 → developer-* (직접) → tester-* (경량)
+```
+
+- office-hours / grill-with-docs / co-plan / 설계패널 전부 스킵
+- tester-design 단독 케이스 작성(codex 합의·저자 스킵)
+- **설계 이슈 발견 시 즉시 신규기능 트랙으로 승격**
+
+### 신규기능 트랙
+
+조건: 복잡도=신규기능 OR 보안 스캔 해당
+
+```
+office-hours → grill-with-docs → co-plan(OOP5) → planner-*
+→ 설계패널게이트(≥3) → critical 0건 확인 → 사용자 승인
+→ TDD full (7a∥7b → 7c합의 → 7.5 RED → 8 GREEN → 9 검증)
+```
+
+### 고복잡도 트랙
+
+조건: 복잡도=고복잡도
+
+신규기능 트랙과 동일 + 아래 추가:
+- planner-high-complexity 호출
+- plan-eng-review 필수
+- 설계패널 ≥4 보장
+
+---
+
 ## 요구사항 상세화 단계
 
 사용자 요청 수신 후, planner 호출 전에 /office-hours로 요구사항을 상세화한다.
@@ -109,16 +182,37 @@ memory: project
 - 문서 갱신만 필요한 경우
 - 사용자가 명시적으로 스킵 요청한 경우
 
+### co-plan 호출 시 OOP 컨텍스트 주입 (필수)
+
+co-plan은 gstack 스킬이라 직접 수정이 불가하므로, 호출 시 아래 컨텍스트를 반드시 주입한다:
+
+```
+OOP 5단계 정렬 순서:
+  ① 역할·데이터 정의 → ② 책임 분배 → ③ 메시지(인터페이스) 설계
+  → ④ 협력 관계 확정 → ⑤ 클래스 구조 확정
+
+원칙:
+  - RDD(책임 주도 설계) 적용
+  - 정보 전문가 원칙: 데이터를 가진 객체가 책임을 진다
+  - God 클래스 금지: 단일 클래스에 책임 집중 금지
+  - ⑤단계 시그니처는 public 계약만 freeze (내부 private 구현은 developer 자유)
+
+rule 경로: <0단계 확정 경로>를 Read하고 준수
+```
+
 ### 출력 활용
 - 단계별 합의 결과 → 시나리오/계약/설계 초안으로 planner에 전달
 - /co-plan 출력은 planner 호출 시까지 보관한다 (기능 문서 설계 초안 섹션에 사용)
 
 ## 라우팅 규칙
+
+신규 기능 흐름의 트랙 분기는 `## 3트랙 라우팅`이 우선한다. 아래 목록은 도메인별(프론트/백엔드/혼합) 세부 라우팅이다.
+
 - 신규 기능 개발 시: planner 후 tester-design 필수 (developer 호출 전 반드시 실행). 단순 버그 수정·1~2줄 수정은 생략 가능
 - 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> /co-plan(인터랙티브 설계) -> planner-* -> 승인 -> ...
-- 프론트 전용: planner-frontend -> 승인 -> tester-design -> developer-frontend -> tester-frontend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 백엔드 전용: planner-backend -> 승인 -> tester-design -> developer-backend -> tester-backend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 승인 -> tester-design -> 도메인별 developer/tester 분리 -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review -> /codex review -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 프론트 전용: planner-frontend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> developer-frontend -> tester-frontend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 백엔드 전용: planner-backend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> developer-backend -> tester-backend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 설계패널게이트(≥4) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> 도메인별 developer/tester 분리 -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 테스트 설계만 필요: tester-design
 - 빌드/기동 확인만 필요: tester-runtime (단독)
 - 마무리 문서화/커밋: finalizer
@@ -126,8 +220,10 @@ memory: project
 - tester-runtime FAIL (frontend) → developer-frontend 재수정
 - tester-runtime FAIL (environment) → 사용자에게 환경 수정 가이드 전달 후 tester-runtime 재실행
 - tester-runtime FAIL (mixed) → /investigate 스킬 실행 후 도메인 재판단
-- tester FAIL + 에러 분류 DESIGN_MISMATCH → 해당 planner 재호출 (developer 블로커 사유를 컨텍스트로 전달) + 사용자 재승인
-- tester FAIL + 원인 불명확 → /investigate → learning gate(test_fail) → developer 재수정
+- tester FAIL + 구현 결함 → developer 재수정 [루프 n/3, learning-gate test_fail]
+- tester FAIL + 에러 분류 DESIGN_MISMATCH(설계 결함) → 해당 planner 재호출 + 설계패널 재게이트 + 사용자 재승인
+- tester FAIL + 환경 문제 → 사용자에게 환경 수정 가이드 전달 후 tester-runtime 재실행
+- tester FAIL + 원인 불명확 → /investigate → FAIL 3분기 재판단 → learning gate(test_fail) → developer 재수정
 
 ## 최소 컨텍스트 전달 규칙
 각 agent에는 아래만 전달한다.
@@ -153,6 +249,45 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 - `feature 문서 경로`: planner가 생성한 `docs/features/YYYY-MM-DD-<기능명>.md` 경로
 - tester-design은 해당 파일에 `## 테스트 설계` 섹션을 append한다
 
+## 설계 패널 게이트 (planner 산출 후, 사용자 승인 직전)
+
+신규기능·고복잡도 트랙에서 planner 산출물이 나오면 사용자 승인 전에 반드시 이 게이트를 통과한다.
+단순수정 트랙은 이 게이트를 스킵한다.
+
+### 패널 구성
+
+| 역할 | 페르소나 스킬 | 호출 조건 |
+|------|------------|---------|
+| eng | plan-eng-review | 항상 포함 |
+| cso | plan-cso-review | 변경영역 태그에 `보안` 포함 시 |
+| design | plan-design-review | 변경영역 태그에 `UI` 포함 시 |
+| devex | plan-devex-review | 변경영역 태그에 `공통API/DAO` 포함 시 |
+| ceo | plan-ceo-review | 변경영역 태그에 `대규모범위` 포함 시 |
+
+**최소 인원 보장**: 태그 매칭만으로 3명(고복잡도 4명) 미달이면 채움 순서(eng → devex → cso → design → ceo)로 채운다.
+모든 패널 멤버는 **병렬 호출**한다.
+
+패널 호출 시 각 멤버에게 rule 경로를 "Read하고 준수" 명시로 주입한다.
+
+### Severity 처리
+
+| Severity | 처리 |
+|----------|------|
+| **critical** | 게이트 차단. planner 재작업 후 패널 재실행. 최대 3회 루프. |
+| **major** | 통과 허용. 사용자 승인 화면에 리포트로 노출. |
+| **minor** | 통과 허용. 리포트만 기록. |
+
+**충돌 조정 우선순위**: 보안 > 아키텍처 > 기타
+**모순 critical** (패널 간 상충하는 critical 의견): 루프 돌리지 말고 즉시 사용자에게 에스컬레이션.
+
+### planner 재작업 루프
+
+critical 건이 존재하면 planner에게 패널 피드백을 전달하여 재작업한다.
+- 루프 카운트: 최대 3회
+- 3회 초과 시: 자동 루프 중단 → 사용자에게 판단 위임 (남은 critical 항목과 함께)
+
+---
+
 ## 승인 게이트
 - planner 결과를 사용자에게 먼저 보여준다
 - 사용자 승인 전 developer 호출 금지
@@ -169,13 +304,12 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 | 시점 | gate 값 | 호출 위치 |
 |------|---------|---------|
-| planner 결과 출력 후 → 사용자 승인 요청 전 | `plan_approval` | 승인 게이트 바로 앞 |
 | tester FAIL 판정 후 → developer 위임 전 | `test_fail` | developer 호출 바로 앞 |
 | finalizer 커밋 완료 후 | `post_commit` | 최종 보고 바로 앞 |
 
 호출 시 컨텍스트를 반드시 포함한다:
 ```
-gate: plan_approval | test_fail | post_commit
+gate: test_fail | post_commit
 domain: 변경된 기술 영역 (예: Vue.js, PowerShell, Spring Boot, SVN, MySQL)
 change_summary: 변경 또는 버그 요약 1~2문장
 key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff URL 범위)
@@ -189,11 +323,11 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 
 | 시점 | 호출 위치 |
 |------|---------|
-| planner 결과 출력 후 → 사용자 승인 요청 전 | 학습 게이트(plan_approval) 다음, 승인 게이트 직전 |
+| planner 결과 출력 후 → 사용자 승인 요청 전 | 설계패널게이트 완료 후, 승인 게이트 직전 |
 | tester FAIL `[LOOP n/3]` 발생 시 | tester FAIL 판정 후, /investigate 호출 직후 |
 
 ### 자동 save 시 컨텍스트
-- 현재 단계 (planner 출력 후 / tester FAIL 시)
+- 현재 단계 (planner 출력 후·설계패널게이트 완료 후 / tester FAIL 시)
 - 보관 중인 스킬 출력 (/office-hours, /grill-with-docs, /co-plan)
 - 현재 루프 카운트 `[LOOP n/3]`
 - 직전 단계 산출물 요약
@@ -202,6 +336,54 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - session-check.sh 훅이 24시간 이내 저장된 컨텍스트 있으면 **안내만** 출력 ("이어가시려면 /context-restore")
 - 사용자가 `/context-restore`를 명시 호출하면 그때 복원
 - 자동 로드는 다른 작업 시작 시 옛 컨텍스트 끼어드는 사고 위험 때문에 금지
+
+## TDD 합의 구간 (신규기능·고복잡도 트랙 전용)
+
+사용자 승인 후, developer 호출 전에 아래 순서로 TDD 합의를 진행한다.
+
+### 7a∥7b — 테스트 케이스 병렬 산출
+- **7a**: tester-design → 케이스A 산출
+- **7b**: codex → 케이스B 산출 (rule 경로 주입 필수)
+  - codex 실패 시 claude(tester-design) 폴백
+- 7a와 7b는 병렬 호출한다.
+
+### 7c — diff 합의
+| 구분 | 처리 |
+|------|------|
+| A∩B (양쪽 동일) | 자동 채택 |
+| 차집합 (한쪽에만 존재) | 합집합 기본 채택. 상충하지 않으면 토론 없이 통과. |
+| 상호배타 (논리적 충돌) | 사용자에게 판단 위임 |
+
+차집합 토론 상한: 최대 2왕복. 초과 시 합집합 채택.
+
+### 7.5 — RED 테스트 작성 (codex, public 행위 기준)
+
+codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
+- 테스트는 **public 행위 기준** (내부 구현 검증 금지)
+- **작성자(codex/tester) ≠ 구현자(developer)** 원칙 엄수
+- codex 실패 시 tester-design 폴백
+- codex 호출 시 rule 경로 주입 필수
+
+### 8 — developer GREEN 구현
+
+- developer가 7.5 RED 테스트를 통과시키는 구현 작성
+- **public 계약 준수** (co-plan/7c에서 freeze된 시그니처 변경 불가)
+- **public 계약 소변경** (파라미터명·반환타입 등 마이너 조정): planner 경량 갱신 후 설계패널 스킵하고 진행
+- **구조 변경** (역할·책임 재분배): planner 단계 풀 회귀 (설계패널 재실행 포함)
+
+---
+
+## FAIL 3분기 처리
+
+tester가 FAIL 판정을 내리면 원인을 아래 3가지로 분류하여 처리한다.
+
+| 원인 분류 | 처리 |
+|----------|------|
+| **구현 결함** (코드 버그, 로직 오류) | developer 재수정 [루프 n/3, learning-gate test_fail 실행] |
+| **설계 결함** (DESIGN_MISMATCH, 구조 불일치) | planner 재호출 + 설계패널 재게이트 (사용자 재승인 필요) |
+| **환경 문제** (빌드 설정, 의존성, 서버 기동 실패) | 사용자에게 환경 수정 가이드 전달 후 tester-runtime 재실행 |
+
+---
 
 ## Tester 루프 제한 (Escalation 정책)
 
@@ -267,30 +449,68 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 [사용자 요청]
       │
       ▼
- /office-hours         ← 새 기능 개발 요청 시 (필수)
+ ┌─────────────────────────────────────────────────────┐
+ │  0단계: 진입 분기                                    │
+ │  ① 복잡도 판정  ② 보안 2차 스캔  ③ 모듈·rule 확정   │
+ └──────────────┬──────────────────────────────────────┘
+                │
+    ┌───────────┼────────────────┐
+    ▼           ▼                ▼
+[단순수정]   [신규기능]      [고복잡도]
+    │        (보안 포함)          │
+    │           │        planner-high-complexity
+    │    /office-hours      /plan-eng-review
+    │    /grill-with-docs        │
+    │    /co-plan(OOP5)          │ (신규기능 트랙 합류 →)
+    │           │           설계패널게이트 ≥4
+    │      planner-*             │
+    │           │                │
+    │    ┌──────────────────────────────────┐
+    │    │  설계패널게이트 (≥3, 병렬 호출)    │
+    │    │  eng + cso/design/devex/ceo(태그)  │
+    │    │  critical 있으면 planner 재작업     │
+    │    │  루프 최대 3회, 초과→사용자 에스컬레이션│
+    │    └────────────┬─────────────────────┘
+    │                 │
+    │          [사용자 승인]
+    │                 │
+    │    ┌────────────▼─────────────────────┐
+    │    │  TDD 합의 (신규기능·고복잡도 전용)  │
+    │    │  7a tester-design ∥ 7b codex      │
+    │    │         ↓ 7c diff 합의             │
+    │    │  7.5 codex RED 테스트 작성         │
+    │    └────────────┬─────────────────────┘
+    │                 │
+ 7s.tester-design   ▼
+ (경량: 버그재현   developer-* (8: GREEN 구현)
+  테스트 1개,
+  codex합의·저자
+  스킵)
       │
       ▼
- /grill-with-docs      ← 새 기능 개발 요청 시 (필수, office-hours 후)
+ developer-*
       │
       ▼
- /co-plan              ← 새 기능 개발 요청 시 (필수, grill-with-docs 후)
+ tester-backend ∥ tester-frontend
       │
-      ▼
- planner-*
+      ├── PASS → tester-runtime
+      │               │
+      │    /verify-implementation (verify-* 등록 시)
+      │               │
+      │    /review ∥ /codex review (병렬, 필수)
+      │               │
+      │    /cso (인증/권한/암호화 변경 시 필수)
+      │               │
+      │           finalizer
       │
-      ▼
- /plan-eng-review      ← 고복잡도 계획 시 (필수)
-      │
-      ▼
- [사용자 승인]
-      │
-      ▼
- /pair-impl            ← 구현을 함께 이해하며 진행 (선택)
-      │ (또는 developer-* 직접)
-      ▼
- tester-*
-      ├── PASS → tester-runtime → /verify-implementation (verify-* 스킬 등록 시) → /review (필수) → /codex review (필수) → /cso (인증/권한/암호화 변경 시 필수) → finalizer
-      └── FAIL → /investigate → developer-* (재수정)
+      └── FAIL → /investigate
+                     │
+           ┌─────────┼──────────────┐
+           ▼         ▼              ▼
+       [구현결함]  [설계결함]    [환경문제]
+     learning-gate  planner 재호출  사용자 가이드
+     developer 재수정 설계패널 재게이트 tester-runtime 재실행
+     [LOOP n/3]   사용자 재승인
 ```
 
 ### 라우팅 규칙
@@ -304,8 +524,8 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 구현을 이해하며 함께 진행 | `/pair-impl` | 선택 |
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
 | tester-runtime PASS 후 구현 검증 (verify-* 스킬 순차 실행) | `/verify-implementation` | verify-* 스킬 등록 시 |
-| tester-runtime PASS 후 소스코드 리뷰 | `/review` | 필수 |
-| /review 통과 후 독립 코드 검증 (200 IQ 두 번째 의견) | `/codex review` | 필수 |
+| tester-runtime PASS 후 소스코드 리뷰 | `/review` | 필수 (rule 경로 Read+준수 주입) |
+| /review 통과 후 독립 코드 검증 (구현코드만, 7.5 테스트 제외) | `/codex review` | 필수 (/review와 병렬 호출) |
 | 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
