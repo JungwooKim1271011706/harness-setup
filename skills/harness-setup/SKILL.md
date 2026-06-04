@@ -172,6 +172,8 @@ Read: README.md (있는 경우) → 프로젝트 설명
 Read: pom.xml → skipTests 여부, 테스트 프레임워크
 ```
 
+> skipTests가 리터럴 `true`면 `-DskipTests=false` CLI 오버라이드가 안 먹는다. 이 경우 tester가 런타임에 임시 오버라이드(sed로 임시 false → `mvn test` → trap 원복 + git checkout 자가치유)로 JUnit을 실행한다(C1-temp). 셋업에서 프로덕트 pom을 수정할 필요는 없다. 개요 '아키텍처 특이사항'에 "테스트: skipTests=true, tester 임시 오버라이드로 실행" 한 줄 기록을 권장한다.
+
 #### 개요 섹션에서 추출할 항목
 
 | 항목 | 출처 | 중요도 |
@@ -307,7 +309,7 @@ CLAUDE.md 설정 완료.
 다음 단계:
 1. memoryDir 값이 실제 Claude Code 프로젝트 경로와 일치하는지 확인
 2. /rule-maker 실행 → 프로젝트 전용 backend.md / frontend.md 자동 생성
-3. .claude/agents/ 디렉터리를 harness repo에서 submodule로 연결
+3. .claude/는 harness-setup repo를 통째로 clone한 것이므로 agents/skills/hooks는 이미 포함됨. 루트 .gitignore에 /.claude/ 추가해 상위 repo가 중복 추적하지 않게 한다.
 ```
 
 ---
