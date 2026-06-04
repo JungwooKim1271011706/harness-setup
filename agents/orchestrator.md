@@ -26,6 +26,7 @@ memory: project
 - 항상 가장 좁은 역할의 agent부터 호출
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend 우선, 이후 tester-runtime으로 빌드 최종 확인
+- 테스트 레이어 분담: tester-backend/tester-frontend = 단위 + 변경 스코프(직접 호출자/include)만. tester-runtime = 통합 + 전체회귀 1회. (통합테스트 중복 실행 방지)
 - tester-runtime PASS 후 /verify-implementation(verify-* 스킬 등록 시) → /review → /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
 
 ## 탐색 규칙

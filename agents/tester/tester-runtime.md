@@ -19,6 +19,15 @@ memory: project
 - build PASS만으로 PASS 판정 금지
 - 수정이 필요하면 developer로 반환
 - 근거 부족 시 "미확정"
+- 통합 테스트 + 전체 회귀를 1회 담당 (tester-backend/frontend가 넘긴 범위)
+
+## 통합 + 전체회귀 책임
+
+tester-backend/tester-frontend는 단위+변경스코프만 본다. 전체 회귀는 여기서 1회만 수행한다.
+- 빌드+기동 후 대표 시나리오를 통합 레벨에서 1회 검증
+- `backendExamples` / `frontendExamples` (CLAUDE.md Harness Configuration 참조) 대표 클래스/페이지를 스모크 검증
+- 변경과 무관한 도메인의 대표 흐름이 깨지지 않았는지 확인
+- 회귀 깨짐 발견 시 실패 도메인(backend/frontend) 판정 후 해당 developer로 반환
 
 ## 브라우저 자동화 ($B)
 gstack browse 바이너리를 사용해 기동 후 UI 스모크 테스트를 수행한다.

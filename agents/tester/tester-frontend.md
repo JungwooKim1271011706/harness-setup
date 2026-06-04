@@ -27,6 +27,7 @@ memory: project
 - 브라우저 자동화 가능 시 우선 사용
 - 수정 필요 시 developer-frontend로 반환
 - 근거 부족 시 "미확정"
+- 통합·전체회귀 금지. 변경 라우트 + 직접 include 스코프만 검증
 
 ## 브라우저 자동화 ($B)
 gstack browse 바이너리를 사용해 실제 브라우저로 검증한다.
@@ -60,12 +61,10 @@ B=""
 - **빈 상태/로딩/에러 상태**: 각 UI 상태가 렌더링되는지 (WCAG-4.1.3)
 
 ### 영역 2: 회귀 (Regression)
-기존에 동작하던 라우트/컴포넌트가 변경 후에도 유지되는지 검증한다.
+변경된 라우트/페이지의 직접 include 대상 범위만 검증한다. 통합·전체회귀는 tester-runtime이 담당한다.
 
 - 변경과 무관한 기존 페이지 정상 동작 확인
-- 공통 컴포넌트(CLAUDE.md Harness Configuration의 `frontendExamples` 참조) side effect 없음
 - 기존 API 호출 응답 정상 처리 확인
-- 변경 전 동작하던 대표 사용자 흐름 재실행
 
 ### 영역 3: UI/UX
 (gstack QA issue-taxonomy Visual/UX/Console 기준)

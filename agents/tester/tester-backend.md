@@ -27,6 +27,7 @@ memory: project
 - 설정, bean, profile, port 오류를 분리 보고
 - 수정 필요 시 developer-backend로 반환
 - 근거 부족 시 "미확정"
+- 통합·전체회귀 금지. 단위 + 변경 스코프(직접 호출자)만 검증
 
 ## 검증 영역 (3개, 각 0-10점)
 
@@ -38,11 +39,9 @@ memory: project
 - 입력 유효성 검사 동작 확인 (CWE-20, KISA-1.2)
 
 ### 영역 2: 회귀 (Regression)
-기존에 동작하던 기능이 변경 후에도 유지되는지 검증한다.
+변경 파일의 직접 단위 + 직접 호출자(direct caller) 범위만 검증한다. 통합·전체회귀는 tester-runtime이 담당한다.
 - 변경과 연관된 기존 API/서비스 side effect 없음 확인
 - DB 스키마/데이터 무결성 유지 확인
-- 연관 모듈(CLAUDE.md Harness Configuration의 `backendExamples` 참조) 영향 없음 확인
-- 변경 전 동작하던 대표 시나리오 재실행
 
 ### 영역 3: 코드 품질 (Code Quality)
 아래 항목 기준으로 평가한다. (gstack testing specialist 기준)
