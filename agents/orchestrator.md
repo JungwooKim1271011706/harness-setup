@@ -69,8 +69,8 @@ memory: project
 
 요청 텍스트에 아래 키워드 중 하나라도 포함되면 **단순트랙 금지 → 신규기능 트랙으로 강제 승격**한다.
 
-- 세션, 권한, 암호, 로그인, 인증, 입력검증
-- session, auth, password, login, permission, validation
+- 세션, 권한, 인가, 암호, 암호화, 로그인, 인증, 입력검증, 토큰, 쿠키, 파일업로드, 개인정보, 비밀키, 권한상승, 경로조작, 역직렬화
+- session, auth, password, crypto, login, permission, privilege, validation, token, cookie, upload, PII, secret, injection, SQL, XSS, CORS, SSRF, deserialize
 
 ### ③ 모듈 판정 및 rule 경로 확정
 
@@ -267,6 +267,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 **최소 인원 보장**: 태그 매칭만으로 3명(고복잡도 4명) 미달이면 채움 순서(eng → devex → cso → design → ceo)로 채운다.
 모든 패널 멤버는 **병렬 호출**한다.
+
+> orchestrator는 사용자 승인 직전 planner 산출물 텍스트를 0단계 ②의 보안 키워드로 기계적으로 재스캔한다. 매치되는데 변경영역 태그에 `보안`이 없으면, 누락으로 간주하고 변경영역 태그에 `보안`을 추가한다. (이후 cso 포함은 기존 패널 구성 규칙이 처리)
 
 패널 호출 시 각 멤버에게 rule 경로를 "Read하고 준수" 명시로 주입한다.
 
