@@ -246,6 +246,8 @@ planner 호출 시 아래 정보를 프롬프트에 포함한다:
 
 planner는 이 컨텍스트를 `docs/features/YYYY-MM-DD-<기능명>.md`에 기록한다.
 
+> planner 재작업(설계패널 critical 또는 사용자 범위 수정) 시 동일 기능 문서를 덮어쓴다(반복마다 새 날짜 파일 생성 금지). feature 문서는 finalizer 커밋 전까지 미커밋 초안이며, 미승인 상태로 repo에 커밋하지 않는다.
+
 tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 - `feature 문서 경로`: planner가 생성한 `docs/features/YYYY-MM-DD-<기능명>.md` 경로
 - tester-design은 해당 파일에 `## 테스트 설계` 섹션을 append한다
@@ -275,7 +277,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 ### PASS 증거 강제
 
 - 각 페르소나는 PASS(critical 없음) 판정 시 **확인 근거를 반드시 명시**해야 한다. 무엇을 검토했고 왜 critical이 없다고 판단했는지(점검 항목 나열).
-- 근거 없이 "critical 없음"만 제출하거나 근거가 빈약하면, 오케스트레이터는 그 PASS를 **미통과로 간주하고 해당 페르소나에 재검토 1회 요청**한다.
+- 오케스트레이터는 PASS 근거를 기계적 기준으로만 판정한다(자의 판단 금지): ① '확인 근거'에 점검 항목이 2개 이상 나열되어 있고 ② 각 항목에 '무엇을 점검했는지'가 1줄 이상 기술되어 있으면 통과. 하나라도 미충족이면 자동으로 미통과 처리하고 해당 페르소나에 재검토 1회 요청한다.
 - 재검토 후에도 근거 미흡이면 사용자에게 노출(판단 위임).
 - 목적: lazy PASS(형식적 통과) 차단. (자기검증/교차검증은 도입 안 함 — 하류 tester/review와 중복 회피)
 
@@ -357,6 +359,8 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
   - codex 실패 시 claude(tester-design) 폴백
 - 7a와 7b는 병렬 호출한다.
 
+> codex 미가용 폴백 시 7a∥7b 교차검증은 불성립한다. 산출물에 `⚠ 교차검증 없음 (codex 미사용, 단일 소스)`를 명시하고, 7.7 tester-quality 호출 시 '단일 소스' 컨텍스트를 전달해 더 엄격히 판정하도록 한다.
+
 ### 7c — diff 합의
 | 구분 | 처리 |
 |------|------|
@@ -432,7 +436,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
   - 심각도 (critical / high / medium)
   - 계속 진행 or 중단 권고
 
-> **세션 경계 주의**: 대화 세션이 끊기면 루프 카운트가 초기화된다. 사용자가 이전 루프 이력을 언급하면 해당 카운트부터 재개한다.
+> **세션 경계 주의**: 루프 카운트는 tester FAIL 시 context-save 체크포인트(`~/.gstack/projects/{slug}/checkpoints/`)에 `[LOOP n/3]`으로 기록된다. 세션 재개 시 사용자 기억이 아니라 최근 체크포인트의 LOOP 값을 권위 소스로 삼아 그 값부터 재개한다. 체크포인트 없으면 1부터.
 
 ## 실패 패턴 기록 (ESCALATION/중단 시)
 
@@ -566,3 +570,5 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
 | 작업 컨텍스트 보존 (planner 결과 후, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
 | 세션 끊김 후 작업 이어가기 | `/context-restore` | 사용자 명시 호출 시 |
+
+> /review와 /codex review는 동일 코드 스냅샷(tester-runtime PASS 시점)을 검토한다. 두 결과의 발견을 합집합으로 종합한다. 종합은 고정 규칙으로 한다: blocking 1건이라도 있으면 처리 대상(취사선택 금지). 한쪽 PASS가 다른 쪽 발견을 무효화하지 않는다. 수정이 발생하면 수정분만 tester 재검증 후 진행한다.

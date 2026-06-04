@@ -94,6 +94,7 @@ permissionMode: plan
 계획 완료 후 `docs/features/YYYY-MM-DD-<기능명>.md`에 기능 문서를 작성한다.
 - `YYYY-MM-DD`는 오늘 날짜, `<기능명>`은 영문 소문자 하이픈 구분 (예: `2026-05-09-mail-filter-approval`)
 - `docs/features/` 디렉터리가 없으면 Write로 생성한다
+- 재작업 시 기존 기능 문서를 덮어쓴다(새 날짜 파일 생성 금지). 미승인 초안은 커밋하지 않는다.
 - 오케스트레이터가 컨텍스트로 전달한 /office-hours 출력과 /grill-with-docs 출력을 각 섹션에 포함한다
 - 스킬 출력이 전달되지 않은 섹션은 "해당 단계 생략됨"으로 표기한다
 
