@@ -15,6 +15,14 @@ git clone https://github.com/JungwooKim1271011706/harness-setup.git .claude
 > `git clone <url> <대상디렉터리>` — 마지막 인자를 `.claude`로 주면 그 이름으로 받는다.
 > `.claude`가 이미 있으면 비우거나 백업 후 클론한다 (git clone은 빈 디렉터리 필요).
 
+특정 브랜치를 받고 싶으면 `-b <브랜치명>`:
+
+```bash
+git clone -b <브랜치명> https://github.com/JungwooKim1271011706/harness-setup.git .claude
+```
+
+미지정 시 기본 브랜치(main, 안정 버전)를 받는다. 개발/실험 브랜치를 쓸 때만 `-b`로 지정.
+
 ## 클론 후 셋업 (필수 3단계)
 
 ### 1. 프로젝트 루트가 `.claude`를 추적하지 않게
