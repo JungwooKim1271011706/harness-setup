@@ -29,6 +29,32 @@ memory: project
 - 근거 부족 시 "미확정"
 - 통합·전체회귀 금지. 단위 + 변경 스코프(직접 호출자)만 검증
 
+## 단위테스트 실행 (skipTests 임시 오버라이드)
+
+이 프로젝트 pom은 surefire `<skipTests>true</skipTests>`가 리터럴이라 `-DskipTests=false` CLI 오버라이드가 안 먹는다. JUnit을 돌리려면 실행 직전 pom 값을 임시로 false로 바꾸고 실행 후 원복한다. **프로덕트 pom은 영구 변경·커밋하지 않는다.**
+
+반드시 아래 전체를 **하나의 Bash 호출**로 실행한다. (쉘 상태가 호출 간 유지되지 않으므로 cp/trap/sed/mvn/복원이 분리되면 원복 보장이 깨진다.)
+
+```bash
+cd <대상 모듈 디렉터리>        # 예: tocServer (오케스트레이터가 준 현재 모듈)
+POM=pom.xml
+# 자가치유: 이전 크래시(SIGKILL 등)로 남은 잔재·더러운 pom을 먼저 정리
+[ -f "$POM.harnessbak" ] && mv -f "$POM.harnessbak" "$POM"
+git checkout -- "$POM" 2>/dev/null || true
+# 백업 + 신호 전부 잡아 원복 (EXIT/INT/TERM; SIGKILL만 OS레벨이라 불가)
+cp "$POM" "$POM.harnessbak"
+trap 'mv -f "$POM.harnessbak" "$POM" 2>/dev/null' EXIT INT TERM
+sed -i 's#<skipTests>true</skipTests>#<skipTests>false</skipTests>#g' "$POM"
+mvn test -DskipTests=false -Dtest=<변경스코프 테스트클래스>
+```
+
+- `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당.
+- 시작 시 자가치유(git checkout)로 이전 크래시 잔재를 정리한다. SIGKILL을 제외한 모든 종료(EXIT/INT/TERM)는 trap이 원복한다. SIGKILL 시에도 git checkout으로 복구 가능(원본 손실 없음).
+- pom이 이미 `<skipTests>${skipTests}</skipTests>` 변수형이면 sed는 no-op, `-DskipTests=false`로 충분 (포터블).
+- 실행 종료 후 `git status --porcelain pom.xml`이 비었는지 확인. 안 비었으면 원복 실패 → 수동 원복(`mv pom.xml.harnessbak pom.xml`) 후 FAIL 보고.
+- 테스트 클래스가 없으면 "단위테스트 없음" 명시하고 기존 시나리오/스모크 검증으로 보완.
+- 백업/임시변경분은 절대 stage·commit 금지.
+
 ## 검증 영역 (3개, 각 0-10점)
 
 ### 영역 1: 기능 (Functional)

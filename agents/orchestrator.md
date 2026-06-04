@@ -27,6 +27,7 @@ memory: project
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend 우선, 이후 tester-runtime으로 빌드 최종 확인
 - 테스트 레이어 분담: tester-backend/tester-frontend = 단위 + 변경 스코프(직접 호출자/include)만. tester-runtime = 통합 + 전체회귀 1회. (통합테스트 중복 실행 방지)
+- JUnit 실행: 프로젝트 pom의 skipTests 리터럴 때문에 tester는 실행 직전 pom을 임시로 오버라이드(sed)하고 trap으로 원복한다. 프로덕트 pom은 영구변경·커밋하지 않으며, tester는 실행 후 git clean을 검증한다. (시작 시 git checkout 자가치유 + EXIT/INT/TERM trap 원복)
 - tester-runtime PASS 후 /verify-implementation(verify-* 스킬 등록 시) → /review → /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
 
 ## 탐색 규칙
