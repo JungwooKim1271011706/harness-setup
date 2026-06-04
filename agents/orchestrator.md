@@ -3,7 +3,7 @@ name: orchestrator
 description: "작업 분류와 agent 위임만 담당하는 오케스트레이터. 직접 구현 금지."
 model: opus
 tools:
-  - "Agent(planner-frontend, planner-backend, planner-high-complexity, developer-frontend, developer-backend, tester-design, tester-runtime, tester-frontend, tester-backend, finalizer)"
+  - "Agent(planner-frontend, planner-backend, planner-high-complexity, developer-frontend, developer-backend, tester-design, tester-runtime, tester-frontend, tester-backend, tester-quality, finalizer)"
   - Read
   - Glob
   - Grep
@@ -210,9 +210,9 @@ rule 경로: <0단계 확정 경로>를 Read하고 준수
 
 - 신규 기능 개발 시: planner 후 tester-design 필수 (developer 호출 전 반드시 실행). 단순 버그 수정·1~2줄 수정은 생략 가능
 - 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> /co-plan(인터랙티브 설계) -> planner-* -> 승인 -> ...
-- 프론트 전용: planner-frontend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> developer-frontend -> tester-frontend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 백엔드 전용: planner-backend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> developer-backend -> tester-backend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 설계패널게이트(≥4) -> 승인 -> TDD합의(7a∥7b→7c→7.5) -> 도메인별 developer/tester 분리 -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 프론트 전용: planner-frontend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> developer-frontend -> tester-frontend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 백엔드 전용: planner-backend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> developer-backend -> tester-backend -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 설계패널게이트(≥4) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> 도메인별 developer/tester 분리 -> tester-runtime -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 테스트 설계만 필요: tester-design
 - 빌드/기동 확인만 필요: tester-runtime (단독)
 - 마무리 문서화/커밋: finalizer
@@ -371,6 +371,27 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - codex 실패 시 tester-design 폴백
 - codex 호출 시 rule 경로 주입 필수
 
+### 7.7 — 테스트 품질 게이트 (tester-quality)
+
+7.5 완료 후, developer GREEN 구현 전에 반드시 실행한다.
+
+| 작성자 | 검증자 | 교차 원칙 |
+|--------|--------|---------|
+| codex (7.5 정상) | tester-quality(claude) 호출 | 작성자≠검증자 |
+| claude (codex 폴백) | 오케스트레이터가 `codex` 스킬로 교차 판정 | 작성자≠검증자 |
+
+**rule 경로 주입 필수** (📋 0단계 확정 경로). tester-quality 호출 시 아래 컨텍스트를 전달한다:
+- 7c 합의 테스트 케이스 목록
+- 7.5 RED 테스트 코드 파일 경로
+- 승인된 설계 문서 경로
+- rule 경로
+
+**게이트 처리**:
+- critical 0건 + 근거 명시 → 통과 → 8 진행
+- critical 1건 이상 → **작성자(codex 또는 tester-design)에게 반환해 재작성** [LOOP n/3]
+  - 루프 상한: 최대 3회. 초과 시 사용자에게 에스컬레이션.
+- 사용자는 테스트를 승인하지 않는다 — 테스트 품질은 이 게이트가 책임진다(6단계 사용자 승인은 설계 한정).
+
 ### 8 — developer GREEN 구현
 
 - developer가 7.5 RED 테스트를 통과시키는 구현 작성
@@ -487,6 +508,9 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
     │    │  7a tester-design ∥ 7b codex      │
     │    │         ↓ 7c diff 합의             │
     │    │  7.5 codex RED 테스트 작성         │
+    │    │  7.7 tester-quality(품질게이트)    │
+    │    │  critical 0+근거 → 8              │
+    │    │  아니면 작성자반환 [LOOP n/3]      │
     │    └────────────┬─────────────────────┘
     │                 │
  7s.tester-design   ▼
