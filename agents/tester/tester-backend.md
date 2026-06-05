@@ -28,6 +28,7 @@ memory: project
 - 수정 필요 시 developer-backend로 반환
 - 근거 부족 시 "미확정"
 - 통합·전체회귀 금지. 단위 + 변경 스코프(직접 호출자)만 검증
+- 기동 검증은 L1 컨텍스트 기동(Spring ApplicationContext 로드 = bean/config wiring)까지만 담당. 변경 스코프에 context 로드 테스트가 있으면 실행해 보고, 없으면 컴파일까지만 확인하고 "L1 공백" 명시(공백 인정). L2 풀 런타임 기동(Tomcat WAR+HTTP)은 전체회귀 부채 또는 사람 검증으로 위임.
 
 ## 단위테스트 실행 (skipTests 임시 오버라이드)
 

@@ -19,15 +19,26 @@ memory: project
 - build PASS만으로 PASS 판정 금지
 - 수정이 필요하면 developer로 반환
 - 근거 부족 시 "미확정"
-- 통합 테스트 + 전체 회귀를 1회 담당 (tester-backend/frontend가 넘긴 범위)
+- 전체회귀 전담 agent. 매 구현 강제 체인에 들어가지 않고, "회귀 돌려" 수동 트리거 또는 전체회귀 부채 권장 수락 시에만 호출된다.
+- 통합 테스트 + 전체 회귀를 1회 수행하고, 전체회귀 PASS 시 regression-debt.json을 리셋한다.
 
 ## 통합 + 전체회귀 책임
 
-tester-backend/tester-frontend는 단위+변경스코프만 본다. 전체 회귀는 여기서 1회만 수행한다.
+tester-backend/tester-frontend는 변경검증(단위+변경스코프)만 본다. 전체회귀는 여기서만 수행하며, 호출 경로는 둘뿐이다: ① 사용자 수동("회귀 돌려") ② 전체회귀 부채 권장 수락. 매 구현마다 자동 호출되지 않는다.
 - 빌드+기동 후 대표 시나리오를 통합 레벨에서 1회 검증
 - `backendExamples` / `frontendExamples` (CLAUDE.md Harness Configuration 참조) 대표 클래스/페이지를 스모크 검증
 - 변경과 무관한 도메인의 대표 흐름이 깨지지 않았는지 확인
 - 회귀 깨짐 발견 시 실패 도메인(backend/frontend) 판정 후 해당 developer로 반환
+
+### 전체회귀 PASS 시 부채 리셋 (state 갱신)
+
+전체회귀가 PASS하면 마지막 전체회귀 기준점을 갱신하고 누적 부채를 비운다.
+
+- 대상 파일: `~/.gstack/projects/{slug}/regression-debt.json` (repo 밖 비공유)
+- **{slug} 산정 (finalizer와 반드시 동일 메커니즘)**: `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`로 `$SLUG`를 도출한다. 이는 리뷰모드 체크포인트(`~/.gstack/projects/{slug}/checkpoints/review-WI{N}.json`)가 쓰는 기존 메커니즘과 동일하다. finalizer(흐름10)도 같은 명령으로 산정하므로 양쪽 경로가 일치한다(다르면 부채가 영구 리셋 실패).
+- 갱신 내용: `last_full_regression` = {sha: 현재 HEAD sha, ts: 현재 시각}, `commits_since` = [] (빈 배열로 리셋)
+- FAIL 시에는 리셋하지 않는다(부채 유지). 실패 도메인 판정 후 해당 developer로 반환.
+- 파일/디렉터리가 없으면 생성한다. 파싱 실패 시 새 스키마로 초기화.
 
 ### JUnit 통합/전체회귀 실행 (skipTests 임시 오버라이드)
 

@@ -98,6 +98,45 @@ memory: project
 5. 발견된 패턴이 특정 에이전트의 핵심 규칙/체크리스트에 해당하면 해당 에이전트 md 파일도 함께 수정
 6. 커밋 진행
 
+## 전체회귀 부채 안내 + state 갱신 (커밋 직전 단일 지점, 필수)
+
+> 정의: CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 D3~D7. 이 안내는 **비차단 단방향 통지**다 — 출력 후 그냥 커밋한다.
+
+### 불변식 (절대 위반 금지)
+- AskUserQuestion·멈춤·답 대기 금지. "회귀 돌릴까요?"식 질문 금지.
+- 커밋은 부채 상태와 무관하게 무조건 완료한다. 안내는 텍스트 출력일 뿐 게이트가 아니다.
+- state 읽기/쓰기 실패(파일 없음·JSON 파싱 실패 등)는 안내를 생략할지언정 커밋을 막지 않는다.
+- git 훅이 아니라 완료 리포트 안의 텍스트 1블록이다(제품 repo·서브모듈 미변경).
+
+### 절차 (커밋 직전)
+1. {slug} 산정 (tester-runtime 흐름8과 반드시 동일 메커니즘): `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`로 `$SLUG`를 도출. 리뷰모드 체크포인트(`review-WI{N}.json`)가 쓰는 기존 메커니즘과 동일. 양쪽이 같은 slug를 써야 부채가 정상 리셋된다.
+2. state 읽기: `~/.gstack/projects/$SLUG/regression-debt.json`. **파일이 없거나 JSON 파싱에 실패하면 빈 부채(N=0)로 간주하고 그대로 진행한다. 절대 커밋을 차단하거나 에러로 중단하지 않는다.**
+3. 부채 계산:
+   - `commits_since` 길이 = N (마지막 전체회귀 후 코드 모듈 터친 커밋 수)
+   - `commits_since`의 modules 합집합에 tocFramework 포함 여부 = framework 격상 플래그
+4. 트리거 판정 (2트리거, 강력권장으로 격상):
+   - ① N ≥ 5 (N=5)
+   - ② tocFramework 변경 감지 (리셋 전까지 유지)
+5. 렌더:
+   - 트리거 hit 아님 + N=0(마지막 전체회귀 후 코드 모듈 터친 커밋 0개): **📊 정보줄도 출력 생략**(노이즈 방지).
+   - 트리거 hit 아님 + N≥1(정보): `📊 전체회귀 부채: 후 N커밋 / M모듈(모듈명). 임계 미만 — 참고.`
+   - 트리거 hit(강력권장):
+     ```
+     ⚠ 전체회귀 강력 권장
+       - (framework 터치 시) tocFramework 변경 감지 (tocServer+tocProcess 양쪽 영향)
+       - 마지막 전체회귀 후: N커밋
+       - 권장: "회귀 돌려"로 tester-runtime 전체회귀 1회
+       (소프트 — 차단 안 함)
+     ```
+6. 출력 후 멈추지 않고 커밋 진행(6단계).
+
+### 커밋 후 state 갱신 (코드 모듈 터친 커밋만 카운트)
+1. 이번 커밋이 제품 코드 모듈을 터쳤는지 판정: `git diff --cached --name-only`(또는 커밋 직후 `git show --name-only`) 경로 첫 세그먼트가 tocServer / tocProcess / tocFramework 중 하나면 코드 모듈.
+2. 문서·.claude만 바뀐 커밋은 카운트 제외(state 미변경).
+3. 코드 모듈 터쳤으면 `commits_since`에 `{sha: 커밋 sha, modules: [터친 모듈 첫세그먼트 목록], ts: 시각}` append.
+4. 파일/디렉터리 없으면 생성. 스키마 = `{last_full_regression:{sha,ts}, commits_since:[{sha,modules,ts}]}`.
+   - state 쓰기 실패 시에도 커밋은 이미 완료된 상태이므로 그대로 진행한다(불변식: state I/O는 커밋을 막지 않는다).
+
 ## 출력 형식
 ## 최종 정리
 ### BUG
