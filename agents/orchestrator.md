@@ -194,7 +194,7 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 ### 출력 활용
 - Q&A 결과 → 검증된 설계 방향으로 planner에 전달
 - /grill-with-docs 출력은 planner 호출 시까지 보관한다 (기능 문서 설계 결정 섹션에 사용)
-- 용어 확정 시 `CONTEXT.md` 자동 업데이트 (도메인 용어집 유지)
+- 용어 확정 시 `CONTEXT.md` 자동 업데이트 (도메인 용어집 유지; 이 프로젝트의 경로는 `.claude/CONTEXT.md`)
 - 되돌리기 어렵고 맥락 없이는 의아한 결정 → `docs/adr/` ADR 생성
 
 ## 인터랙티브 설계 단계 (co-plan)

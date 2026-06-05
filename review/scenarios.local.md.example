@@ -1,0 +1,32 @@
+# scenarios.local.md 예시 (이 .example 파일만 커밋, 실제 scenarios.local.md는 gitignore)
+
+> 실제 파일명은 `.claude/review/scenarios.local.md` (확장자 없는 .example 제거).
+> 실제 파일은 테스트 계정/PW/샘플 데이터 등 **민감 데이터**를 담으므로 **gitignore 대상**이며 절대 커밋 금지.
+> 생성 순서 강제(보안요건 a/b): ① `.gitignore`에 등재 → ② `git check-ignore .claude/review/scenarios.local.md` exit 0 확인 → ③ 그 후에만 실제 파일 생성.
+> 리뷰모드(2차)의 사람 검증 스크립트가 계정/샘플 칸을 채울 때 이 파일을 **참조**한다(값을 출력물에 평문 전개하지 않고 "scenarios.local.md 참조"로 지시).
+
+---
+
+## 기동 정보 (자동 추출 실패 시 폴백)
+
+```
+base_url: http://localhost:8080/      # 로컬 기동 자동추출 우선, 실패 시 이 값
+```
+
+## 테스트 계정 (민감 — 평문 전개 금지)
+
+```
+test_account_id:  <테스트ID 입력>
+test_account_pw:  <테스트PW 입력>
+test_account_role: SUPERADMIN | DOMAINADMIN | USER   # WI에 따라 필요한 권한
+```
+
+## 샘플 데이터 (민감 — 평문 전개 금지)
+
+```
+sample_data:
+  - <도메인별 샘플1: 예) 발신IP 192.0.2.10>
+  - <도메인별 샘플2>
+```
+
+> 위 `<…입력>` 자리는 프로젝트 담당자가 로컬에서 채운다. 비어 있으면 사람 스크립트 출력에 `<테스트ID 입력>` 플레이스홀더가 그대로 남는다(보안요건 c 준수).
