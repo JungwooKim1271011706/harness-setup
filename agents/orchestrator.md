@@ -194,7 +194,8 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 ### 출력 활용
 - Q&A 결과 → 검증된 설계 방향으로 planner에 전달
 - /grill-with-docs 출력은 planner 호출 시까지 보관한다 (기능 문서 설계 결정 섹션에 사용)
-- 용어 확정 시 `CONTEXT.md` 자동 업데이트 (도메인 용어집 유지; 이 프로젝트의 경로는 `.claude/CONTEXT.md`)
+- 용어 확정 시 도메인 용어집 `CONTEXT.md`를 갱신한다. **이 프로젝트의 용어집 경로는 `.claude/CONTEXT.md`다 (repo 루트 아님).**
+- **경로 강제 (필수 주입)**: `/grill-with-docs` 호출 시 컨텍스트에 "도메인 용어집은 `.claude/CONTEXT.md`다. 이 파일을 Read해 기존 용어를 확인하고, 용어 갱신·추가는 이 파일에만 한다. repo 루트에 새 `CONTEXT.md`를 만들지 마라"를 반드시 주입한다. grill-with-docs는 기본적으로 repo 루트를 탐색하므로, 주입 없이는 루트에 중복 파일이 생겨 용어집이 파편화된다. (rule 경로 주입과 동일한 게이트키퍼 패턴)
 - 되돌리기 어렵고 맥락 없이는 의아한 결정 → `docs/adr/` ADR 생성
 
 ## 인터랙티브 설계 단계 (co-plan)
