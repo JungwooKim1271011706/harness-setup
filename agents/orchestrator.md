@@ -642,12 +642,14 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
 | 변경검증(tester-backend/frontend) PASS 후 구현 검증 (verify-* 스킬 순차 실행) | `/verify-implementation` | verify-* 스킬 등록 시 |
 | 변경검증(tester-backend/frontend) PASS 후 소스코드 리뷰 | `/review` | 필수 (rule 경로 Read+준수 주입) |
-| 전체회귀 수동 실행 ("회귀 돌려") 또는 부채 권장 수락 | `tester-runtime` (단독) | 사용자 명시 호출 시 / 부채 트리거 |
+| 전체회귀 수동 실행[^regression] 또는 부채 권장 수락 | `tester-runtime` (단독) | 사용자 명시 호출 시 / 부채 트리거 |
 | /review 통과 후 독립 코드 검증 (구현코드만, 7.5 테스트 제외) | `/codex review` | 필수 (/review와 병렬 호출) |
 | 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
 | 작업 컨텍스트 보존 (planner 결과 후, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
 | 세션 끊김 후 작업 이어가기 | `/context-restore` | 사용자 명시 호출 시 |
+
+[^regression]: 인식 변형 — 모두 동일하게 tester-runtime 단독 전체회귀로 매핑: `회귀 돌려`, `전체회귀`, `전체 회귀 돌려/해줘`, `전체 테스트(해줘)`, `통합 테스트(해줘)`, `통테`, `전체 검증`. 이 프로젝트는 통합≈전체회귀이므로 통합/통테도 전체회귀로 처리한다.
 
 > /review와 /codex review는 동일 코드 스냅샷(tester-backend/tester-frontend PASS 시점(혼합/고복잡도는 둘 다 PASS 후))을 검토한다. 두 결과의 발견을 합집합으로 종합한다. 종합은 고정 규칙으로 한다: blocking 1건이라도 있으면 처리 대상(취사선택 금지). 한쪽 PASS가 다른 쪽 발견을 무효화하지 않는다. 수정이 발생하면 수정분만 tester 재검증 후 진행한다.
