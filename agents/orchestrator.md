@@ -10,6 +10,7 @@ tools:
   - Skill
   - Write
   - Bash
+  - Workflow
 permissionMode: default
 memory: project
 ---
@@ -29,6 +30,24 @@ memory: project
 - 테스트 레이어 분담: tester-backend/tester-frontend = 변경검증(단위 + 변경 스코프: 직접 호출자 1홉 + planner 회귀범위) + L1 컨텍스트 기동. tester-runtime = 전체회귀 전담(부채 트리거 또는 "회귀 돌려" 수동 호출 시에만). 자세한 정의는 CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 참조.
 - JUnit 실행: 프로젝트 pom의 skipTests 리터럴 때문에 tester는 실행 직전 pom을 임시로 오버라이드(sed)하고 trap으로 원복한다. 프로덕트 pom은 영구변경·커밋하지 않으며, tester는 실행 후 git clean을 검증한다. (시작 시 git checkout 자가치유 + EXIT/INT/TERM trap 원복)
 - tester-backend/tester-frontend PASS 후 /verify-implementation(verify-* 스킬 등록 시) → /review → /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
+
+## 동적 워크플로 (Workflow 도구) 사용 규칙 — 실험 (research preview)
+
+orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크플로를 실행할 수 있다.
+
+### 허용 용도 (fan-out 배치만)
+- 코드베이스 감사(다파일 스윕), 다각도 교차검증, 리서치성 조사, 대규모 마이그레이션 계획.
+- 다중 에이전트 적대적 교차검증 서브루틴(예: 설계패널 산출 보조).
+
+### 금지 (거버넌스 불변식 — 절대 우회 금지)
+- 사람 승인 게이트를 Workflow로 대체·생략 금지.
+- 설계패널 critical 게이트, 전체회귀 부채 D4 비차단 불변식을 Workflow 자율 실행으로 우회 금지.
+- research preview라 신뢰성 미검증 → 게이트 통과/차단 결정을 Workflow 산출 단독으로 내리지 않는다(보조 입력만, 최종 판정은 기존 게이트 규칙).
+- Workflow 산출물은 orchestrator가 검토 후 기존 흐름(planner/패널/finalizer)에 매핑한다. fire-and-forget 금지.
+
+### 비고
+- Workflow는 런타임 백그라운드 실행. 산출만 컨텍스트에 떨어짐.
+- 본 부여가 실제 도구 프로비저닝으로 이어지는지는 세션 재시작 후 확인(미검증). 도구 미노출 시 별도 세션(B안)으로 폴백.
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일
