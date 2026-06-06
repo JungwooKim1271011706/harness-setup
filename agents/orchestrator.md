@@ -170,8 +170,8 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 
 신규기능 트랙과 동일 + 아래 추가:
 - planner-high-complexity 호출
-- plan-eng-review 필수
 - 설계패널 ≥4 보장
+- 깊은 아키텍처 검증은 설계패널 워크플로의 eng 페르소나 다라운드(loop-until-dry 최대 3회, `complexity='high'`)가 담당한다. (단독 `/plan-eng-review` 단계는 제거 — 패널 eng와 중복이었음)
 
 ---
 
@@ -263,7 +263,7 @@ rule 경로: <0단계 확정 경로>를 Read하고 준수
 - 신규 기능/방향 불명확: /office-hours(요구사항 상세화) -> /grill-with-docs(설계 검증) -> /co-plan(인터랙티브 설계) -> planner-* -> 승인 -> ...
 - 프론트 전용: planner-frontend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> developer-frontend -> tester-frontend -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 백엔드 전용: planner-backend -> 설계패널게이트(≥3) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> developer-backend -> tester-backend -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
-- 혼합/고복잡도: planner-high-complexity -> /plan-eng-review -> 설계패널게이트(≥4) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> 도메인별 developer/tester 분리 -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
+- 혼합/고복잡도: planner-high-complexity -> 설계패널게이트(≥4, eng 다라운드가 아키텍처 검증 흡수) -> 승인 -> TDD합의(7a∥7b→7c→7.5→7.7품질게이트) -> 도메인별 developer/tester 분리 -> /verify-implementation(verify-* 스킬 등록 시) -> /review ∥ /codex review(병렬) -> /cso(인증/권한/암호화 변경 시) -> finalizer
 - 테스트 설계만 필요: tester-design
 - 전체회귀 필요 ("회귀 돌려" 수동 트리거 또는 전체회귀 부채 권장 수락): tester-runtime (단독) — 통합 + 전체회귀 1회 수행. PASS 시 regression-debt.json 리셋.
 - 빌드/기동 확인만 필요: tester-runtime (단독)
@@ -310,27 +310,52 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 ### 패널 구성
 
-| 역할 | 페르소나 스킬 | 호출 조건 |
+| 역할 | 렌즈 출처 (skillPath) | 호출 조건 |
 |------|------------|---------|
-| eng | plan-eng-review | 항상 포함 |
-| cso | plan-cso-review | 변경영역 태그에 `보안` 포함 시 |
-| design | plan-design-review | 변경영역 태그에 `UI` 포함 시 |
-| devex | plan-devex-review | 변경영역 태그에 `공통API/DAO` 포함 시 |
-| ceo | plan-ceo-review | 변경영역 태그에 `대규모범위` 포함 시 |
+| eng | `~/.claude/skills/plan-eng-review/SKILL.md` (Read) | 항상 포함 |
+| cso | **임베드 보안 렌즈** (⚠ plan-cso-review 스킬 미존재 → design-panel.js의 `CSO_LENS`) | 변경영역 태그에 `보안` 포함 시 |
+| design | `~/.claude/skills/plan-design-review/SKILL.md` (Read) | 변경영역 태그에 `UI` 포함 시 |
+| devex | `~/.claude/skills/plan-devex-review/SKILL.md` (Read) | 변경영역 태그에 `공통API/DAO` 포함 시 |
+| ceo | `~/.claude/skills/plan-ceo-review/SKILL.md` (Read) | 변경영역 태그에 `대규모범위` 포함 시 |
 
 **최소 인원 보장**: 태그 매칭만으로 3명(고복잡도 4명) 미달이면 채움 순서(eng → devex → cso → design → ceo)로 채운다.
-모든 패널 멤버는 **병렬 호출**한다.
+패널은 **Workflow `design-panel`로 병렬 실행**한다 (아래 ### 패널 실행 참조).
+> cso 렌즈: plan-cso-review 스킬은 실존하지 않는다(있는 건 eng/ceo/design/devex 4종 + 코드감사용 `cso`). 계획단계 보안 렌즈는 design-panel.js에 임베드된 `CSO_LENS`로 대체한다. 추후 plan-cso-review 스킬을 신규 작성하면 skillPath 방식으로 통일(TODO).
 
 > orchestrator는 사용자 승인 직전 planner 산출물 텍스트를 0단계 ②의 보안 키워드로 기계적으로 재스캔한다. 매치되는데 변경영역 태그에 `보안`이 없으면, 누락으로 간주하고 변경영역 태그에 `보안`을 추가한다. (이후 cso 포함은 기존 패널 구성 규칙이 처리)
 
 패널 호출 시 각 멤버에게 rule 경로를 "Read하고 준수" 명시로 주입한다.
+
+### 패널 실행 (Workflow `design-panel`)
+
+패널은 `Workflow({ name: 'design-panel', args })`로 실행한다. orchestrator 책임과 워크플로 책임을 분리한다(가드레일: research preview라 게이트 단독판정 금지).
+> 주의: `name` 호출은 세션 시작 시 등록된 스크립트본을 쓴다. design-panel.js를 **세션 도중 수정**하면 그 세션에선 반영 안 되니, 재시작하거나 임시로 `scriptPath`(절대경로)로 호출한다. args는 JSON 문자열로 전달되며 스크립트가 파싱한다(설계 반영됨).
+
+**orchestrator가 한다 (워크플로 호출 전):**
+1. 변경영역 태그 판정 + 0단계 ② 보안 키워드 재스캔(아래 인용구 규칙).
+2. 패널 멤버 선정 + 최소 인원 보장(채움 순서). → `personas[]` 구성.
+   - 스킬 있는 4종(eng/ceo/design/devex): `{ key, skillPath: '~/.claude/skills/plan-*-review/SKILL.md' }`
+   - cso: `{ key: 'cso', skillPath: null }` (null이면 워크플로가 임베드 `CSO_LENS` 사용)
+3. args 구성: `{ planText: <계획서 전문>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
+
+**워크플로가 한다 (findings 생산만):**
+- 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드 — 고복잡도 단독 plan-eng-review 흡수).
+- critical findings만 적대적 교차검증(refute-default 3 스킵터, ≥2 반증 시 폐기).
+- 반환: `{ confirmedCriticals, droppedCriticals, majors, minors, perPersona }`.
+
+**orchestrator가 한다 (워크플로 반환 후 — 최종 판정):**
+- `confirmedCriticals.length > 0` → 게이트 차단, planner 재작업 [LOOP n/3] (기존 Severity 처리 규칙).
+- `confirmedCriticals.length === 0` → 사용자 승인 단계로. `majors`는 승인화면 노출, `minors`는 기록.
+- 워크플로 산출은 **보조 입력**이다. critical→차단·major→노출 매핑과 PASS 근거 판정은 orchestrator가 기존 규칙으로 내린다(워크플로 단독 결정 금지).
+- 워크플로 실패/도구 미가용 시 폴백: 기존 수동 페르소나 합성으로 진행(fire-and-forget 금지, orchestrator가 검토).
 
 ### PASS 증거 강제
 
 - 각 페르소나는 PASS(critical 없음) 판정 시 **확인 근거를 반드시 명시**해야 한다. 무엇을 검토했고 왜 critical이 없다고 판단했는지(점검 항목 나열).
 - 오케스트레이터는 PASS 근거를 기계적 기준으로만 판정한다(자의 판단 금지): ① '확인 근거'에 점검 항목이 2개 이상 나열되어 있고 ② 각 항목에 '무엇을 점검했는지'가 1줄 이상 기술되어 있으면 통과. 하나라도 미충족이면 자동으로 미통과 처리하고 해당 페르소나에 재검토 1회 요청한다.
 - 재검토 후에도 근거 미흡이면 사용자에게 노출(판단 위임).
-- 목적: lazy PASS(형식적 통과) 차단. (자기검증/교차검증은 도입 안 함 — 하류 tester/review와 중복 회피)
+- 목적: lazy PASS(형식적 통과) 차단.
+- 교차검증 범위: **critical findings만** design-panel 워크플로에서 적대적 교차검증(거짓 critical 차단). major/minor는 교차검증 안 함(하류 tester/review와 중복 회피). PASS 근거(critical 0건) 판정은 위 기계적 기준 유지.
 
 ### Severity 처리
 
@@ -593,10 +618,10 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 [단순수정]   [신규기능]      [고복잡도]
     │        (보안 포함)          │
     │           │        planner-high-complexity
-    │    /office-hours      /plan-eng-review
+    │    /office-hours           │
     │    /grill-with-docs        │
     │    /co-plan(OOP5)          │ (신규기능 트랙 합류 →)
-    │           │           설계패널게이트 ≥4
+    │           │           설계패널게이트 ≥4 (eng 다라운드)
     │      planner-*             │
     │           │                │
     │    ┌──────────────────────────────────┐
@@ -656,7 +681,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 새 기능 개발 요청 | `/office-hours` | 필수 |
 | 새 기능 설계 방향 검증 (코드베이스 교차 검증) | `/grill-with-docs` | 필수 (office-hours 후) |
 | 새 기능 인터랙티브 설계 (시나리오/API/클래스/메서드) | `/co-plan` | 필수 (grill-with-docs 후) |
-| 고복잡도 계획 후 아키텍처 검증 | `/plan-eng-review` | 필수 |
+| 고복잡도 아키텍처 검증 | 설계패널 Workflow `design-panel`의 eng 다라운드 | 필수 (단독 `/plan-eng-review` 대체) |
 | 구현을 이해하며 함께 진행 | `/pair-impl` | 선택 |
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
 | 변경검증(tester-backend/frontend) PASS 후 구현 검증 (verify-* 스킬 순차 실행) | `/verify-implementation` | verify-* 스킬 등록 시 |
