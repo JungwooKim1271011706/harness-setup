@@ -11,9 +11,11 @@ if command -v jq >/dev/null 2>&1; then
   agent_id=$(printf '%s' "$input" | jq -r '.agent_id // empty' 2>/dev/null)
   command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/null)
 else
-  # 폴백: agent_id 키 존재 여부만 거칠게 판정
-  agent_id=$(printf '%s' "$input" | grep -o '"agent_id"[[:space:]]*:[[:space:]]*"[^"]\+"' | head -1)
-  command=$(printf '%s' "$input")
+  # 폴백(jq 부재): 값만 거칠게 추출. command는 JSON 전체가 아니라 tool_input.command 값만
+  # 잡아 오탐 감소. escape된 따옴표가 있으면 값이 잘릴 수 있으나, 차단 방향엔 안전
+  # (부분이라도 git commit 매치 시 차단). 정확성은 jq 경로가 보장.
+  agent_id=$(printf '%s' "$input" | sed -n 's/.*"agent_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+  command=$(printf '%s' "$input" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
 fi
 
 # 서브에이전트(agent_id 존재) → 허용 (finalizer commit, tester mvn 등 정상)

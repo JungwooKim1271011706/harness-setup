@@ -102,6 +102,7 @@ ${planText}
 async function runPersona(persona) {
   const maxRounds = (persona.key === 'eng' && complexity === 'high') ? 3 : 1
   const all = []
+  const evidence = [] // PASS 근거 누적 (다라운드 병합). orchestrator의 PASS 근거 기계검증 소스
   for (let r = 1; r <= maxRounds; r++) {
     const res = await agent(reviewPrompt(persona, r), {
       label: `review:${persona.key}${maxRounds > 1 ? `:r${r}` : ''}`,
@@ -109,11 +110,12 @@ async function runPersona(persona) {
       schema: FINDINGS_SCHEMA,
       model: 'opus', // 품질 우선 (사용자 기준: 토큰보다 품질)
     })
+    if (Array.isArray(res?.passEvidence)) evidence.push(...res.passEvidence)
     const found = res?.findings ?? []
-    if (found.length === 0) break // dry → 다라운드 중단
+    if (found.length === 0) break // dry → 다라운드 중단 (단 passEvidence는 위에서 이미 수집)
     all.push(...found)
   }
-  return { persona: persona.key, findings: all }
+  return { persona: persona.key, findings: all, passEvidence: evidence }
 }
 
 // ── critical 적대적 교차검증 (D3+D5: critical만, 토큰 가드) ──
@@ -154,7 +156,7 @@ const results = await pipeline(
       res.findings
         .filter(f => f.severity === 'critical')
         .map(f => () => verifyCritical(f, res.persona))
-    ).then(verified => ({ persona: res.persona, findings: res.findings, verifiedCriticals: verified.filter(Boolean) }))
+    ).then(verified => ({ persona: res.persona, findings: res.findings, passEvidence: res.passEvidence, verifiedCriticals: verified.filter(Boolean) }))
 )
 
 // ── 집계 (판정 아님 — orchestrator가 기존 게이트 규칙으로 최종 판정) ──
@@ -169,5 +171,10 @@ return {
   droppedCriticals,   // 교차검증서 폐기된 거짓 critical (감사용)
   majors,             // 통과허용, 승인화면 노출
   minors,             // 기록만
-  perPersona: clean.map(r => ({ persona: r.persona, total: r.findings.length, criticals: (r.verifiedCriticals || []).length })),
+  perPersona: clean.map(r => ({
+    persona: r.persona,
+    total: r.findings.length,
+    criticals: (r.verifiedCriticals || []).length,
+    passEvidence: r.passEvidence || [], // orchestrator: critical 0건 시 PASS 근거 ≥2 기계검증 소스
+  })),
 }
