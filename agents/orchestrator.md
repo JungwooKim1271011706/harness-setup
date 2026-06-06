@@ -340,7 +340,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 **워크플로가 한다 (findings 생산만):**
 - 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드 — 고복잡도 단독 plan-eng-review 흡수).
-- critical findings만 적대적 교차검증(refute-default 3 스킵터, ≥2 반증 시 폐기).
+- critical findings만 적대적 교차검증(perspective-diverse 3렌즈: 존재성/발현가능성/맥락, refute-default, ≥2 렌즈 반증 시 폐기). 같은 프롬프트 N회는 고상관이라 confidence 안 늚 → 비상관 3렌즈로 대체.
 - 반환: `{ confirmedCriticals, droppedCriticals, majors, minors, perPersona }`.
 
 **orchestrator가 한다 (워크플로 반환 후 — 최종 판정):**

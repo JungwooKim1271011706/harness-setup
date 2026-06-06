@@ -119,8 +119,28 @@ async function runPersona(persona) {
 }
 
 // ── critical 적대적 교차검증 (D3+D5: critical만, 토큰 가드) ──
-function verifyPrompt(finding, personaKey) {
-  return `이 critical 보안/설계 지적을 반증(refute)하려 시도하라. 불확실하면 refuted=true가 기본이다(거짓 critical을 거르는 게 목적).
+// perspective-diverse: 같은 refute 프롬프트 N회(고상관, confidence 안 늚)가 아니라
+// 서로 다른 렌즈 3개(비상관)로 검증. 한 critical이 여러 방식으로 틀릴 수 있으니
+// 다양성이 중복이 못 잡는 실패모드를 잡는다. (결정적 재실행 N회는 정보 0이라는 원칙)
+const VERIFY_LENSES = [
+  {
+    key: 'existence',
+    instruction: `[렌즈: 존재성] 이 지적의 전제가 코드/계획에 실재하나? 근거인용된 라인이 실제로 그러한가, 인용 없이 추정한 것은 아닌가. 전제가 허구거나 인용이 계획을 오독했으면 refuted=true.`,
+  },
+  {
+    key: 'exploitability',
+    instruction: `[렌즈: 발현가능성] 전제가 실재해도 실제로 악용/장애로 발현되는 경로가 있나? 이론상 가능하나 현실 트리거가 없거나, 심각도가 과장(critical 아닌 major/minor)이면 refuted=true.`,
+  },
+  {
+    key: 'context',
+    instruction: `[렌즈: 맥락/중복] 기존 코드·인터셉터·룰·프레임워크가 이미 이 문제를 막고 있지 않나? 다른 finding과 중복이거나 상위 계층이 이미 차단하면 refuted=true.`,
+  },
+]
+
+function verifyPrompt(finding, personaKey, lens) {
+  return `critical 지적을 ${lens.key} 렌즈로 검증하라. 불확실하면 refuted=true가 기본(거짓 critical 거르기).
+${lens.instruction}
+
 페르소나=${personaKey}
 지적=${finding.description}
 위치=${finding.location}
@@ -130,19 +150,26 @@ function verifyPrompt(finding, personaKey) {
 계획서 맥락:
 ${planText}
 
-[출력] VERDICT_SCHEMA. refuted=true면 왜 이 지적이 틀렸/과장됐는지, false면 왜 실재 critical인지 reason에.`
+[출력] VERDICT_SCHEMA. 이 렌즈 기준 refuted=true면 왜 틀렸/과장/중복인지, false면 이 렌즈로도 실재 critical인 이유를 reason에.`
 }
 
 async function verifyCritical(finding, personaKey) {
-  const votes = await parallel([1, 2, 3].map(i => () =>
-    agent(verifyPrompt(finding, personaKey), {
-      label: `verify:${personaKey}:${i}`,
+  // 3개 서로 다른 렌즈 병렬 (비상관 3표). ≥2 렌즈가 반증하면 폐기.
+  const votes = await parallel(VERIFY_LENSES.map(lens => () =>
+    agent(verifyPrompt(finding, personaKey, lens), {
+      label: `verify:${personaKey}:${lens.key}`,
       phase: 'Verify',
       schema: VERDICT_SCHEMA,
-    })
+    }).then(v => (v ? { ...v, lens: lens.key } : null))
   ))
-  const refutes = votes.filter(Boolean).filter(v => v.refuted).length
-  return { ...finding, personaKey, refutes, survived: refutes < 2 } // 다수(≥2) 반증 시 폐기
+  const valid = votes.filter(Boolean)
+  const refutes = valid.filter(v => v.refuted).length
+  return {
+    ...finding, personaKey,
+    refutes,
+    refutedLenses: valid.filter(v => v.refuted).map(v => v.lens), // 어느 렌즈가 반증했나(감사)
+    survived: refutes < 2, // 다수(≥2 렌즈) 반증 시 폐기
+  }
 }
 
 // ── 파이프라인: 페르소나별 리뷰 → 그 페르소나 critical 즉시 교차검증 ──
