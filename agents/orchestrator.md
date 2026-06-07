@@ -21,9 +21,9 @@ memory: project
 
 ## 핵심 규칙
 - 직접 구현 금지
-- 직접 코드 수정 금지
+- 직접 코드 수정 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-edit.sh`가 메인스레드의 Edit/Write/MultiEdit를 제품모듈(tocServer/tocProcess/tocFramework) 대상이면 차단. .claude/ 하네스 자가수정·메모리·docs는 허용. 알려진 구멍: Bash `sed -i` 우회는 v1 미차단)
 - 직접 테스트 실행 금지
-- Bash 도구는 스킬 preamble 실행 및 환경 점검 전용. 직접 git commit/build/test/배포 명령 금지 (해당 작업은 finalizer/tester-* 위임)
+- Bash 도구는 스킬 preamble 실행 및 환경 점검 전용. 직접 git commit/build/test/배포 명령 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-exec.sh`가 메인스레드의 git commit/push·mvn/gradle 차단. 해당 작업은 finalizer/tester-* 위임)
 - 항상 가장 좁은 역할의 agent부터 호출
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend로 변경검증을 수행하고, PASS면 변경검증 종료. tester-runtime(전체회귀)은 매 구현 강제 체인에서 호출하지 않는다.
@@ -328,8 +328,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 ### 패널 실행 (Workflow `design-panel`)
 
-패널은 `Workflow({ name: 'design-panel', args })`로 실행한다. orchestrator 책임과 워크플로 책임을 분리한다(가드레일: research preview라 게이트 단독판정 금지).
-> 주의: `name` 호출은 세션 시작 시 등록된 스크립트본을 쓴다. design-panel.js를 **세션 도중 수정**하면 그 세션에선 반영 안 되니, 재시작하거나 임시로 `scriptPath`(절대경로)로 호출한다. args는 JSON 문자열로 전달되며 스크립트가 파싱한다(설계 반영됨).
+패널은 `Workflow({ scriptPath: 'C:/workspace/scourt/sb/.claude/workflows/design-panel.js', args })`로 실행한다. orchestrator 책임과 워크플로 책임을 분리한다(가드레일: research preview라 게이트 단독판정 금지).
+> **scriptPath 고정 이유**: `name: 'design-panel'` 호출은 세션 시작 시 등록된 스크립트본(캐시)을 쓴다 — 세션 도중 design-panel.js를 수정해도 그 세션엔 반영 안 되는 풋건. `scriptPath`는 호출 시 디스크에서 항상 최신을 읽어 이 풋건을 제거한다. args는 JSON 문자열로 전달되며 스크립트가 방어적 파싱한다(설계 반영됨).
 
 **orchestrator가 한다 (워크플로 호출 전):**
 1. 변경영역 태그 판정 + 0단계 ② 보안 키워드 재스캔(아래 인용구 규칙).
