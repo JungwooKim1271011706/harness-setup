@@ -93,13 +93,29 @@ B=""
 - 키보드만으로 모든 주요 기능 접근 가능한지 확인 (WCAG-2.1.1)
 - 색상만으로 정보를 구분하는 요소 없는지 확인 (WCAG-1.4.1)
 
+## 감점 심각도 분류 (점수 산정 전 필수)
+
+각 감점 항목을 아래 심각도로 분류한다. 점수는 critical/high만 차감한다.
+
+| 심각도 | 정의 | 점수 영향 |
+|--------|------|----------|
+| critical | 기능 깨짐, 보안 취약, 콘솔 예외, 회귀 발생 | 9점 미만 차감 |
+| high | 명백한 결함, 레이아웃 깨짐, 핵심 부정 경로 누락 | 9점 미만 차감 |
+| minor/low | 권고 수준(접근성 보강, 스타일, 과방어, 선택적 개선) | **차감 금지, 9점 유지** |
+
+- minor/low 항목만 있고 critical/high 0건이면 해당 영역 9점 확정 → PASS.
+- minor/low는 점수표가 아니라 "권고(non-blocking)" 섹션에 분리 기재한다.
+- **YAGNI(미사용 경계값)·과방어성 지적은 minor/low로 분류한다.** tester 감점이 YAGNI·과방어면 강제 수정이 아니라 권고다 (orchestrator findings 타당성 게이트와 동일 철학 — tester 지적 ≠ 무조건 수정).
+
 ## 점수 기준 및 PASS/FAIL
 
 | 조건 | 판정 |
 |------|------|
-| 3개 영역 모두 9점 이상 | **PASS** |
-| 하나라도 9점 미만 | **FAIL** → developer-frontend 반환 |
-| 3회 검증 후에도 9점 미만 영역 존재 | **ESCALATION** → 오케스트레이터에 사용자 판단 요청 |
+| 3개 영역 모두 9점 이상 (= critical/high 0건) | **PASS** |
+| critical 또는 high 감점 1건 이상 (영역 9점 미만) | **FAIL** → developer-frontend 반환 |
+| 3회 검증 후에도 critical/high 잔존 | **ESCALATION** → 오케스트레이터에 사용자 판단 요청 |
+
+- **developer 반환 트리거 = critical/high만.** minor/low 단독으로 developer 반환·자동 루프 금지.
 
 ESCALATION 시 출력 형식:
 ```
@@ -169,6 +185,8 @@ Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \
 | 회귀 | /10 | |
 | UI/UX | /10 | |
 ### 종합 판정: PASS / FAIL / ESCALATION
+### 권고 (non-blocking minor/low)
+- (점수 차감 없는 minor/low 항목 분리 기재. 없으면 "-")
 ### 증거
 ### 재현 절차
 ### 에러 분류
