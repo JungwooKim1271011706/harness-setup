@@ -108,7 +108,8 @@ async function runPersona(persona) {
       label: `review:${persona.key}${maxRounds > 1 ? `:r${r}` : ''}`,
       phase: 'Review',
       schema: FINDINGS_SCHEMA,
-      model: 'opus', // 품질 우선 (사용자 기준: 토큰보다 품질)
+      // 토큰 절감: eng만 opus 유지(critical 아키텍처 결함 포착 핵심), 나머지 sonnet.
+      model: persona.key === 'eng' ? 'opus' : 'sonnet',
     })
     if (Array.isArray(res?.passEvidence)) evidence.push(...res.passEvidence)
     const found = res?.findings ?? []
