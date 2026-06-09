@@ -11,6 +11,7 @@ tools:
   - Write
   - Bash
   - Workflow
+  - WebSearch
 permissionMode: default
 memory: project
 ---
@@ -71,8 +72,43 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 |------------|------|
 | `⚠ 미처리 실패 패턴 N건` | 사용자에게 하네스 자가 점검 제안 |
 | `⚠ 스킬 동기화 N일 경과` | 사용자에게 `sync-skills.sh` 실행 제안 |
+| `🔍 HARNESS_FEATURE_SCAN_DUE` | 백그라운드 기능 스캔 1회 throttled 런치 (아래 ## 하네스 기능 스캔 참조) |
 
 경고가 주입됐지만 사용자가 긴급 작업을 요청한 경우 → 해당 작업 완료 후 경고 제안.
+
+## 하네스 기능 스캔 (CC 신기능·웹 모범사례 주기 흡수)
+
+목적: CC 공식 신기능 + 웹 오케스트레이션 모범사례를 주기적으로 조사해 하네스 도입 후보를 백로그에 매핑한다. **자동 조사, 사람 적용** — 스캔은 자동/백그라운드지만 하네스 수정은 사람 판정(거버넌스 불변식).
+
+### 트리거 (둘 다 동일 Workflow)
+1. **자동(넛지)**: SessionStart 훅이 `🔍 HARNESS_FEATURE_SCAN_DUE`를 주입하면(마지막 스캔 ≥30일 또는 최초), orchestrator가 **백그라운드 Workflow를 1회 런치**한다.
+2. **수동**: 사용자가 "기능스캔 돌려" / "하네스 기능 점검" 요청 시 즉시 런치.
+
+### 런치 절차
+1. **throttle 갱신 먼저**: `.claude/state/last-feature-scan` 파일에 오늘 날짜(YYYY-MM-DD)를 Write한다(없으면 디렉터리 포함 생성). **런치 직전에 갱신** → 매 재구동 재런치 방지(30일 1회). 자동 트리거 시 필수.
+2. **사용자 통지 1줄**(논블로킹): "백그라운드 하네스 기능 스캔 시작(마지막 N일 경과). 완료 시 백로그 후보 보고." — 작업을 막지 않는다.
+3. **백그라운드 Workflow 런치**:
+   ```
+   Workflow({
+     scriptPath: 'C:/workspace/scourt/sb/.claude/workflows/harness-feature-scan.js',
+     args: {
+       orchestratorPath: 'C:/workspace/scourt/sb/.claude/agents/orchestrator.md',
+       backlogPath: 'C:/workspace/scourt/sb/.claude/agent-memory/orchestrator/project_harness_improvement_backlog.md',
+       websearchAvailable: <WebSearch 도구가 이 세션 toolset에 있으면 true, 없으면 false>
+     },
+     run_in_background: true
+   })
+   ```
+   - `websearchAvailable`: orchestrator tools에 WebSearch가 프로비저닝됐는지로 판정. 미검증/미노출이면 `false`(레인A CC기능 스캔만 수행 — 그래도 유효).
+4. **완료 알림 수신 후**: 반환 `{ newCandidates, alreadyHave, rejected, backlogPatch, scanNotes }`를 검토.
+   - `newCandidates`(high/medium) 위주로 사용자에게 요약 보고.
+   - `backlogPatch`(append 초안)를 백로그 메모리에 반영할지 **사용자에게 위임**. 자동 반영 금지.
+   - `scanNotes`의 커버 못한 영역(curl 실패 등) 함께 보고(조용한 누락 금지).
+
+### 가드레일
+- 스캔 산출 = **보조 입력**. 도입 결정·하네스 수정은 사람.
+- 자동 트리거라도 긴급 사용자 작업 중이면 작업 완료 후 런치(백그라운드라 충돌은 없으나 통지 타이밍 조정).
+- research preview(Workflow)라 스캔 단독으로 게이트/규칙 변경 금지.
 
 ## 0-1단계: 모드 판정 (요구사항 수신 직후, 0단계보다 먼저)
 

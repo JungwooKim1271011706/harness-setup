@@ -58,6 +58,37 @@ if [ -f "$VERSIONS" ]; then
   fi
 fi
 
+# 4) 하네스 기능 스캔 staleness (CC 신기능·웹 모범사례 주기 점검, 기본 30일)
+#    네트워크 0 — timestamp 파일만 확인. 실제 스캔은 orchestrator가 백그라운드 Workflow로 수행.
+SCAN_THRESHOLD_DAYS=30
+SCAN_STAMP="$PROJECT_DIR/.claude/state/last-feature-scan"
+SCAN_DUE=0
+SCAN_LAST="(없음)"
+if [ -f "$SCAN_STAMP" ]; then
+  SCAN_LAST=$(grep -o '[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}' "$SCAN_STAMP" | head -1)
+  if [ -n "$SCAN_LAST" ]; then
+    TODAY=$(date +%Y-%m-%d)
+    if date --version 2>/dev/null | grep -q GNU; then
+      TODAY_TS=$(date -d "$TODAY" +%s 2>/dev/null)
+      SCAN_TS=$(date -d "$SCAN_LAST" +%s 2>/dev/null)
+    else
+      TODAY_TS=$(date -j -f "%Y-%m-%d" "$TODAY" +%s 2>/dev/null)
+      SCAN_TS=$(date -j -f "%Y-%m-%d" "$SCAN_LAST" +%s 2>/dev/null)
+    fi
+    if [ -n "$TODAY_TS" ] && [ -n "$SCAN_TS" ]; then
+      SCAN_DAYS=$(( (TODAY_TS - SCAN_TS) / 86400 ))
+      [ "$SCAN_DAYS" -ge "$SCAN_THRESHOLD_DAYS" ] && SCAN_DUE=1
+    fi
+  else
+    SCAN_DUE=1
+  fi
+else
+  SCAN_DUE=1  # 한 번도 스캔 안 함 → due
+fi
+if [ "$SCAN_DUE" -eq 1 ]; then
+  MESSAGES+=("🔍 HARNESS_FEATURE_SCAN_DUE (마지막: ${SCAN_LAST}, 임계 ${SCAN_THRESHOLD_DAYS}일) — orchestrator는 백그라운드 기능스캔 Workflow를 1회 throttled 런치할 것 (자동적용 금지, 백로그 매핑만)")
+fi
+
 # 메시지 없으면 조용히 종료
 if [ ${#MESSAGES[@]} -eq 0 ]; then
   exit 0
