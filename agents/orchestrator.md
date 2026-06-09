@@ -346,14 +346,21 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 3. args 구성: `{ planText: <계획서 전문>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
 
 **워크플로가 한다 (findings 생산만):**
-- 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드 — 고복잡도 단독 plan-eng-review 흡수).
-- critical findings만 적대적 교차검증(perspective-diverse 3렌즈: 존재성/발현가능성/맥락, refute-default, ≥2 렌즈 반증 시 폐기). 같은 프롬프트 N회는 고상관이라 confidence 안 늚 → 비상관 3렌즈로 대체.
-- 반환: `{ confirmedCriticals, droppedCriticals, majors, minors, perPersona }`.
+- 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드).
+- critical 적대검증 안 함(제거됨 — 검증자 코드 미독+refute편향으로 신뢰 불가, 실측 음수가치).
+- 반환: `{ criticals, majors, minors, perPersona }` (criticals는 페르소나 태그 부착 raw).
 
-**orchestrator가 한다 (워크플로 반환 후 — 최종 판정):**
-- `confirmedCriticals.length > 0` → 게이트 차단, planner 재작업 [LOOP n/3] (기존 Severity 처리 규칙).
-- `confirmedCriticals.length === 0` → 사용자 승인 단계로. `majors`는 승인화면 노출, `minors`는 기록.
-- 워크플로 산출은 **보조 입력**이다. critical→차단·major→노출 매핑과 PASS 근거 판정은 orchestrator가 기존 규칙으로 내린다(워크플로 단독 결정 금지).
+**orchestrator가 한다 (워크플로 반환 후 — dedup + 코드대조 판정):**
+1. **dedup**: `criticals`를 근본원인별로 묶는다(여러 페르소나가 같은 버그를 다르게 표현 → 1건으로).
+2. **코드대조 게이트 (receiving-code-review, critical마다)**: 각 dedup critical의 인용 라인(file:line)을 **실제 Read해서 대조**한다.
+   ① 전제가 실재하나(인용 라인이 정말 그러한가) ② 기존 코드/룰/프레임워크가 이미 막나 ③ YAGNI.
+   - 코드로 전제 확인됨 → **생존 critical** (게이트 차단 대상).
+   - 인용이 코드와 불일치/이미 차단/YAGNI → 기각(근거 기록).
+   - orchestrator가 직접 Read로 판정(저자보다 덜 아는 LLM 투표 금지 — verify 제거 취지).
+   - critical이 많아 직접 판정이 부담이면, 인용 라인 Read를 **강제**한 단일 서브에이전트에 위임 가능(단 "코드 안 읽으면 uncertain, refute-default 금지" 명시).
+3. **생존 critical > 0** → 게이트 차단, planner 재작업 [LOOP n/3].
+   **생존 critical == 0** → 사용자 승인 단계로. `majors` 승인화면 노출, `minors` 기록.
+- 워크플로 산출은 **보조 입력**이다. dedup·코드대조·차단 판정은 orchestrator가 내린다.
 - 워크플로 실패/도구 미가용 시 폴백: 기존 수동 페르소나 합성으로 진행(fire-and-forget 금지, orchestrator가 검토).
 
 ### PASS 증거 강제
@@ -362,13 +369,13 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 - 오케스트레이터는 PASS 근거를 기계적 기준으로만 판정한다(자의 판단 금지): ① '확인 근거'에 점검 항목이 2개 이상 나열되어 있고 ② 각 항목에 '무엇을 점검했는지'가 1줄 이상 기술되어 있으면 통과. 하나라도 미충족이면 자동으로 미통과 처리하고 해당 페르소나에 재검토 1회 요청한다.
 - 재검토 후에도 근거 미흡이면 사용자에게 노출(판단 위임).
 - 목적: lazy PASS(형식적 통과) 차단.
-- 교차검증 범위: **critical findings만** design-panel 워크플로에서 적대적 교차검증(거짓 critical 차단). major/minor는 교차검증 안 함(하류 tester/review와 중복 회피). PASS 근거(critical 0건) 판정은 위 기계적 기준 유지.
+- 교차검증 범위: critical 적대검증은 워크플로에서 제거됨. 거짓 critical 차단은 orchestrator의 dedup + 인용라인 코드대조 게이트(### 패널 실행의 "orchestrator가 한다" 2번)가 담당한다. PASS 근거(critical 0건) 기계검증은 유지(passEvidence ≥2).
 
 ### Severity 처리
 
 | Severity | 처리 |
 |----------|------|
-| **critical** | 게이트 차단. planner 재작업 후 패널 재실행. 최대 3회 루프. |
+| **critical** | orchestrator dedup+코드대조 후 생존 시 게이트 차단. planner 재작업 후 패널 재실행. 최대 3회 루프. |
 | **major** | 통과 허용. 사용자 승인 화면에 리포트로 노출. |
 | **minor** | 통과 허용. 리포트만 기록. |
 
@@ -713,4 +720,4 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 >
 > **tester 감점에도 동일 적용**: 이 타당성 게이트는 리뷰/패널 findings뿐 아니라 **tester 감점 항목에도 적용한다**. tester critical/high 감점이 YAGNI(미사용 경계값)·과방어면 orchestrator가 기각할 수 있다(근거 기록). tester 지적 ≠ 무조건 수정. (tester는 1차로 minor/low를 점수 차감 없이 권고 섹션에 분리하지만, critical/high로 올라온 항목도 이 게이트로 한 번 더 거른다.)
 >
-> **codex 미가용 폴백 — 적대검증 보상 (반복≠신뢰 응용)**: codex 한도초과/실패로 /codex review가 빠지면 /review(claude) **단일 소스**가 된다(비상관 두번째 의견 상실). 7a∥7b 폴백과 동형으로, 잃은 비상관 소스를 **다른 종류로 복원**한다 → blocking findings를 design-panel.js의 perspective-diverse 적대검증(존재성/발현가능성/맥락 3렌즈, ≥2 렌즈 반증 시 폐기)으로 1회 거른 뒤 처리한다. 산출물에 `⚠ 교차검증 없음(codex 미사용, 단일소스 + 적대검증 보상)`을 명시한다. 정상(2소스)일 땐 적대검증을 켜지 않는다(비상관 2소스가 이미 교차검증이라 과잉).
+> **codex 미가용 폴백**: codex 한도초과/실패로 /codex review가 빠지면 /review(claude) **단일 소스**가 된다(비상관 두번째 의견 상실). 잃은 비상관 소스를 design-panel 적대검증으로 보상하던 경로는 제거됨(verify 삭제). 대신 orchestrator가 blocking findings의 인용 라인을 직접 Read해 코드대조(receiving-code-review)로 1회 거른 뒤 처리한다. 산출물에 `⚠ 교차검증 없음(codex 미사용, 단일소스 + 코드대조 보상)`을 명시한다.

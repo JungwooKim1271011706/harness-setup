@@ -1,9 +1,8 @@
 export const meta = {
   name: 'design-panel',
-  description: '설계패널: 페르소나 병렬 리뷰 + critical 적대적 교차검증. findings만 생산하고 게이트 판정은 orchestrator가 한다(가드레일).',
+  description: '설계패널: 페르소나 병렬 리뷰. findings만 생산하고 dedup·게이트 판정은 orchestrator가 한다(가드레일).',
   phases: [
     { title: 'Review', detail: '페르소나 N 병렬 리뷰 (eng는 고복잡도 시 다라운드)' },
-    { title: 'Verify', detail: 'critical findings 적대적 교차검증 (refute-default 3 스킵터)' },
   ],
 }
 
@@ -25,7 +24,7 @@ const complexity = _a.complexity ?? 'normal'
 const personas   = _a.personas   ?? []
 
 if (!planText || personas.length === 0) {
-  return { error: 'planText 또는 personas 누락 — orchestrator args 확인', confirmedCriticals: [], majors: [], minors: [], perPersona: [] }
+  return { error: 'planText 또는 personas 누락 — orchestrator args 확인', criticals: [], majors: [], minors: [], perPersona: [] }
 }
 
 const FINDINGS_SCHEMA = {
@@ -50,15 +49,6 @@ const FINDINGS_SCHEMA = {
     },
   },
   required: ['persona', 'passEvidence', 'findings'],
-}
-
-const VERDICT_SCHEMA = {
-  type: 'object',
-  properties: {
-    refuted: { type: 'boolean' },
-    reason:  { type: 'string' },
-  },
-  required: ['refuted', 'reason'],
 }
 
 // cso 계획단계 보안 렌즈 (D1=A 임베드 — plan-cso-review 스킬 부재로 불가피)
@@ -119,90 +109,22 @@ async function runPersona(persona) {
   return { persona: persona.key, findings: all, passEvidence: evidence }
 }
 
-// ── critical 적대적 교차검증 (D3+D5: critical만, 토큰 가드) ──
-// perspective-diverse: 같은 refute 프롬프트 N회(고상관, confidence 안 늚)가 아니라
-// 서로 다른 렌즈 3개(비상관)로 검증. 한 critical이 여러 방식으로 틀릴 수 있으니
-// 다양성이 중복이 못 잡는 실패모드를 잡는다. (결정적 재실행 N회는 정보 0이라는 원칙)
-const VERIFY_LENSES = [
-  {
-    key: 'existence',
-    instruction: `[렌즈: 존재성] 이 지적의 전제가 코드/계획에 실재하나? 근거인용된 라인이 실제로 그러한가, 인용 없이 추정한 것은 아닌가. 전제가 허구거나 인용이 계획을 오독했으면 refuted=true.`,
-  },
-  {
-    key: 'exploitability',
-    instruction: `[렌즈: 발현가능성] 전제가 실재해도 실제로 악용/장애로 발현되는 경로가 있나? 이론상 가능하나 현실 트리거가 없거나, 심각도가 과장(critical 아닌 major/minor)이면 refuted=true.`,
-  },
-  {
-    key: 'context',
-    instruction: `[렌즈: 맥락/중복] 기존 코드·인터셉터·룰·프레임워크가 이미 이 문제를 막고 있지 않나? 다른 finding과 중복이거나 상위 계층이 이미 차단하면 refuted=true.`,
-  },
-]
-
-function verifyPrompt(finding, personaKey, lens) {
-  return `critical 지적을 ${lens.key} 렌즈로 검증하라. 불확실하면 refuted=true가 기본(거짓 critical 거르기).
-${lens.instruction}
-
-페르소나=${personaKey}
-지적=${finding.description}
-위치=${finding.location}
-근거인용=${finding.quote ?? '(없음 — 근거 약함)'}
-권고=${finding.recommendation ?? ''}
-
-계획서 맥락:
-${planText}
-
-[출력] VERDICT_SCHEMA. 이 렌즈 기준 refuted=true면 왜 틀렸/과장/중복인지, false면 이 렌즈로도 실재 critical인 이유를 reason에.`
-}
-
-async function verifyCritical(finding, personaKey) {
-  // 3개 서로 다른 렌즈 병렬 (비상관 3표). ≥2 렌즈가 반증하면 폐기.
-  const votes = await parallel(VERIFY_LENSES.map(lens => () =>
-    agent(verifyPrompt(finding, personaKey, lens), {
-      label: `verify:${personaKey}:${lens.key}`,
-      phase: 'Verify',
-      schema: VERDICT_SCHEMA,
-    }).then(v => (v ? { ...v, lens: lens.key } : null))
-  ))
-  const valid = votes.filter(Boolean)
-  const refutes = valid.filter(v => v.refuted).length
-  return {
-    ...finding, personaKey,
-    refutes,
-    refutedLenses: valid.filter(v => v.refuted).map(v => v.lens), // 어느 렌즈가 반증했나(감사)
-    survived: refutes < 2, // 다수(≥2 렌즈) 반증 시 폐기
-  }
-}
-
-// ── 파이프라인: 페르소나별 리뷰 → 그 페르소나 critical 즉시 교차검증 ──
-// (페르소나 A critical 검증 중 페르소나 B 리뷰 동시 진행 — barrier 없음)
+// ── 페르소나 병렬 리뷰만 (적대검증 제거 — orchestrator가 dedup+코드대조 판정) ──
 phase('Review')
-const results = await pipeline(
-  personas,
-  (persona) => runPersona(persona),
-  (res) =>
-    parallel(
-      res.findings
-        .filter(f => f.severity === 'critical')
-        .map(f => () => verifyCritical(f, res.persona))
-    ).then(verified => ({ persona: res.persona, findings: res.findings, passEvidence: res.passEvidence, verifiedCriticals: verified.filter(Boolean) }))
-)
+const results = (await parallel(personas.map(p => () => runPersona(p)))).filter(Boolean)
 
-// ── 집계 (판정 아님 — orchestrator가 기존 게이트 규칙으로 최종 판정) ──
-const clean = results.filter(Boolean)
-const confirmedCriticals = clean.flatMap(r => (r.verifiedCriticals || []).filter(v => v.survived))
-const droppedCriticals   = clean.flatMap(r => (r.verifiedCriticals || []).filter(v => !v.survived))
-const majors = clean.flatMap(r => r.findings.filter(f => f.severity === 'major').map(f => ({ ...f, persona: r.persona })))
-const minors = clean.flatMap(r => r.findings.filter(f => f.severity === 'minor').map(f => ({ ...f, persona: r.persona })))
+// 집계 (dedup·판정 없음 — orchestrator 책임). 페르소나 태그만 부착해 raw 반환.
+const tag = (sev) => results.flatMap(r =>
+  r.findings.filter(f => f.severity === sev).map(f => ({ ...f, persona: r.persona })))
 
 return {
-  confirmedCriticals, // orchestrator: length>0 → planner 재작업 [LOOP n/3]
-  droppedCriticals,   // 교차검증서 폐기된 거짓 critical (감사용)
-  majors,             // 통과허용, 승인화면 노출
-  minors,             // 기록만
-  perPersona: clean.map(r => ({
+  criticals: tag('critical'), // orchestrator: dedup by root → 인용라인 코드대조 → 생존>0면 차단
+  majors:    tag('major'),    // 통과허용, 승인화면 노출
+  minors:    tag('minor'),    // 기록만
+  perPersona: results.map(r => ({
     persona: r.persona,
     total: r.findings.length,
-    criticals: (r.verifiedCriticals || []).length,
-    passEvidence: r.passEvidence || [], // orchestrator: critical 0건 시 PASS 근거 ≥2 기계검증 소스
+    criticals: r.findings.filter(f => f.severity === 'critical').length,
+    passEvidence: r.passEvidence || [], // critical 0건 시 PASS 근거 ≥2 기계검증 소스
   })),
 }
