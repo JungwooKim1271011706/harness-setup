@@ -52,18 +52,17 @@ const FINDINGS_SCHEMA = {
 }
 
 // cso 계획단계 보안 렌즈 (D1=A 임베드 — plan-cso-review 스킬 부재로 불가피)
-// 출처: cso 스킬의 OWASP/STRIDE/trust-boundary를 '계획 비평'용으로 각색.
-// TODO: 추후 plan-cso-review 스킬 신규 작성(D) 후 이 임베드를 C(스킬 Read)로 교체.
+// 보안룰 SSOT(.claude/claude-security-guidance.md)를 Read해 프로젝트인지 계획비평.
+// 백로그 #7a: 하드코딩 제너릭 → 프로젝트 보안룰 문서 참조로 교체(계획·코드 단계 보안기준 통일).
+// 파일 부재 시 인라인 폴백 체크리스트 사용(견고성).
 const CSO_LENS = `[보안 계획 리뷰 렌즈 — 계획 텍스트를 비평한다. 코드 스캔 아님(코드는 아직 없음).]
-다음을 계획서에서 점검:
-- 인증/인가: 권한 체크 위치가 계획에 명시됐나? UserLevel/세션 검증·LoginCheckInterceptor 우회 경로?
-- 입력 검증: 사용자 입력 진입점마다 검증 계획? SQL injection/XSS/경로조작 표면?
-- 세션/쿠키: 세션 고정·하이재킹 고려? 민감값 세션 저장 방식?
-- 암호화/비밀: 비밀키·PW 평문 위험? 저장·전송 암호화 계획?
-- 신뢰 경계: 계획이 trust boundary를 넘나? 경계마다 재검증하나?
-- 감사 로깅: 민감 동작에 @Audit 계획? (actionResult/subject 기록)
-- STRIDE 매핑(Spoofing/Tampering/Repudiation/Info disclosure/DoS/Elevation) + OWASP Top 10 해당 항목
-설계결함 수준 보안 누락 = critical. 강화 권고 수준 = major.`
+먼저 \`.claude/claude-security-guidance.md\`(프로젝트 보안 SSOT)를 Read하라. 그 1~9 카테고리 + 심각도 기준을 이 계획서 비평의 렌즈로 사용한다.
+파일을 못 읽으면 폴백 체크리스트로 진행:
+- 인증/인가: 권한 체크 위치 명시? UserLevel/세션·LoginCheckInterceptor 우회?
+- 입력 검증/SQL injection(MyBatis #{} vs \${})/XSS/경로조작 표면?
+- 역직렬화: URL/외부소스 readValue 위험? 세션/비밀 평문?
+- 신뢰 경계 재검증 + 감사로깅(@Audit) + STRIDE/OWASP 매핑.
+설계결함 수준 보안 누락 = critical. 강화 권고 = major.`
 
 // ── 페르소나 리뷰 프롬프트 (D1: 스킬 있으면 C[Read], cso는 임베드 A) ──
 function reviewPrompt(persona, round) {

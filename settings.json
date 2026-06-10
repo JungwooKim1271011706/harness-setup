@@ -38,6 +38,18 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "planner-backend|planner-frontend|planner-high-complexity",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-planner-output.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

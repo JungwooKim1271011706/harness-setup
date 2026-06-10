@@ -12,6 +12,7 @@ tools:
   - Bash
   - Workflow
   - WebSearch
+  - AskUserQuestion
 permissionMode: default
 memory: project
 ---
@@ -363,14 +364,14 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 | 역할 | 렌즈 출처 (skillPath) | 호출 조건 |
 |------|------------|---------|
 | eng | `~/.claude/skills/plan-eng-review/SKILL.md` (Read) | 항상 포함 |
-| cso | **임베드 보안 렌즈** (⚠ plan-cso-review 스킬 미존재 → design-panel.js의 `CSO_LENS`) | 변경영역 태그에 `보안` 포함 시 |
+| cso | **보안룰 SSOT 렌즈** (`CSO_LENS`가 `.claude/claude-security-guidance.md`를 Read — 프로젝트인지) | 변경영역 태그에 `보안` 포함 시 |
 | design | `~/.claude/skills/plan-design-review/SKILL.md` (Read) | 변경영역 태그에 `UI` 포함 시 |
 | devex | `~/.claude/skills/plan-devex-review/SKILL.md` (Read) | 변경영역 태그에 `공통API/DAO` 포함 시 |
 | ceo | `~/.claude/skills/plan-ceo-review/SKILL.md` (Read) | 변경영역 태그에 `대규모범위` 포함 시 |
 
 **최소 인원 보장**: 태그 매칭만으로 3명(고복잡도 4명) 미달이면 채움 순서(eng → devex → cso → design → ceo)로 채운다.
 패널은 **Workflow `design-panel`로 병렬 실행**한다 (아래 ### 패널 실행 참조).
-> cso 렌즈: plan-cso-review 스킬은 실존하지 않는다(있는 건 eng/ceo/design/devex 4종 + 코드감사용 `cso`). 계획단계 보안 렌즈는 design-panel.js에 임베드된 `CSO_LENS`로 대체한다. 추후 plan-cso-review 스킬을 신규 작성하면 skillPath 방식으로 통일(TODO).
+> cso 렌즈: plan-cso-review 스킬은 실존하지 않는다(있는 건 eng/ceo/design/devex 4종 + 코드감사용 `cso`). 계획단계 보안 렌즈 = design-panel.js `CSO_LENS`가 **보안룰 SSOT `.claude/claude-security-guidance.md`를 Read**(백로그 #7a). 별도 plan-cso 스킬 불필요 — 룰 문서가 계획·코드 단계 공통 보안기준. (구 TODO "plan-cso 스킬 신설" 해소)
 
 > orchestrator는 사용자 승인 직전 planner 산출물 텍스트를 0단계 ②의 보안 키워드로 기계적으로 재스캔한다. 매치되는데 변경영역 태그에 `보안`이 없으면, 누락으로 간주하고 변경영역 태그에 `보안`을 추가한다. (이후 cso 포함은 기존 패널 구성 규칙이 처리)
 
@@ -746,10 +747,10 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 구현을 이해하며 함께 진행 | `/pair-impl` | 선택 |
 | tester FAIL + 원인 불명확 | `/investigate` | 필수 |
 | 변경검증(tester-backend/frontend) PASS 후 구현 검증 (verify-* 스킬 순차 실행) | `/verify-implementation` | verify-* 스킬 등록 시 |
-| 변경검증(tester-backend/frontend) PASS 후 소스코드 리뷰 | `/review` | 필수 (rule 경로 Read+준수 주입) |
+| 변경검증(tester-backend/frontend) PASS 후 소스코드 리뷰 | `/review` | 필수 (rule 경로 + 보안룰 SSOT `.claude/claude-security-guidance.md` Read+준수 주입) |
 | 전체회귀 수동 실행[^regression] 또는 부채 권장 수락 | `tester-runtime` (단독) | 사용자 명시 호출 시 / 부채 트리거 |
 | /review 통과 후 독립 코드 검증 (구현코드만, 7.5 테스트 제외) | `/codex review` | 필수 (/review와 병렬 호출) |
-| 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 |
+| 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 (보안룰 SSOT `.claude/claude-security-guidance.md` Read+준수 주입) |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
 | 작업 컨텍스트 보존 (planner 결과 후, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
