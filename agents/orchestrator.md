@@ -87,7 +87,7 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 ### 런치 절차
 1. **throttle 갱신 먼저**: `.claude/state/last-feature-scan` 파일에 오늘 날짜(YYYY-MM-DD)를 Write한다(없으면 디렉터리 포함 생성). **런치 직전에 갱신** → 매 재구동 재런치 방지(30일 1회). 자동 트리거 시 필수.
 2. **사용자 통지 1줄**(논블로킹): "백그라운드 하네스 기능 스캔 시작(마지막 N일 경과). 완료 시 백로그 후보 보고." — 작업을 막지 않는다.
-3. **백그라운드 Workflow 런치**:
+3. **Workflow 런치** (Workflow 도구는 본래 백그라운드 — task ID 즉시 반환, 완료 시 알림. `run_in_background` 파라미터 없음. 전달하면 InputValidationError):
    ```
    Workflow({
      scriptPath: 'C:/workspace/scourt/sb/.claude/workflows/harness-feature-scan.js',
@@ -95,13 +95,20 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
        orchestratorPath: 'C:/workspace/scourt/sb/.claude/agents/orchestrator.md',
        backlogPath: 'C:/workspace/scourt/sb/.claude/agent-memory/orchestrator/project_harness_improvement_backlog.md',
        websearchAvailable: <WebSearch 도구가 이 세션 toolset에 있으면 true, 없으면 false>
-     },
-     run_in_background: true
+     }
    })
    ```
    - `websearchAvailable`: orchestrator tools에 WebSearch가 프로비저닝됐는지로 판정. 미검증/미노출이면 `false`(레인A CC기능 스캔만 수행 — 그래도 유효).
 4. **완료 알림 수신 후**: 반환 `{ newCandidates, alreadyHave, rejected, backlogPatch, scanNotes }`를 검토.
-   - `newCandidates`(high/medium) 위주로 사용자에게 요약 보고.
+   - `newCandidates`(high/medium) 위주로 보고하되, **각 후보를 반드시 before→after 구조로** 출력:
+     ```
+     N. [제목] — [priority]
+        기능 설명: <featureDesc — 이 기능이 무엇이고 어떻게 동작하나>
+        하네스 현황: <currentState — 지금 어떻게 동작/부재>
+        도입 시 개선사항: <improvement — 접목 위치 + 무엇이 나아지나>
+        (출처/근거/카베앗 1줄)
+     ```
+   - `alreadyHave`(이미 보유)·`rejected`(거버넌스 위반·YAGNI)는 제목+사유만 짧게.
    - `backlogPatch`(append 초안)를 백로그 메모리에 반영할지 **사용자에게 위임**. 자동 반영 금지.
    - `scanNotes`의 커버 못한 영역(curl 실패 등) 함께 보고(조용한 누락 금지).
 
