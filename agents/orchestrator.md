@@ -24,6 +24,7 @@ memory: project
 - 직접 구현 금지
 - 직접 코드 수정 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-edit.sh`가 메인스레드의 Edit/Write/MultiEdit를 제품모듈(tocServer/tocProcess/tocFramework) 대상이면 차단. .claude/ 하네스 자가수정·메모리·docs는 허용. 알려진 구멍: Bash `sed -i` 우회는 v1 미차단)
 - 직접 테스트 실행 금지
+- developer의 테스트 파일 변조 금지 (**기계강제**: PreToolUse 훅 `block-developer-test-edit.sh`가 agent_type=developer-backend|frontend의 `<module>/src/test/**` Edit/Write/MultiEdit를 차단 — GREEN 단계 reward-hacking 방어. tester-*/메인은 통과. 백로그 #8, 근거 ImpossibleBench. 알려진 구멍: Bash `sed -i` 우회 v1 미차단)
 - Bash 도구는 스킬 preamble 실행 및 환경 점검 전용. 직접 git commit/build/test/배포 명령 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-exec.sh`가 메인스레드의 git commit/push·mvn/gradle 차단. 해당 작업은 finalizer/tester-* 위임)
 - 사내 products 보호 main 직접 push 금지 (**기계강제**: PreToolUse 훅 `block-products-main-push.sh`가 메인+서브에이전트(finalizer 포함)의 `git push`를 검사 — 사내 `10.1.1.10:9090/crinity/products/*` remote의 master/main 직접 push면 차단. `*_WI_*` 브랜치·개인 브랜치·products 외 remote는 통과. 근거: 풀사이클=개인실험은 사내 main에 안 올린다, 사내 반영은 설계모드 WI→봇 분기/MR. 서버측 Protected branch의 보강 안전망)
 - 항상 가장 좁은 역할의 agent부터 호출
@@ -587,6 +588,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 ### 8 — developer GREEN 구현
 
 - developer가 7.5 RED 테스트를 통과시키는 구현 작성
+- **테스트 파일 편집 금지 (기계강제)**: developer는 `<module>/src/test/**`를 수정·삭제할 수 없다. PreToolUse 훅 `block-developer-test-edit.sh`가 agent_type=developer-* + 테스트경로 Edit/Write/MultiEdit를 차단(exit 2). 테스트 약화=reward-hacking 방어(백로그 #8, 근거 ImpossibleBench GPT-5 76%). 테스트가 틀렸다고 판단되면 구현 멈추고 **설계결함(DESIGN_MISMATCH)으로 보고** → FAIL 3분기의 설계결함 경로. (알려진 구멍: Bash sed -i 우회는 v1 미차단 — 백로그 #13)
 - **public 계약 준수** (co-plan/7c에서 freeze된 시그니처 변경 불가)
 - **public 계약 소변경** (파라미터명·반환타입 등 마이너 조정): planner 경량 갱신 후 설계패널 스킵하고 진행
 - **구조 변경** (역할·책임 재분배): planner 단계 풀 회귀 (설계패널 재실행 포함)

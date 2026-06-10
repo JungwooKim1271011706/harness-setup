@@ -35,6 +35,11 @@
             "type": "command",
             "command": "bash .claude/hooks/block-orchestrator-edit.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-developer-test-edit.sh",
+            "timeout": 10
           }
         ]
       }
