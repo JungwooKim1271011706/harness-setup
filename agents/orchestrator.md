@@ -535,6 +535,33 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - 사용자가 `/context-restore`를 명시 호출하면 그때 복원
 - 자동 로드는 다른 작업 시작 시 옛 컨텍스트 끼어드는 사고 위험 때문에 금지
 
+## codex 호출 가드 (타임아웃·폴백 — 무한 대기 방지)
+
+codex 진입점은 5곳: TDD 7b(케이스B), 7.5(RED 작성), 7.7 폴백(claude 작성분 codex 교차판정), /codex review, codex:rescue. 과거 다른 세션에서 /codex review가 7시간 무응답 행에 빠진 사건의 재발 방지 규칙이다. (근본원인 = 타임아웃 가드 없던 구버전 codex 스킬. 스킬 동기화 후 기계강제 복구됨.)
+
+### 기계강제는 codex 스킬이 담당 (orchestrator 재구현·재지시 금지 — 중복 회피)
+
+codex 스킬(`/codex`)이 이미 아래를 강제한다. orchestrator는 프롬프트 전달 방식·타임아웃 값을 다시 지시하지 않는다:
+- **하드 타임아웃**: review 330s, challenge·consult 600s (`_gstack_codex_timeout_wrapper` + GNU `timeout`). 초과 시 exit 124.
+- **stdin deadlock 회피**: 전 호출 `< /dev/null`.
+- **파일 Read 위임 차단**: 전 프롬프트에 filesystem boundary prepend(`~/.claude`,`.claude/skills`,`agents/` Read 금지). consult는 계획·diff 내용을 인라인 임베드(경로 참조 금지).
+- **불량버전 경고**: codex 0.120.0/.1/.2 (stdin deadlock) 차단.
+- ⚠ 위 가드는 **GNU `timeout` 존재 + 동기화된 최신 스킬** 전제. 둘 중 하나라도 깨지면 wrapper의 `else "$@"` 분기로 **타임아웃 없이 실행**된다(=행 재발). 아래 백스톱이 이 구멍을 받는다.
+
+### orchestrator 책임 (실패 신호 인식 + 폴백 — 무한 대기·맹목 재시도 금지)
+
+codex 호출 산출에 아래 신호 중 하나라도 보이면 **즉시 실패로 간주**하고 폴백한다:
+- `Codex stalled past ...` / exit `124` / `[codex exit N]` / `CODEX_TIMEOUT` / `AUTH_FAILED` / `NOT_FOUND`
+- **폴백 라우팅** (기존 폴백 규칙의 트리거 정의를 여기로 통일):
+  - 7b·7.5 → tester-design(claude) 작성 + `⚠ 교차검증 없음 (codex 미사용, 단일 소스)` 태그. 7.7엔 '단일 소스' 컨텍스트 전달(더 엄격히).
+  - 7.7(claude 작성분 codex 교차판정) 실패 → orchestrator가 직접 코드대조(receiving-code-review) 1회로 대체 + 태그.
+  - /codex review → /review(claude) 단일 소스 + blocking findings 인용라인 직접 Read 코드대조 1회 + `⚠ 교차검증 없음(codex 미사용, 단일소스 + 코드대조 보상)` 태그.
+  - codex:rescue → 미사용, 기존 3회 루프 정책 유지.
+- **재시도 상한**: codex 실패 시 자동 재시도 최대 1회. 2회째도 실패면 폴백 확정.
+- **이식성 백스톱 (무한 대기 최후 차단)**: codex 스킬 호출이 위 타임아웃 상한(최대 ~10분)을 **크게 넘겨도 응답이 없으면** → 구버전 스킬 또는 GNU timeout 부재로 wrapper가 무력화된 상태로 의심한다. 대기를 끊고 폴백한 뒤, 사용자에게 `sync-skills.sh` 재실행 + `timeout --version`(GNU coreutils 여부) 점검을 권고한다.
+
+---
+
 ## TDD 합의 구간 (신규기능·고복잡도 트랙 전용)
 
 사용자 승인 후, developer 호출 전에 아래 순서로 TDD 합의를 진행한다.
@@ -542,7 +569,7 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 ### 7a∥7b — 테스트 케이스 병렬 산출
 - **7a**: tester-design → 케이스A 산출
 - **7b**: codex → 케이스B 산출 (rule 경로 주입 필수)
-  - codex 실패 시 claude(tester-design) 폴백
+  - codex 실패 시 claude(tester-design) 폴백 (실패 신호 정의·재시도 상한·무한대기 백스톱은 `## codex 호출 가드`)
 - 7a와 7b는 병렬 호출한다.
 
 > codex 미가용 폴백 시 7a∥7b 교차검증은 불성립한다. 산출물에 `⚠ 교차검증 없음 (codex 미사용, 단일 소스)`를 명시하고, 7.7 tester-quality 호출 시 '단일 소스' 컨텍스트를 전달해 더 엄격히 판정하도록 한다.
@@ -561,7 +588,7 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - 테스트는 **public 행위 기준** (내부 구현 검증 금지)
 - **작성자(codex/tester) ≠ 구현자(developer)** 원칙 엄수
-- codex 실패 시 tester-design 폴백
+- codex 실패 시 tester-design 폴백 (실패 신호 정의·무한대기 백스톱은 `## codex 호출 가드`)
 - codex 호출 시 rule 경로 주입 필수
 
 ### 7.7 — 테스트 품질 게이트 (tester-quality)
@@ -765,4 +792,4 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 >
 > **tester 감점에도 동일 적용**: 이 타당성 게이트는 리뷰/패널 findings뿐 아니라 **tester 감점 항목에도 적용한다**. tester critical/high 감점이 YAGNI(미사용 경계값)·과방어면 orchestrator가 기각할 수 있다(근거 기록). tester 지적 ≠ 무조건 수정. (tester는 1차로 minor/low를 점수 차감 없이 권고 섹션에 분리하지만, critical/high로 올라온 항목도 이 게이트로 한 번 더 거른다.)
 >
-> **codex 미가용 폴백**: codex 한도초과/실패로 /codex review가 빠지면 /review(claude) **단일 소스**가 된다(비상관 두번째 의견 상실). 잃은 비상관 소스를 design-panel 적대검증으로 보상하던 경로는 제거됨(verify 삭제). 대신 orchestrator가 blocking findings의 인용 라인을 직접 Read해 코드대조(receiving-code-review)로 1회 거른 뒤 처리한다. 산출물에 `⚠ 교차검증 없음(codex 미사용, 단일소스 + 코드대조 보상)`을 명시한다.
+> **codex 미가용 폴백** (실패 신호 정의·타임아웃·재시도 상한·무한대기 백스톱은 `## codex 호출 가드`): codex 한도초과/실패/타임아웃으로 /codex review가 빠지면 /review(claude) **단일 소스**가 된다(비상관 두번째 의견 상실). 잃은 비상관 소스를 design-panel 적대검증으로 보상하던 경로는 제거됨(verify 삭제). 대신 orchestrator가 blocking findings의 인용 라인을 직접 Read해 코드대조(receiving-code-review)로 1회 거른 뒤 처리한다. 산출물에 `⚠ 교차검증 없음(codex 미사용, 단일소스 + 코드대조 보상)`을 명시한다.
