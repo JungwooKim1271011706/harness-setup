@@ -12,7 +12,6 @@ tools:
   - Bash
   - Workflow
   - WebSearch
-  - AskUserQuestion
 permissionMode: default
 memory: project
 ---
