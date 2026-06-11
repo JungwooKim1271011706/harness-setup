@@ -1,0 +1,12 @@
+1.0.0
+# 하네스 버전 (semver MAJOR.MINOR.PATCH). 이 파일이 SSOT.
+# 첫 줄의 X.Y.Z 만 기계 파싱(session-check.sh). 아래 주석은 사람용.
+#
+# MAJOR = 거버넌스 불변식·게이트 구조 변경 → 세션 재시작 필수
+# MINOR = agent md 규칙 추가 / 스킬 스냅샷 갱신 → 재시작 권장
+# PATCH = 오타·문서·주석 → 재시작 불요
+#
+# bump 주체: 하네스 변경 커밋 시 finalizer (커밋 의식, sync-skills.sh 동반).
+# 추적 범위: .claude/ 내부(agent md/훅/settings/룰/워크플로/로컬미러 스킬).
+#   ⚠ 스킬 bin 헬퍼(~/.claude/skills/gstack/bin/*)는 글로벌 의존 → 추적 외.
+# 설계: docs/harness-versioning.md

@@ -1,9 +1,20 @@
 #!/bin/bash
-# SessionStart hook: 실패 패턴 및 스킬 동기화 상태 자동 점검
+# SessionStart hook: 실패 패턴 / 컨텍스트 / 스킬 동기화 / 기능스캔 / 하네스 버전 drift 점검
+# stdin(JSON)에서 session_id·source를 읽어 버전 drift 안내에 사용한다.
+INPUT=$(cat 2>/dev/null)
 PROJECT_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
 if [ -z "$PROJECT_DIR" ]; then
   exit 0
 fi
+
+# stdin 파싱 (session_id, source). sed 추출 — python 의존 없음(이 머신 python3는 Windows Store 스텁이라 사용 불가).
+SESSION_ID=""
+SOURCE=""
+if [ -n "$INPUT" ]; then
+  SESSION_ID=$(printf '%s' "$INPUT" | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+  SOURCE=$(printf '%s' "$INPUT" | sed -n 's/.*"source"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
+fi
+[ -z "$SESSION_ID" ] && SESSION_ID="ppid-$PPID"
 
 MESSAGES=()
 
@@ -87,6 +98,39 @@ else
 fi
 if [ "$SCAN_DUE" -eq 1 ]; then
   MESSAGES+=("🔍 HARNESS_FEATURE_SCAN_DUE (마지막: ${SCAN_LAST}, 임계 ${SCAN_THRESHOLD_DAYS}일) — orchestrator는 백그라운드 기능스캔 Workflow를 1회 throttled 런치할 것 (자동적용 금지, 백로그 매핑만)")
+fi
+
+# 5) 하네스 버전 drift 탐지 (세션 시작 시점 VERSION vs 현재 디스크 VERSION)
+#    순수 안내 — 자동 sync/pull/재시작 없음. 설계: docs/harness-versioning.md
+STATE_DIR="$PROJECT_DIR/.claude/state"
+VERSION_FILE="$PROJECT_DIR/.claude/VERSION"
+if [ -f "$VERSION_FILE" ]; then
+  DISK_VER=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' "$VERSION_FILE" | head -1)
+  if [ -n "$DISK_VER" ]; then
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    # 오래된 스탬프 청소 (mtime +1일)
+    find "$STATE_DIR" -maxdepth 1 -name 'session-*.version' -mtime +1 -type f -delete 2>/dev/null || true
+    # 파일명 안전화: session_id의 / 및 공백을 _로 치환
+    SAFE_SID=$(printf '%s' "$SESSION_ID" | tr '/ :' '___')
+    STAMP_FILE="$STATE_DIR/session-${SAFE_SID}.version"
+    if [ "$SOURCE" = "startup" ] || [ ! -f "$STAMP_FILE" ]; then
+      # 세션 시작: 현재 버전 기록, 무경고 (이미 최신을 들고 시작)
+      printf '%s\n' "$DISK_VER" > "$STAMP_FILE" 2>/dev/null || true
+    else
+      # 비-startup(resume/compact/clear): 시작 시점 버전과 비교
+      STAMP_VER=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' "$STAMP_FILE" 2>/dev/null | head -1)
+      if [ -n "$STAMP_VER" ] && [ "$STAMP_VER" != "$DISK_VER" ]; then
+        DISK_MAJOR=${DISK_VER%%.*}
+        STAMP_MAJOR=${STAMP_VER%%.*}
+        if [ "$DISK_MAJOR" != "$STAMP_MAJOR" ]; then
+          MESSAGES+=("🔁 하네스 버전 변경 v${STAMP_VER}→v${DISK_VER} (MAJOR) — 거버넌스/게이트 구조 변경. 세션 재시작 필수 (현재 세션은 옛 agent 정의를 사용 중). 사용자에게 재시작 안내.")
+        else
+          MESSAGES+=("🔁 하네스 버전 변경 v${STAMP_VER}→v${DISK_VER} — agent 정의/스킬 갱신됨. 세션 재시작 권장 (현재 세션 미반영). 사용자에게 안내.")
+        fi
+        # 스탬프 갱신 안 함 → 재시작 전까지 매 compact/resume 재알림
+      fi
+    fi
+  fi
 fi
 
 # 메시지 없으면 조용히 종료

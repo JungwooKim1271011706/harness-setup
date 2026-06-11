@@ -3,3 +3,4 @@ rules/
 agent-memory/
 .gstack/
 .secrets/
+state/

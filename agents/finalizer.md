@@ -98,6 +98,24 @@ memory: project
 5. 발견된 패턴이 특정 에이전트의 핵심 규칙/체크리스트에 해당하면 해당 에이전트 md 파일도 함께 수정
 6. 커밋 진행
 
+## 하네스 버전 bump 의식 (하네스 `.claude/` 변경 커밋 시 필수)
+
+이번 커밋이 `.claude/` 하네스 파일(agent md / 훅 / settings / 워크플로 / 룰 / 로컬미러 스킬)을 변경했으면 아래를 커밋에 **반드시 포함**한다. 제품 코드 모듈(tocServer/tocProcess/tocFramework)만 변경한 커밋은 이 의식 **불요**. 설계: `.claude/docs/harness-versioning.md`.
+
+### 절차
+1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석).
+2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(글로벌→로컬 미러, 네트워크 0).
+   - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/learning-gate skills/grill-with-docs`.
+   - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(orchestrator.md가 트리거 문구를 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
+3. **VERSION bump**: `.claude/VERSION` 첫 줄 X.Y.Z를 레벨에 맞게 증가.
+4. **CHANGELOG 갱신**: `.claude/CHANGELOG.md` 최상단에 `## X.Y.Z — YYYY-MM-DD` + 변경 요약 1~3줄 추가.
+5. **한 커밋**: 하네스 변경분 + VERSION + CHANGELOG + (non-critical) 스킬 미러 갱신을 한 커밋으로. push는 기존 규칙(사내 products main 직접 push 금지 등).
+
+### 불변식
+- bump·sync는 하네스 변경이 있을 때만. 제품코드 전용 커밋엔 적용 안 함.
+- critical 스킬 자동 변경 금지(2번). 사람 검토 게이트 보존.
+- VERSION/CHANGELOG는 `.claude` repo 대상(제품 repo·서브모듈 미변경).
+
 ## 전체회귀 부채 안내 + state 갱신 (커밋 직전 단일 지점, 필수)
 
 > 정의: CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 D3~D7. 이 안내는 **비차단 단방향 통지**다 — 출력 후 그냥 커밋한다.

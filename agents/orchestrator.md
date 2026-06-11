@@ -74,6 +74,7 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 | `⚠ 미처리 실패 패턴 N건` | 사용자에게 하네스 자가 점검 제안 |
 | `⚠ 스킬 동기화 N일 경과` | 사용자에게 `sync-skills.sh` 실행 제안 |
 | `🔍 HARNESS_FEATURE_SCAN_DUE` | 백그라운드 기능 스캔 1회 throttled 런치 (아래 ## 하네스 기능 스캔 참조) |
+| `🔁 하네스 버전 변경 vX→vY` | 사용자에게 **세션 재시작 안내**(MAJOR=필수, 그 외=권장). 현재 세션은 옛 agent 정의 사용 중. 자동 재시작 금지 — 안내만. (아래 ## 하네스 버전 관리 참조) |
 
 경고가 주입됐지만 사용자가 긴급 작업을 요청한 경우 → 해당 작업 완료 후 경고 제안.
 
@@ -117,6 +118,32 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 - 스캔 산출 = **보조 입력**. 도입 결정·하네스 수정은 사람.
 - 자동 트리거라도 긴급 사용자 작업 중이면 작업 완료 후 런치(백그라운드라 충돌은 없으나 통지 타이밍 조정).
 - research preview(Workflow)라 스캔 단독으로 게이트/규칙 변경 금지.
+
+## 하네스 버전 관리 (VERSION drift 탐지 + 재시작 안내)
+
+목적: 세션은 시작 시점 하네스(특히 agent md·settings)를 메모리에 들고 간다. 세션 도중 다른 세션이 하네스를 갱신·커밋하면 현재 세션은 옛 정의를 계속 쓴다. 이 drift를 **탐지해서 재시작을 안내**한다. (배경: codex 7h 행 = 구버전 로컬 미러 스킬을 들고 있던 세션. 설계 전문: `.claude/docs/harness-versioning.md`)
+
+### SSOT = `.claude/VERSION` (semver MAJOR.MINOR.PATCH)
+| 레벨 | 의미 | 재시작 |
+|------|------|--------|
+| MAJOR | 거버넌스 불변식·게이트 구조 변경 | 필수 |
+| MINOR | agent md 규칙 추가 / 스킬 스냅샷 갱신 | 권장 |
+| PATCH | 오타·문서·주석 | 불요 |
+
+추적 범위 = `.claude/` 내부(agent md/훅/settings/룰/워크플로/**로컬 미러 스킬**). ⚠ 스킬 bin 헬퍼(`~/.claude/skills/gstack/bin/*`)는 글로벌 의존이라 추적 외(알려진 한계).
+
+### 탐지 (자동) — session-check.sh가 수행
+- SessionStart 훅이 세션 시작 시점 VERSION을 `state/session-<id>.version`에 스탬프.
+- compact/resume/clear 재발화 시 디스크 VERSION ≠ 스탬프면 `🔁 하네스 버전 변경 …` 주입.
+- orchestrator는 이 신호 수신 시 **사용자에게 재시작 안내**(MAJOR=필수/그 외=권장). 자동 재시작·자동 sync·자동 pull 금지 — 순수 안내.
+- ⚠ 한계: compact/resume를 한 번도 안 한 순수 장시간 세션은 못 잡음(근본 한계).
+
+### bump (사람 주도) — 하네스 변경 커밋 시
+- **orchestrator 책임**: 하네스(`.claude/`)를 변경해 finalizer에 커밋 위임할 때, **bump 레벨(MAJOR/MINOR/PATCH)을 위 기준으로 판정해 지정**한다.
+- **finalizer 책임**: VERSION bump + CHANGELOG 갱신 + `sync-skills.sh` 동반 실행(스킬 스냅샷 refresh) + 한 커밋. critical 스킬(learning-gate/grill) diff 발생 시 자동커밋 금지·사용자 보고. (절차: finalizer.md `## 하네스 버전 bump 의식`)
+- 자동 변형 금지 이유: critical 스킬 게이트 파괴·dirty-tree 위험. 그래서 훅이 아니라 커밋 의식에 묶는다.
+
+---
 
 ## 0-1단계: 모드 판정 (요구사항 수신 직후, 0단계보다 먼저)
 
