@@ -4,3 +4,5 @@ agent-memory/
 .gstack/
 .secrets/
 state/
+slack-webhook
+**/slack-webhook
