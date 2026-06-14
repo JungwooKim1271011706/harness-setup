@@ -121,7 +121,8 @@ git -C .claude pull origin main
 | `settings.json` | 공유 설정 | track |
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |
 | `docs/` | 설계 문서 (ADR·하네스 버전관리 등) | track |
+| `wiki/` | 하네스 운영 지식·gotcha (엔티티 페이지+`[[링크]]`, 카파시 LLM wiki 패턴). 작성/라우팅 규칙은 `wiki/_schema.md` | track |
 | `rules/` | 프로젝트별 코딩 규칙 (rule-maker 생성) | ignore |
-| `agent-memory/` | 프로젝트별 메모리 | ignore |
+| `agent-memory/` | 프로젝트별 메모리 (auto-memory, 머신로컬·휴대 안 됨) | ignore |
 | `settings.local.json` | 로컬 권한/secret | ignore |
 | `state/` | 머신로컬 세션 스탬프·스캔 산출 | ignore |
