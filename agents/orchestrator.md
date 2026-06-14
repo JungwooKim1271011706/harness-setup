@@ -542,6 +542,14 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 
 학습 게이트가 "학습 게이트 완료. 계속 진행해."를 반환하면 다음 단계로 진행한다.
 
+## wiki 운영지식 capture (post_commit 자가점검)
+
+`post_commit` 학습 게이트와 **같은 시점**에 한 번 자가질문한다: **"이번 변경에서 비자명하게 배운 운영지식·gotcha가 있나?"**
+
+- 있으면 → `wiki/_schema.md`의 **"언제 기록하나 (capture 트리거)"** 절차를 따른다(스텁 준비 → `index.md` 등록 → `[[링크]]` → 사용자에게 기록 제안). 기준·형식은 그 파일이 SSOT — 여기서 재서술하지 않는다(중복금지).
+- 머신 한정 사실(이 PC의 경로·임시 상태)은 wiki가 아니라 auto-memory. 설계 전문은 `docs/` 링크만.
+- **advisory** — 자동 커밋 금지. 사용자 승인 시에만 finalizer가 함께 커밋한다.
+
 ## 작업 컨텍스트 보존 (context-save / context-restore)
 
 세션 끊김에 대비해 두 시점에 `/context-save`를 Skill 도구로 자동 호출한다.
