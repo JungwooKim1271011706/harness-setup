@@ -16,11 +16,10 @@ flowchart TD
   CPX -->|단순수정| SIMP["developer-* → tester-* 경량<br/>설계게이트·TDD 스킵"]
   SIMP --> POST
   CPX -->|신규기능| NF1["/office-hours"]
-  CPX -->|고복잡도| HC1["planner-high-complexity"]
+  CPX -->|고복잡도| NF1
 
-  NF1 --> NF2["/grill-with-docs"] --> NF3["/co-plan OOP5 freeze=public"] --> PL["planner-* +변경영역태그"]
-  HC1 --> HCE["/plan-eng-review"] --> PL
-  PL --> GATE["설계패널 게이트 신규≥3/고복잡도≥4<br/>PASS 근거 기계심사 C5b<br/>보안 재스캔 태그보정 C2"]
+  NF1 --> NF2["/grill-with-docs"] --> NF3["/co-plan OOP5 freeze=public"] --> PL["planner-*<br/>고복잡도=planner-high-complexity<br/>+변경영역태그"]
+  PL --> GATE["설계패널 게이트 신규≥3/고복잡도≥4<br/>eng 렌즈=gstack plan-eng-review(고복잡도 다라운드 loop-until-dry)<br/>PASS 근거 기계심사 C5b<br/>보안 재스캔 태그보정 C2"]
   GATE --> CRIT{critical 0?}
   CRIT -->|NO| PLRE["planner 재작업 루프3"] --> GATE
   CRIT -->|YES| APV{{"사용자 승인 설계만"}}
