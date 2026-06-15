@@ -10,19 +10,28 @@
 | `learning-gate` | `~/.claude/skills/learning-gate/` | 2026-05-09 | `orchestrator.md`: `"학습 게이트 완료. 계속 진행해."` 트리거 문구 |
 | `grill-with-docs` | `~/.agents/skills/grill-with-docs/` | 2026-05-09 | `orchestrator.md`: CONTEXT.md 업데이트 포맷 |
 
-## 일반 스킬 (변경 시 자동 적용 가능)
+## 일반 스킬 — gstack 제공 (원본: gstack 글로벌 설치)
+
+> 원본이 `~/.claude/skills/gstack/<skill>/`. gstack-upgrade로 갱신 후 sync-skills.sh가 repo 미러로 복사.
 
 | 스킬 | 원본 경로 | 마지막 동기화 |
 |------|---------|------------|
-| `office-hours` | `~/.claude/skills/office-hours/` | 2026-05-09 |
+| `office-hours` | `~/.claude/skills/gstack/office-hours/` | 2026-05-09 |
+| `investigate` | `~/.claude/skills/gstack/investigate/` | 2026-05-09 |
+| `review` | `~/.claude/skills/gstack/review/` | 2026-05-09 |
+| `cso` | `~/.claude/skills/gstack/cso/` | 2026-05-09 |
+| `benchmark` | `~/.claude/skills/gstack/benchmark/` | 2026-05-09 |
+| `codex` | `~/.claude/skills/gstack/codex/` | 2026-05-09 |
+| `browse` | `~/.claude/skills/gstack/browse/` | 2026-05-09 |
+
+## 일반 스킬 — 자체/비-gstack (원본 부재 가능)
+
+> gstack 미제공. 원본 경로가 없으면 sync는 스킵하고 repo 미러로 동작 유지.
+
+| 스킬 | 원본 경로 | 마지막 동기화 |
+|------|---------|------------|
 | `co-plan` | `~/.claude/skills/co-plan/` | 2026-05-09 |
 | `pair-impl` | `~/.claude/skills/pair-impl/` | 2026-05-09 |
-| `investigate` | `~/.claude/skills/investigate/` | 2026-05-09 |
-| `review` | `~/.claude/skills/review/` | 2026-05-09 |
-| `cso` | `~/.claude/skills/cso/` | 2026-05-09 |
-| `benchmark` | `~/.claude/skills/benchmark/` | 2026-05-09 |
-| `codex` | `~/.claude/skills/codex/` | 2026-05-09 |
-| `browse` | `~/.claude/skills/browse/` | 2026-05-09 |
 
 ## gstack 글로벌 의존 (repo 미러 아님 — 추적 외)
 
