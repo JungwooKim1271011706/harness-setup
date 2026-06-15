@@ -390,11 +390,11 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 | 역할 | 렌즈 출처 (skillPath) | 호출 조건 |
 |------|------------|---------|
-| eng | `~/.claude/skills/plan-eng-review/SKILL.md` (Read) | 항상 포함 |
+| eng | `~/.claude/skills/gstack/plan-eng-review/SKILL.md` (Read) | 항상 포함 |
 | cso | **보안룰 SSOT 렌즈** (`CSO_LENS`가 `.claude/claude-security-guidance.md`를 Read — 프로젝트인지) | 변경영역 태그에 `보안` 포함 시 |
-| design | `~/.claude/skills/plan-design-review/SKILL.md` (Read) | 변경영역 태그에 `UI` 포함 시 |
-| devex | `~/.claude/skills/plan-devex-review/SKILL.md` (Read) | 변경영역 태그에 `공통API/DAO` 포함 시 |
-| ceo | `~/.claude/skills/plan-ceo-review/SKILL.md` (Read) | 변경영역 태그에 `대규모범위` 포함 시 |
+| design | `~/.claude/skills/gstack/plan-design-review/SKILL.md` (Read) | 변경영역 태그에 `UI` 포함 시 |
+| devex | `~/.claude/skills/gstack/plan-devex-review/SKILL.md` (Read) | 변경영역 태그에 `공통API/DAO` 포함 시 |
+| ceo | `~/.claude/skills/gstack/plan-ceo-review/SKILL.md` (Read) | 변경영역 태그에 `대규모범위` 포함 시 |
 
 **최소 인원 보장**: 태그 매칭만으로 3명(고복잡도 4명) 미달이면 채움 순서(eng → devex → cso → design → ceo)로 채운다.
 패널은 **Workflow `design-panel`로 병렬 실행**한다 (아래 ### 패널 실행 참조).
@@ -412,7 +412,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 **orchestrator가 한다 (워크플로 호출 전):**
 1. 변경영역 태그 판정 + 0단계 ② 보안 키워드 재스캔(아래 인용구 규칙).
 2. 패널 멤버 선정 + 최소 인원 보장(채움 순서). → `personas[]` 구성.
-   - 스킬 있는 4종(eng/ceo/design/devex): `{ key, skillPath: '~/.claude/skills/plan-*-review/SKILL.md' }`
+   - 스킬 있는 4종(eng/ceo/design/devex): `{ key, skillPath: '~/.claude/skills/gstack/plan-*-review/SKILL.md' }` (gstack 글로벌 설치 경로 — gstack/ 한 단계 아래)
    - cso: `{ key: 'cso', skillPath: null }` (null이면 워크플로가 임베드 `CSO_LENS` 사용)
 3. args 구성: `{ planText: <계획서 전문>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
 

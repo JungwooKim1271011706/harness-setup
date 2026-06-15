@@ -63,7 +63,7 @@ permissionMode: plan
 
 | 태그 | 의미 | 유발 페르소나 |
 |------|------|------------|
-| `보안` | 인증/권한/암호화/세션/입력검증 변경 | plan-cso-review |
+| `보안` | 인증/권한/암호화/세션/입력검증 변경 | cso (design-panel `CSO_LENS` → `claude-security-guidance.md`; 별도 plan-cso-review 스킬 아님) |
 | `UI` | 화면 구성·UX 변경 | plan-design-review |
 | `공통API/DAO` | 공통 라이브러리·DAO·공유 계약 변경 | plan-devex-review |
 | `대규모범위` | 10개 파일 초과 또는 다중 도메인 영향 | plan-ceo-review |
