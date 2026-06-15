@@ -6,3 +6,5 @@ agent-memory/
 state/
 slack-webhook
 **/slack-webhook
+.obsidian/
+**/.obsidian/
