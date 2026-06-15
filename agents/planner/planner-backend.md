@@ -58,7 +58,7 @@ permissionMode: plan
 변경이 닿는 영역을 아래 태그 후보에서 선택하여 나열한다 (복수 선택 가능).
 
 ```
-[backend] [frontend] [보안] [공통API/DAO] [UI] [대규모범위]
+[backend] [frontend] [보안] [공통API/DAO] [UI]
 ```
 
 | 태그 | 의미 | 유발 페르소나 |
@@ -66,7 +66,6 @@ permissionMode: plan
 | `보안` | 인증/권한/암호화/세션/입력검증 변경 | cso (design-panel `CSO_LENS` → `claude-security-guidance.md`; 별도 plan-cso-review 스킬 아님) |
 | `UI` | 화면 구성·UX 변경 | plan-design-review |
 | `공통API/DAO` | 공통 라이브러리·DAO·공유 계약 변경 | plan-devex-review |
-| `대규모범위` | 10개 파일 초과 또는 다중 도메인 영향 | plan-ceo-review |
 | `backend` | 서버 로직·API 변경 (기본 포함) | plan-eng-review (항상) |
 | `frontend` | JSP·JS·CSS 변경 | plan-eng-review (항상) |
 

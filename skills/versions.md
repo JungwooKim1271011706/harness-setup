@@ -40,9 +40,8 @@
 | 스킬 | 설치 경로 | 버전(gstack) | 참조 위치 |
 |------|---------|------------|---------|
 | `plan-eng-review` | `~/.claude/skills/gstack/plan-eng-review/` | 1.58.1.0 | `orchestrator.md` 설계패널 eng 렌즈(Read) |
-| `plan-ceo-review` | `~/.claude/skills/gstack/plan-ceo-review/` | 1.58.1.0 | 설계패널 ceo 렌즈(`대규모범위` 태그) |
 | `plan-design-review` | `~/.claude/skills/gstack/plan-design-review/` | 1.58.1.0 | 설계패널 design 렌즈(`UI` 태그) |
 | `plan-devex-review` | `~/.claude/skills/gstack/plan-devex-review/` | 1.58.1.0 | 설계패널 devex 렌즈(`공통API/DAO` 태그) |
 | `gstack/bin/*` | `~/.claude/skills/gstack/bin/` | 1.58.1.0 | `session-check.sh`(gstack-slug), plan-*-review 로깅 헬퍼 |
 
-> ⚠ 보안(cso) 계획 렌즈는 gstack 스킬이 아니다 — design-panel.js `CSO_LENS`가 `claude-security-guidance.md`(repo track)를 Read. `gstack-upgrade` 후 위 4종 경로가 `gstack/` 아래 유지되는지 1회 확인할 것.
+> ⚠ 보안(cso) 계획 렌즈는 gstack 스킬이 아니다 — design-panel.js `CSO_LENS`가 `claude-security-guidance.md`(repo track)를 Read. `gstack-upgrade` 후 위 plan-* 경로가 `gstack/` 아래 유지되는지 1회 확인할 것. (gstack은 plan-ceo-review도 제공하나, 패널이 ceo를 미사용해 미참조.)

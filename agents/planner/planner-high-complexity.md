@@ -58,12 +58,12 @@ permissionMode: plan
 
 ### 변경영역 태그
 > 오케스트레이터가 설계 패널 페르소나 선별에 사용한다. 반드시 산출물 상단에 위치해야 한다.
-> 고복잡도 계획은 설계패널 ≥4 보장이 필요하므로 태그를 충분히 명시한다.
+> 설계패널 페르소나는 연관 태그로 선별된다(최소 3 / 최대 4). 변경이 닿는 영역 태그를 빠짐없이 명시한다.
 
 변경이 닿는 영역을 아래 태그 후보에서 선택하여 나열한다 (복수 선택 가능).
 
 ```
-[backend] [frontend] [보안] [공통API/DAO] [UI] [대규모범위]
+[backend] [frontend] [보안] [공통API/DAO] [UI]
 ```
 
 | 태그 | 의미 | 유발 페르소나 |
@@ -71,11 +71,10 @@ permissionMode: plan
 | `보안` | 인증/권한/암호화/세션/입력검증 변경 | cso (design-panel `CSO_LENS` → `claude-security-guidance.md`; 별도 plan-cso-review 스킬 아님) |
 | `UI` | 화면 구성·UX 변경 | plan-design-review |
 | `공통API/DAO` | 공통 라이브러리·DAO·공유 계약 변경 | plan-devex-review |
-| `대규모범위` | 10개 파일 초과 또는 다중 도메인 영향 | plan-ceo-review |
 | `backend` | 서버 로직·API 변경 (기본 포함) | plan-eng-review (항상) |
 | `frontend` | JSP·JS·CSS 변경 | plan-eng-review (항상) |
 
-예시: `## 변경영역 태그: [backend, frontend, 공통API/DAO, 대규모범위]`
+예시: `## 변경영역 태그: [backend, frontend, 공통API/DAO]`
 
 ---
 

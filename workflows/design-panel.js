@@ -97,7 +97,7 @@ async function runPersona(persona) {
       label: `review:${persona.key}${maxRounds > 1 ? `:r${r}` : ''}`,
       phase: 'Review',
       schema: FINDINGS_SCHEMA,
-      // 토큰 절감: eng(깊은 아키텍처 추론)+cso(보안 놓침=최악)만 opus, 나머지(design/devex/ceo) sonnet.
+      // 토큰 절감: eng(깊은 아키텍처 추론)+cso(보안 놓침=최악)만 opus, 나머지(design/devex) sonnet.
       model: (persona.key === 'eng' || persona.key === 'cso') ? 'opus' : 'sonnet',
     })
     if (Array.isArray(res?.passEvidence)) evidence.push(...res.passEvidence)
