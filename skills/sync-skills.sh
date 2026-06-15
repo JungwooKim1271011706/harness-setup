@@ -13,7 +13,6 @@ CRITICAL_SKILLS=("learning-gate" "grill-with-docs")
 declare -A SOURCES
 SOURCES["office-hours"]="$HOME/.claude/skills/office-hours"
 SOURCES["co-plan"]="$HOME/.claude/skills/co-plan"
-SOURCES["plan-eng-review"]="$HOME/.claude/skills/plan-eng-review"
 SOURCES["pair-impl"]="$HOME/.claude/skills/pair-impl"
 SOURCES["investigate"]="$HOME/.claude/skills/investigate"
 SOURCES["review"]="$HOME/.claude/skills/review"
