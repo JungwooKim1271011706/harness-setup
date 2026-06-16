@@ -101,6 +101,15 @@ cd ~/.claude/skills/gstack && ./setup --no-prefix
 
 `--no-prefix`는 필수 — 하네스가 `/office-hours`·`/plan-eng-review` 같은 **짧은 이름**으로 호출한다(기본 `--prefix`는 `/gstack-*`로 등록돼 빗나감).
 
+### 5. (선택) 공식 OpenAI codex 플러그인 — 사용자 주도 리뷰용
+codex provider는 **역할 분리**(A2)다: **자동 흐름**(TDD·`/codex review` 단계)은 gstack `/codex`가 담당하고, **사용자가 임의 시점에 직접** 코드리뷰를 원하면 공식 플러그인이 더 깔끔하다(`/codex:review`, `/codex:adversarial-review`). 공식 슬래시는 `disable-model-invocation`이라 orchestrator가 자동 호출하지 않으므로 자동 흐름과 충돌하지 않는다.
+
+```
+/plugin marketplace add openai/codex-plugin-cc
+/plugin install codex@openai-codex
+/codex:setup   # codex CLI·인증 점검
+```
+
 ## 업데이트 (마스터 → 프로젝트)
 
 하네스 개선은 이 레포 `main`에 누적된다. 프로젝트에서 최신 반영:

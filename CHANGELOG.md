@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 2.2.0 — 2026-06-16
+- **codex provider 역할 분리(A2) 명문화.** 공식 OpenAI codex 플러그인(`codex@openai-codex`) 설치 후 provider가 둘이 됨 → 용도별로 가름.
+  - **자동 흐름**(orchestrator의 5 진입점: TDD 7b·7.5 RED·7.7·/codex review 단계) = **gstack `/codex`**(Skill 자동호출 가능). 기존 `## codex 호출 가드`가 그대로 유효.
+  - **사용자 주도 임의 리뷰** = **공식 플러그인**(`/codex:review`·`/codex:adversarial-review`). 공식 슬래시는 `disable-model-invocation`이라 orchestrator 자동호출 불가 → 자동 흐름과 충돌 없음.
+  - `orchestrator.md`: `## codex provider — 역할 분리` 절 신설(명칭충돌 `codex:rescue` vs 공식 `codex-rescue` 에이전트 구분 포함). `README.md`: 셋업 §5 공식 플러그인 설치(선택) 안내.
+  - 전면 전환(A1) 안 함 이유: 공식 슬래시가 자동호출 불가라 자동 흐름엔 gstack이 구조적으로 맞고, 분리가 안전장치(7시간-행 가드)를 안 건드림.
+
 ## 2.1.0 — 2026-06-16
 - **gstack 스킬 de-vendor → 글로벌 단일출처 + 미설치 안내 모델로 전환.** gstack 스킬은 bin/lib/node_modules/브라우저 바이너리 의존이라 SKILL.md만 미러하면 반쪽(로깅 bin 등 깨짐) + 드리프트 누적 문제. 글로벌 `~/.claude/skills/gstack/`를 단일출처로 삼는다.
   - repo `skills/`에서 gstack 미러 7종 제거: office-hours·investigate·review·cso·benchmark·codex·browse.

@@ -573,9 +573,16 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - 사용자가 `/context-restore`를 명시 호출하면 그때 복원
 - 자동 로드는 다른 작업 시작 시 옛 컨텍스트 끼어드는 사고 위험 때문에 금지
 
+## codex provider — 역할 분리 (자동 vs 사용자 주도)
+
+codex provider가 둘이며 **용도가 갈린다**(2026-06-16 결정, A2):
+- **자동 흐름(orchestrator가 호출) = gstack `/codex` 스킬.** 아래 5 진입점 전부 이 경로. Skill 도구로 orchestrator가 **자동 호출 가능**. 이 절의 모든 가드는 이 경로 기준이다.
+- **사용자 주도 임의 리뷰 = 공식 OpenAI codex 플러그인** (`/codex:review`, `/codex:adversarial-review`, `/codex:rescue`). 이들은 `disable-model-invocation: true` — **orchestrator가 자동 호출 못 한다**(사용자가 직접 슬래시 입력 전용). 하네스 흐름엔 끼우지 않는다. 사용자가 임의 시점에 독립 코드리뷰를 원할 때 쓴다.
+- ⚠ 명칭 충돌: 아래 진입점의 `codex:rescue`(미사용)와 공식 플러그인의 `codex-rescue` 에이전트는 **다른 것**. 하네스 자동 흐름은 공식 에이전트를 부르지 않는다.
+
 ## codex 호출 가드 (타임아웃·폴백 — 무한 대기 방지)
 
-codex 진입점은 5곳: TDD 7b(케이스B), 7.5(RED 작성), 7.7 폴백(claude 작성분 codex 교차판정), /codex review, codex:rescue. 과거 다른 세션에서 /codex review가 7시간 무응답 행에 빠진 사건의 재발 방지 규칙이다. (근본원인 = 타임아웃 가드 없던 구버전 codex 스킬. 스킬 동기화 후 기계강제 복구됨.)
+codex 진입점은 5곳: TDD 7b(케이스B), 7.5(RED 작성), 7.7 폴백(claude 작성분 codex 교차판정), /codex review, codex:rescue. 과거 다른 세션에서 /codex review가 7시간 무응답 행에 빠진 사건의 재발 방지 규칙이다. (근본원인 = 타임아웃 가드 없던 구버전 codex 스킬. 스킬 동기화 후 기계강제 복구됨.) 이 절의 codex = **gstack `/codex`**(위 역할 분리 참조), 공식 플러그인 아님.
 
 ### 기계강제는 codex 스킬이 담당 (orchestrator 재구현·재지시 금지 — 중복 회피)
 
