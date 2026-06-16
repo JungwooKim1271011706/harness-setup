@@ -8,6 +8,7 @@
 ## Gotcha (함정·교훈)
 - [[jq-korean-encoding]] — Slack 알림 한글이 깨지는 진짜 원인과 회피(파일 경유 vs curl 인자)
 - [[windows-path-jq]] — Windows에서 CC가 stale PATH를 상속 → 훅에서 jq 못 찾는 문제와 자가탐색 해법
+- [[gstack-install-windows]] — gstack/setup이 브라우저 추출에서 hang → 스킬 미등록. 등록만 수동 재현 + bun stale PATH
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)
 - 설계·ADR: `../docs/` (예: `../docs/harness-versioning.md` — 하네스 버전관리 설계 전문)

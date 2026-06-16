@@ -21,3 +21,4 @@ jq-less 셸에서 검증 완료. 정말 못 찾을 때만 ASCII 폴백.
 - Windows에서 훅이 외부 CLI(jq 등)에 의존하면 **PATH를 신뢰하지 말고** 스크립트가 직접 탐색하게 짜라.
 - "winget 설치했으니 재시작하면 되겠지"는 자주 틀린다.
 - 적용 사례: [[slack-notify-hook]] (한글 요약은 [[jq-korean-encoding]] 때문에 jq 필요).
+- 같은 stale-PATH 패턴 재발: [[gstack-install-windows]] (bun이 설치돼 있어도 git-bash PATH에 없어 setup 실패).
