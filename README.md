@@ -91,6 +91,16 @@ echo "/.claude/" >> .gitignore
 ### 3. 프로젝트 설정값 교체
 `CLAUDE.md`의 `Harness Configuration` 섹션 값(projectName, frontendRoot/backendRoot, modules, examples 등)을 새 프로젝트에 맞게 수정한다. `agents/`는 이 변수만 참조하므로 직접 수정하지 않는다.
 
+### 4. gstack 설치 (글로벌 의존 — plan-*-review·계획리뷰·context-save 등)
+하네스는 gstack 스킬을 repo에 vendoring하지 않고 글로벌 설치에 의존한다. 미설치 시 설계패널 plan-*-review 렌즈·`/office-hours`·`/cso`·`/context-save` 등이 동작하지 않는다(세션 시작 시 `session-check.sh`가 안내).
+
+```bash
+git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+cd ~/.claude/skills/gstack && ./setup --no-prefix
+```
+
+`--no-prefix`는 필수 — 하네스가 `/office-hours`·`/plan-eng-review` 같은 **짧은 이름**으로 호출한다(기본 `--prefix`는 `/gstack-*`로 등록돼 빗나감).
+
 ## 업데이트 (마스터 → 프로젝트)
 
 하네스 개선은 이 레포 `main`에 누적된다. 프로젝트에서 최신 반영:
@@ -99,7 +109,7 @@ echo "/.claude/" >> .gitignore
 git -C .claude pull origin main
 ```
 
-스킬 동기화는 `bash .claude/skills/sync-skills.sh`.
+자체 스킬 동기화는 `bash .claude/skills/sync-skills.sh` (gstack 스킬은 대상 아님 — `gstack-upgrade`로 갱신).
 
 ## 버전 관리
 
@@ -115,7 +125,7 @@ git -C .claude pull origin main
 | 경로 | 내용 | 추적 |
 |------|------|------|
 | `agents/` | 오케스트레이터·planner·developer·tester·finalizer | track |
-| `skills/` | 커스텀 스킬, sync 스크립트 | track |
+| `skills/` | 자체 스킬 + sync 스크립트 (gstack 스킬은 미러 안 함 — 글로벌 의존, §셋업 4) | track |
 | `hooks/` | 세션 점검 훅 | track |
 | `settings.json` | 공유 설정 | track |
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |

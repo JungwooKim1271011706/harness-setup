@@ -9,18 +9,15 @@ TODAY=$(date +%Y-%m-%d)
 # 하드코딩 참조 스킬 — 변경 시 사용자 검토 필요
 CRITICAL_SKILLS=("learning-gate" "grill-with-docs")
 
-# 소스 경로 매핑 (글로벌 → 로컬)
-# gstack 제공 스킬: gstack 글로벌 설치(~/.claude/skills/gstack/<skill>)가 원본. gstack-upgrade로 갱신됨.
+# 소스 경로 매핑 (글로벌 → 로컬) — 자체/비-gstack 스킬만 동기화한다.
+#
+# ⚠ gstack 제공 스킬(office-hours·investigate·review·cso·benchmark·codex·browse·
+#   plan-*-review·context-save/restore 등)은 더 이상 vendoring하지 않는다(v2.1.0).
+#   글로벌 gstack 설치(~/.claude/skills/gstack/)에 의존하며, 미설치 시 session-check.sh가
+#   설치를 안내한다. gstack 갱신은 `gstack-upgrade`로. → 여기서 동기화하지 않음.
+#
+# 아래는 gstack 비제공 자체 스킬. 원본 부재 시 sync는 "소스 없음"으로 스킵(repo 미러로 동작 유지).
 declare -A SOURCES
-SOURCES["office-hours"]="$HOME/.claude/skills/gstack/office-hours"
-SOURCES["investigate"]="$HOME/.claude/skills/gstack/investigate"
-SOURCES["review"]="$HOME/.claude/skills/gstack/review"
-SOURCES["cso"]="$HOME/.claude/skills/gstack/cso"
-SOURCES["benchmark"]="$HOME/.claude/skills/gstack/benchmark"
-SOURCES["codex"]="$HOME/.claude/skills/gstack/codex"
-SOURCES["browse"]="$HOME/.claude/skills/gstack/browse"
-# 자체/비-gstack 스킬: gstack에 없음. 원본 부재 시 sync는 "소스 없음"으로 스킵(미러로 동작은 유지).
-#   co-plan·pair-impl·learning-gate: gstack 미제공. grill-with-docs: ~/.agents 소스.
 SOURCES["co-plan"]="$HOME/.claude/skills/co-plan"
 SOURCES["pair-impl"]="$HOME/.claude/skills/pair-impl"
 SOURCES["learning-gate"]="$HOME/.claude/skills/learning-gate"

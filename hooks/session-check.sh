@@ -133,6 +133,18 @@ if [ -f "$VERSION_FILE" ]; then
   fi
 fi
 
+# 6) gstack 글로벌 의존 점검 (미설치/미등록 시 설치 안내 — 순수 안내, 자동 설치 없음)
+#    하네스는 gstack 스킬(plan-*-review·office-hours·cso·review·context-save/restore 등)을
+#    repo에 vendoring하지 않고 글로벌 gstack에 의존한다. 없으면 슬래시/Read가 빗나간다.
+GSTACK_HOME="${HOME}/.claude/skills/gstack"
+GSTACK_INSTALL="git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup --no-prefix"
+if [ ! -f "$GSTACK_HOME/SKILL.md" ]; then
+  MESSAGES+=("⚠ gstack 미설치 — 설계패널 plan-*-review·계획리뷰·context-save/restore 등 사용 불가. 설치(글로벌): ${GSTACK_INSTALL}")
+elif [ ! -f "${HOME}/.claude/skills/context-save/SKILL.md" ]; then
+  # gstack 클론은 됐으나 setup --no-prefix 미실행 → top-level 등록 없음 → 슬래시 호출 불가
+  MESSAGES+=("⚠ gstack 설치됨·스킬 미등록 — 슬래시 호출(/context-save 등) 불가. 등록: cd ~/.claude/skills/gstack && ./setup --no-prefix")
+fi
+
 # 메시지 없으면 조용히 종료
 if [ ${#MESSAGES[@]} -eq 0 ]; then
   exit 0

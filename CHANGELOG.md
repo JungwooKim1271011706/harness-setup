@@ -3,6 +3,16 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 2.1.0 — 2026-06-16
+- **gstack 스킬 de-vendor → 글로벌 단일출처 + 미설치 안내 모델로 전환.** gstack 스킬은 bin/lib/node_modules/브라우저 바이너리 의존이라 SKILL.md만 미러하면 반쪽(로깅 bin 등 깨짐) + 드리프트 누적 문제. 글로벌 `~/.claude/skills/gstack/`를 단일출처로 삼는다.
+  - repo `skills/`에서 gstack 미러 7종 제거: office-hours·investigate·review·cso·benchmark·codex·browse.
+  - `session-check.sh`: gstack 미설치/미등록(setup --no-prefix 안 함) 탐지 → 설치·등록 안내 추가(advisory).
+  - `sync-skills.sh`: SOURCES에서 gstack 7종 제거, 자체 스킬(co-plan·pair-impl·learning-gate·grill-with-docs)만 동기화.
+  - `tester-frontend/runtime.md`: browse 바이너리 경로의 repo-미러 분기 제거 → gstack 글로벌 경로로 단순화.
+  - `versions.md`: "자체 스킬(track) / gstack 글로벌 의존(미러 아님)" 두 출처로 재구성. context-save·context-restore 등 슬래시 호출 스킬도 명시.
+  - `README.md`: 셋업 4단계에 gstack 설치(--no-prefix 필수) 추가, 구조 테이블 skills 행 갱신.
+- 배경: 이전까지 gstack 의존이 잠복(미설치 상태에서 plan-*-review·context-save 등이 조용히 미동작)했던 것을 명시적 의존+안내로 전환.
+
 ## 2.0.0 — 2026-06-15
 - **[MAJOR·게이트 불변식 변경] 설계패널 인원 규칙 재정의 + ceo 페르소나 제거.**
   - 인원 규칙: 신규·고복잡도 공통 **최소 3 / 최대 4, 연관(태그)기반**. eng 항상 + cso(보안)/design(UI)/devex(공통API/DAO)는 연관 시에만. 3 미만이면 채움순서(eng→devex→cso)로 3까지만. 4번째는 연관될 때만(강제 채움 금지). 기존 "신규≥3 / 고복잡도≥4(강제)"를 대체.

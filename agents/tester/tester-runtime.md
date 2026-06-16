@@ -66,11 +66,8 @@ mvn test -DskipTests=false
 gstack browse 바이너리를 사용해 기동 후 UI 스모크 테스트를 수행한다.
 
 ```bash
-# 바이너리 경로 확인 (먼저 실행)
-_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/browse/dist/browse" ] && B="$_ROOT/.claude/skills/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+# 바이너리 경로 (gstack 글로벌 — 미설치 시 session-check.sh 안내)
+B=~/.claude/skills/gstack/browse/dist/browse
 ```
 
 - `$B goto <url>` — 페이지 이동

@@ -34,10 +34,7 @@ memory: project
 gstack browse 바이너리를 사용해 실제 브라우저로 검증한다.
 
 ```bash
-_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-B=""
-[ -n "$_ROOT" ] && [ -x "$_ROOT/.claude/skills/browse/dist/browse" ] && B="$_ROOT/.claude/skills/browse/dist/browse"
-[ -z "$B" ] && B=~/.claude/skills/gstack/browse/dist/browse
+B=~/.claude/skills/gstack/browse/dist/browse  # gstack 글로벌(미설치 시 session-check.sh 안내)
 ```
 
 - `$B goto <url>` — 페이지 이동
