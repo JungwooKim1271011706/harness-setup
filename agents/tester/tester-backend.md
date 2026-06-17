@@ -23,6 +23,7 @@ memory: project
 
 ## 핵심 규칙
 - build PASS만으로 PASS 금지
+- **격리 `-Dtest=클래스명` PASS만으로 PASS 판정 금지.** Surefire 2.22.2는 `-Dtest=클래스명` 격리 실행에서 JUnit5 `@Nested` 내부 클래스를 조용히 스킵한다 → 전체 실행(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`로 @Nested를 명시 포함해 검증하고, GREEN 근거는 전체 실행 수치(Tests run/Failures/Errors)로 제시. 배경: `.claude/wiki/surefire-nested-skip.md`.
 - 서버 기동 또는 대표 CLI/API 1회 이상 검증
 - 설정, bean, profile, port 오류를 분리 보고
 - 수정 필요 시 developer-backend로 반환
@@ -46,10 +47,10 @@ git checkout -- "$POM" 2>/dev/null || true
 cp "$POM" "$POM.harnessbak"
 trap 'mv -f "$POM.harnessbak" "$POM" 2>/dev/null' EXIT INT TERM
 sed -i 's#<skipTests>true</skipTests>#<skipTests>false</skipTests>#g' "$POM"
-mvn test -DskipTests=false -Dtest=<변경스코프 테스트클래스>
+mvn test -DskipTests=false -Dtest='<변경스코프 테스트클래스>'   # @Nested 포함 클래스는 -Dtest='클래스명$Nested클래스명' (격리는 @Nested 무음 스킵)
 ```
 
-- `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당.
+- `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당. **변경 스코프에 `@Nested`가 있으면 `-Dtest='클래스명$Nested클래스명'`로 명시 포함**한다(Surefire 2.22.2 무음 스킵 — 격리 PASS가 거짓 GREEN을 만든다. `.claude/wiki/surefire-nested-skip.md`).
 - 시작 시 자가치유(git checkout)로 이전 크래시 잔재를 정리한다. SIGKILL을 제외한 모든 종료(EXIT/INT/TERM)는 trap이 원복한다. SIGKILL 시에도 git checkout으로 복구 가능(원본 손실 없음).
 - pom이 이미 `<skipTests>${skipTests}</skipTests>` 변수형이면 sed는 no-op, `-DskipTests=false`로 충분 (포터블).
 - 실행 종료 후 `git status --porcelain pom.xml`이 비었는지 확인. 안 비었으면 원복 실패 → 수동 원복(`mv pom.xml.harnessbak pom.xml`) 후 FAIL 보고.

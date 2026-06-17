@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 2.3.0 — 2026-06-18
+- **task3-picker 회고(2026-06-17)에서 도출한 테스트 검증 규칙 3종 추가.** agent md 규칙 추가(게이트 구조·불변식 변경 아님 → MINOR). critical 스킬(learning-gate/grill) diff 없음.
+  - **[A] @Nested 무음 스킵 방지** — `developer-backend.md`·`tester-backend.md`: 테스트 검증은 전체 실행(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`로 @Nested 명시 포함. Surefire 2.22.2는 `-Dtest=클래스명` 격리 실행에서 JUnit5 `@Nested`를 조용히 스킵 → 격리 PASS만으로 GREEN/완료 판정 금지. (developer가 격리로 거짓 GREEN 보고 → 1사이클 낭비 사건)
+  - **[B] 7.7 품질게이트 RED 픽스처 구조결함 검사** — `tester-quality.md` 기준9 신설(전부 critical): ① 테스트 간 논리모순(@Nested/형제가 같은 mock 입력에 상충 기대) ② Mockito strict stub 겹침(`anyLong()` vs `eq(0L)` 동일 호출 겹침 → UnnecessaryStubbing) ③ primitive 매처(`long`/`int`에 `any()` 금지 → unbox NPE, `anyLong()`/`anyInt()` 요구, 교정은 매처로). 통과한 RED에 잠복 시 GREEN 단계 표면화 → 재교정+재라운드 방지.
+  - **[C] 계획서 diff 준수** — `developer-backend.md` 핵심 규칙: planner diff가 정확한 식·시그니처(예: `getApiBaseUrl()`)를 지정하면 임의 변경 금지, 이탈 근거 있으면 멈추고 보고. (임의 이탈이 단위테스트 mock으로 가려지는 라이브 배선버그를 부른 `getUrl()`↔`getApiBaseUrl()` 사고)
+  - **라우팅 보정**: 회고가 가리킨 `docs/learnings/testing-surefire-nested-skip.md`는 출처 프로젝트(task3-picker) 로컬 경로라 harness 레포에 부재 → 휴대용 gotcha를 harness `wiki/surefire-nested-skip.md`로 신설(index 등록). agent md 양쪽이 긴 근거를 중복하지 않고 wiki 1곳을 가리킴(no-duplication).
+  - 세션 한도 사망(#4)은 외부 토큰 문제라 제외(핸드오프 메모리·context-save로 완화 중, 레버리지 작음).
+
 ## 2.2.0 — 2026-06-16
 - **codex provider 역할 분리(A2) 명문화.** 공식 OpenAI codex 플러그인(`codex@openai-codex`) 설치 후 provider가 둘이 됨 → 용도별로 가름.
   - **자동 흐름**(orchestrator의 5 진입점: TDD 7b·7.5 RED·7.7·/codex review 단계) = **gstack `/codex`**(Skill 자동호출 가능). 기존 `## codex 호출 가드`가 그대로 유효.

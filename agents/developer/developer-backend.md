@@ -29,6 +29,7 @@ planner-backend 결과만 구현한다.
 - 설계 변경 금지
 - controller/service/repository 경계 재설계 금지
 - planner에 없는 API 계약 변경 금지
+- **계획서 diff 준수**: planner diff가 정확한 식·시그니처(예: 특정 getter `getApiBaseUrl()`)를 지정하면 임의로 다른 식으로 바꾸지 않는다. 다르게 구현할 근거가 있으면 멈추고 보고한다 — 임의 이탈은 단위테스트가 mock으로 가리는 라이브 배선버그를 부른다(실제 baseUrl `getUrl()`↔`getApiBaseUrl()` 혼동 사고).
 - 설정/빈/profile 변경도 planner 명시 범위 안에서만 수행
 - Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn compile`)과 단위 테스트(`mvn test`)는 허용
 - 프론트엔드 파일(CLAUDE.md Harness Configuration의 `frontendRoot` 하위) 수정 금지
@@ -82,13 +83,20 @@ mvn compile -f <모듈>/pom.xml
 
 테스트 클래스가 존재하는 경우, 구현 전 실패하는 테스트를 먼저 작성한다:
 
-1. 실패하는 테스트 작성 → `mvn test -f <모듈>/pom.xml -Dtest=<테스트클래스명>` 실행 → RED 확인
+1. 실패하는 테스트 작성 → 실행해 RED 확인. 실행 형태는 아래 **테스트 실행 — @Nested 무음 스킵** 규칙을 따른다(격리 `-Dtest=클래스명` 단독 금지).
 2. 최소 구현 → 테스트 통과 확인 → GREEN
 3. 리팩터링 (테스트 유지 확인)
 
 아래 경우 생략:
 - 해당 모듈에 테스트 클래스가 없는 경우
 - `skipTests=true`가 기본인 모듈 (테스트 인프라 미구축)
+
+## 테스트 실행 — @Nested 무음 스킵 (필수)
+
+테스트 검증은 반드시 **전체 실행**(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`으로 @Nested를 명시 포함해 수행한다.
+- `-Dtest=클래스명` **격리 실행은 Surefire 2.22.2에서 JUnit5 `@Nested` 내부 클래스를 조용히 스킵**한다(실패가 아니라 무음 누락). 따라서 격리 PASS만으로 **GREEN/완료 판정 금지**.
+- 신규·수정 테스트의 GREEN 근거는 **전체 실행 수치**(Tests run/Failures/Errors) 또는 `$Nested` 포함 실행으로 제시한다.
+- 배경·회피 상세: `.claude/wiki/surefire-nested-skip.md`.
 
 ## 출력 형식
 ## 구현 결과
