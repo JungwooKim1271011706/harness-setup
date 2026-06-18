@@ -120,6 +120,19 @@ git -C .claude pull origin main
 
 자체 스킬 동기화는 `bash .claude/skills/sync-skills.sh` (gstack 스킬은 대상 아님 — `gstack-upgrade`로 갱신).
 
+## 하네스 자기개선 루프
+
+하네스는 스스로를 고도화하는 4층 루프를 갖는다. **발견·초안은 자동, 적용은 사람 승인**(거버넌스 불변식 = 하네스 자동수정 금지).
+
+| 단계 | 장치 | 트리거 |
+|------|------|--------|
+| ① 발견 | `workflows/harness-feature-scan.js` (CC 신기능·웹 모범사례 조사 → 백로그) | 30일 주기 넛지 또는 "기능스캔 돌려" |
+| ② capture | `wiki/` 운영지식 capture (`wiki/_schema.md` SSOT) | post_commit 자가점검 |
+| ③ 규칙화 | `/harness-retro` 스킬 (회고 → 분류·라우팅·초안·승인·적용) | "하네스 회고 반영" / 회고 텍스트 붙여넣기 |
+| ④ 전파 | `VERSION`/`CHANGELOG` + drift 탐지 + `git -C .claude pull` | session-check 훅 |
+
+①·③은 백로그(`agent-memory/orchestrator/project_harness_improvement_backlog.md`)를 단일 원장으로 공유한다.
+
 ## 버전 관리
 
 하네스는 `VERSION`(semver `MAJOR.MINOR.PATCH`)으로 동작 버전을 관리한다.

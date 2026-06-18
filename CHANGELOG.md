@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 2.4.0 — 2026-06-18
+- **하네스 자기개선 루프 ③ 규칙화 단계 명문화 — `/harness-retro` 스킬 신설.** 그동안 ①발견(feature-scan)·②capture(wiki)·④전파(VERSION/pull)는 장치가 있었으나, "회고에서 나온 개선안을 하네스 규칙으로 승격"하는 ③ 규칙화는 매번 ad-hoc 수작업이었던 갭을 메움.
+  - `skills/harness-retro/SKILL.md`(repo SSOT, 글로벌 미존재 → sync 안 함): 회고 텍스트 입력 → ① 항목 파싱 → ② 분류·대상파일 라우팅(agent-md/게이트구조/훅/wiki/docs/**reject**) → ③ bump레벨 추론(게이트구조·차단훅=MAJOR) → ④ 백로그 원장 기재(feature-scan과 단일 원장) → ⑤ diff/wiki/bump 초안 → ⑥ **사람 승인 게이트** → ⑦ 승인분만 적용+finalizer bump 의식.
+  - **거버넌스 정합**: 초안까지 자동, **적용은 사람 승인**(불변식 = 하네스 자동수정 금지 유지). 거버넌스 영향 항목(게이트구조 MAJOR·차단훅·승인게이트 변경)은 ⚠ 명시 경고 + 별도 확인.
+  - 세션 교훈 경계 내장: 벤더 파일(gstack) 수정 금지(분류·제안까지만), 부재 경로(출처 프로젝트 로컬 `docs/learnings/*`)는 휴대용 위치(wiki/docs)로 라우팅 보정.
+  - `orchestrator.md`: `## 하네스 회고 반영` 절 신설(트리거·절차·가드레일). `versions.md`: repo-SSOT 목록에 harness-retro 추가. `README.md`: `## 하네스 자기개선 루프` 4층 표 추가.
+
 ## 2.3.0 — 2026-06-18
 - **task3-picker 회고(2026-06-17)에서 도출한 테스트 검증 규칙 3종 추가.** agent md 규칙 추가(게이트 구조·불변식 변경 아님 → MINOR). critical 스킬(learning-gate/grill) diff 없음.
   - **[A] @Nested 무음 스킵 방지** — `developer-backend.md`·`tester-backend.md`: 테스트 검증은 전체 실행(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`로 @Nested 명시 포함. Surefire 2.22.2는 `-Dtest=클래스명` 격리 실행에서 JUnit5 `@Nested`를 조용히 스킵 → 격리 PASS만으로 GREEN/완료 판정 금지. (developer가 격리로 거짓 GREEN 보고 → 1사이클 낭비 사건)
