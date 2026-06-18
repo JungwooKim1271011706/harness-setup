@@ -57,6 +57,16 @@ mvn test -DskipTests=false -Dtest='<변경스코프 테스트클래스>'   # @Ne
 - 테스트 클래스가 없으면 "단위테스트 없음" 명시하고 기존 시나리오/스모크 검증으로 보완.
 - 백업/임시변경분은 절대 stage·commit 금지.
 
+## 7.6 RED sanity 모드 (TDD 합의 구간 — 오케스트레이터가 명시 호출 시)
+
+오케스트레이터가 "7.6 RED sanity" 컨텍스트로 호출하면, 변경검증(아래 3영역)이 아니라 **RED 스위트의 컴파일·실행 가능성만** 확인한다(GREEN 구현 전).
+
+- 실행: `mvn test-compile` + RED 테스트 1회 실행(위 `## 단위테스트 실행` 절차 — @Nested 무음 스킵 규칙 동일 적용).
+- 통과 기준 2가지 **모두**:
+  1. **컴파일 OK** — 매처 오용(primitive에 `any()`), `@BeforeEach`가 자기가 만든 팩토리 seam 미사용, 타입추론 실패 등 컴파일/셋업 결함 없음.
+  2. **RED가 "올바른 이유로" FAIL** — 미구현 도메인 동작에 의한 단언 실패/도메인 예외. `UnsupportedOperationException`·컴파일에러 같은 "잘못된 이유"의 FAIL은 불통과.
+- 산출: `RED sanity PASS`(→ 7.7 진행) 또는 `RED sanity FAIL`(결함 종류 명시 → 작성자 codex/tester-design 반환). 테스트 파일은 수정하지 않는다(작성자≠검증자).
+
 ## 검증 영역 (3개, 각 0-10점)
 
 ### 영역 1: 기능 (Functional)

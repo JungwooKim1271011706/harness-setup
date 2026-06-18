@@ -25,7 +25,7 @@ flowchart TD
   CRIT -->|YES| APV{{"사용자 승인 설계만"}}
 
   APV --> T7A["7a tester-design ∥ 7b codex<br/>폴백시 교차검증없음 C4"]
-  T7A --> T7C["7c diff 합의"] --> T75["7.5 codex RED public행위"] --> T77["7.7 tester-quality 품질게이트"]
+  T7A --> T7C["7c diff 합의"] --> T75["7.5 codex RED public행위"] --> T76["7.6 RED sanity<br/>tester-backend: 컴파일+RED실행 올바른이유FAIL"] --> T77["7.7 tester-quality 품질게이트"]
   T77 --> Q77{critical0+근거?}
   Q77 -->|NO| RET["작성자 반환 루프3"] --> T75
   Q77 -->|YES| T8["8 developer GREEN public계약준수"]

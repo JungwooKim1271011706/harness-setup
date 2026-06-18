@@ -30,6 +30,16 @@ memory: project
   - 예: `getList_callsManager` (X — 구현 결합)
 - 각 테스트는 리팩터링 후에도 통과해야 함 (구현이 바뀌어도 테스트는 살아남아야)
 
+## RED 보안/negative 테스트 규칙 (공허 단언·통합버그 방어, 필수)
+
+7.5 RED를 작성·설계할 때 아래를 강제한다. (근거: `failure_2026-06-17_tdd77-vacuous-assertions.md`)
+
+- **(R1) 예외 단언에 `assertThrows(Exception.class/RuntimeException.class)` 금지** — 스텁 `UnsupportedOperationException`도 통과해 RED가 무효가 된다. `isNotInstanceOf(UnsupportedOperationException.class)` 또는 **구체 도메인 예외 타입**으로 단언한다.
+- **(R2) "값 미출현(absence)" 단언은 positive 경로단언과 쌍으로** — `verify(...times(1))`/`logs.isNotEmpty()`가 스텁 상태에서 실제로 FAIL해야 한다. 경로가 미실행이어도 통과하면 공허(vacuous) 단언이다.
+- **(R3) 부재를 검사할 sentinel은 mock 반환/throw로 flow에 실제 주입**한다(단언 대상이 실제로 흐름을 타게).
+- **(R4) 충돌/기존 엔티티는 repo mock이 실제로 반환**하게 한다(로컬 객체 생성 + `assertNotSame` 금지 — 실제 조회 경로를 안 탄다).
+- **외부 API 응답 매핑 DTO는 실제 JSON 문자열 ↔ DTO round-trip(`ObjectMapper.readValue`) 단위테스트 1건 필수.** 목킹 `RestTemplate`은 DTO 객체를 직접 반환해 `@JsonProperty`(snake_case) 매핑·헤더 형식을 안 탄다 → 런타임 100% 실패할 필드매핑 통합버그가 단위테스트를 통과하는 구멍을 막는다.
+
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일
 - unresolved blocker가 있을 때만 추가 5개 파일 탐색 가능

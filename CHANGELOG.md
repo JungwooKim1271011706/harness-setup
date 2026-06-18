@@ -3,6 +3,16 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.0.0 — 2026-06-18
+- **[MAJOR·게이트 구조 변경] 셸 OAuth 세션 회고(2026-06-18) 6건 반영 — `/harness-retro` 첫 dogfooding.** v2.4.0에 만든 회고→규칙화 플로우로 분류·라우팅·승인·적용. ⚠ 게이트 시퀀스 변경 포함 → **세션 재시작 필수**.
+  - **[#2·MAJOR] 7.6 "RED sanity" 단계 신설** — TDD 합의 구간 시퀀스 `7.5 codex RED → **7.6 RED sanity** → 7.7 품질게이트`로 변경. 7.6 = **tester-backend**가 `mvn test-compile` + RED 1회 실행 → "컴파일 OK + 올바른 이유로 FAIL(UOE/컴파일에러 아님)" 확인. 컴파일도 안 되는 RED 스위트가 7.7을 통과해 8/tester-backend에서야 터지던 것을 한 단계 앞에서 차단. `orchestrator.md`(7.6 절+ascii+라우팅 3곳), `tester-backend.md`(RED sanity 모드), `README.md`(mermaid T76) 동기화.
+  - **[#1] RED 보안/negative 4규칙(R1~R4)** — `tester-design.md`: assertThrows(Exception) 금지(R1)·absence는 positive 쌍(R2)·sentinel 실주입(R3)·repo mock 실반환(R4). orchestrator 7.5에 codex 작성자 대상 주입 강제. (공허 단언으로 7.7이 3회 FAIL+escalation한 시간손실 방어 — `failure_2026-06-17_tdd77-vacuous-assertions.md`)
+  - **[#3] 외부 API DTO JSON round-trip 테스트 필수** — `tester-design.md` + `co-plan`: 외부 API 응답 매핑 DTO는 실제 JSON ↔ DTO round-trip(ObjectMapper) 단위테스트 1건 필수. 목킹 RestTemplate이 @JsonProperty(snake_case) 매핑을 안 타 런타임 100% 실패할 버그가 통과하던 구멍 차단.
+  - **[#4] planner diff before=Read 인용 강제** — `planner/{backend,frontend,high-complexity}.md` `### diff 형식`: 모든 diff의 -(before)는 파일 Read해 현재 코드 그대로 인용, 추정·환상변수 금지(불완전·존재하지 않는 코드 = 적용 시 컴파일 불가).
+  - **[#5] 품질게이트 FAIL 반환 시 동일 결함 클래스 전수 sweep** — `orchestrator.md` 7.7 + `tester-quality.md`: 인용 케이스만 고치지 말고 모든 테스트 파일에서 같은 결함 클래스를 첫 루프부터 전수 sweep(7.7이 4라운드 걸린 원인 — un-scrutinized 케이스 재발견 방지).
+  - **[#6] 금지 패키지 경계 — `/freeze` 배선** — `orchestrator.md` `## 작업 스코프 경계` 절: 트랙 시작 시 `/freeze <scope>`, finalizer 후 `/unfreeze`. 병렬 서브에이전트의 스코프 밖 편집을 프롬프트가 아닌 기계로 차단. (새 차단 훅(a)은 동적 스코프 주입 필요 + 거버넌스 부담으로 보류.)
+  - co-plan repo 미러 손편집(글로벌 부재 → repo SSOT, sync 스킵이라 클로버 위험 없음). sync-skills 미실행(글로벌 무관 drift 방지).
+
 ## 2.4.0 — 2026-06-18
 - **하네스 자기개선 루프 ③ 규칙화 단계 명문화 — `/harness-retro` 스킬 신설.** 그동안 ①발견(feature-scan)·②capture(wiki)·④전파(VERSION/pull)는 장치가 있었으나, "회고에서 나온 개선안을 하네스 규칙으로 승격"하는 ③ 규칙화는 매번 ad-hoc 수작업이었던 갭을 메움.
   - `skills/harness-retro/SKILL.md`(repo SSOT, 글로벌 미존재 → sync 안 함): 회고 텍스트 입력 → ① 항목 파싱 → ② 분류·대상파일 라우팅(agent-md/게이트구조/훅/wiki/docs/**reject**) → ③ bump레벨 추론(게이트구조·차단훅=MAJOR) → ④ 백로그 원장 기재(feature-scan과 단일 원장) → ⑤ diff/wiki/bump 초안 → ⑥ **사람 승인 게이트** → ⑦ 승인분만 적용+finalizer bump 의식.
