@@ -22,9 +22,10 @@
 | `co-plan` | `~/.claude/skills/co-plan/` | 2026-05-09 |
 | `pair-impl` | `~/.claude/skills/pair-impl/` | 2026-05-09 |
 
-> 그 밖의 자체 스킬(claude-notify·harness-setup·harness-retro·manage-skills·merge-worktree·rule-maker·verify-implementation)은 sync 대상이 아니라 repo가 SSOT.
+> 그 밖의 자체 스킬(claude-notify·harness-setup·harness-retro·harness-check·manage-skills·merge-worktree·rule-maker·verify-implementation)은 sync 대상이 아니라 repo가 SSOT.
 >
 > `harness-retro`(v2.4.0~): 회고→하네스 규칙화 진입점. 글로벌 미존재 = repo SSOT, sync 안 함. orchestrator `## 하네스 회고 반영` 참조.
+> `harness-check`(v3.1.0~): 운영 고통 자가 탐지 → 개선 후보 → `/harness-retro` 위임. ③ 규칙화의 입력 자동 생성기. orchestrator `## 하네스 운영 자가 회고` 참조. (session-check `⚠ 미처리 실패 패턴` 넛지가 가리키는 스킬 — v3.1.0 이전엔 dangling이었음.)
 
 ## gstack 글로벌 의존 (repo 미러 아님 — 추적 외)
 

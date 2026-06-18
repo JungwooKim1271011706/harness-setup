@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.1.0 — 2026-06-18
+- **하네스 운영 자가 회고 — `/harness-check` 스킬 신설.** 자기개선 루프 ③ 규칙화의 **입력을 자동 생성**: 사람이 회고를 가져오지 않아도, 하네스가 자기 운영 고통을 스스로 탐지해 `/harness-retro`에 먹인다. (사용자 요청: "하네스가 돌면서 겪은 실패·과다 루프를 스스로 회고해 개선사항을 사용자에게 승인 노티")
+  - `skills/harness-check/SKILL.md`(repo SSOT): 운영 고통 신호 4종(과다 루프 LOOP≥2/3·게이트 escalation·출력/런타임 실패·설계 반려 반복) 수집 → 개선 후보 변환 → `/harness-retro` 위임 → 승인 노티. **탐지=자동, 적용=사람 승인**(불변식 유지).
+  - 트리거: 워크플로 종료 시 자동(고통 감지) / 동일영역 failure_ 2건+ / "하네스 자가 점검" / session-check 넛지.
+  - `orchestrator.md`: `## 하네스 운영 자가 회고 (post_commit 자가점검)` 절 신설(wiki capture와 같은 시점). 기존 `## 하네스 자가 점검`을 `/harness-check` 위임으로 재배선(옛 ad-hoc agent md 직접수정 경로 제거 → /harness-retro 분류·승인 게이트 경유). 경고 테이블 `미처리 실패 패턴` 행을 /harness-check로 갱신.
+  - **dangling 해소**: session-check `⚠ 미처리 실패 패턴 N건 — /harness-check`가 가리키던 스킬이 v3.1.0 이전엔 실존하지 않았음(참조만). 이제 실존.
+  - `versions.md`·`README.md`(자기개선 루프 표에 ③-입력 행) 갱신. bump MINOR(새 스킬 + 알림 규칙, 게이트 구조·불변식 변경 아님).
+
 ## 3.0.0 — 2026-06-18
 - **[MAJOR·게이트 구조 변경] 셸 OAuth 세션 회고(2026-06-18) 6건 반영 — `/harness-retro` 첫 dogfooding.** v2.4.0에 만든 회고→규칙화 플로우로 분류·라우팅·승인·적용. ⚠ 게이트 시퀀스 변경 포함 → **세션 재시작 필수**.
   - **[#2·MAJOR] 7.6 "RED sanity" 단계 신설** — TDD 합의 구간 시퀀스 `7.5 codex RED → **7.6 RED sanity** → 7.7 품질게이트`로 변경. 7.6 = **tester-backend**가 `mvn test-compile` + RED 1회 실행 → "컴파일 OK + 올바른 이유로 FAIL(UOE/컴파일에러 아님)" 확인. 컴파일도 안 되는 RED 스위트가 7.7을 통과해 8/tester-backend에서야 터지던 것을 한 단계 앞에서 차단. `orchestrator.md`(7.6 절+ascii+라우팅 3곳), `tester-backend.md`(RED sanity 모드), `README.md`(mermaid T76) 동기화.

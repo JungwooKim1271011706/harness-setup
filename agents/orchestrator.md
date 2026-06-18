@@ -71,7 +71,7 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 
 | 경고 메시지 | 처리 |
 |------------|------|
-| `⚠ 미처리 실패 패턴 N건` | 사용자에게 하네스 자가 점검 제안 |
+| `⚠ 미처리 실패 패턴 N건` | `/harness-check` 제안 (자가 회고 → /harness-retro 승인 게이트) |
 | `⚠ 스킬 동기화 N일 경과` | 사용자에게 `sync-skills.sh` 실행 제안 |
 | `🔍 HARNESS_FEATURE_SCAN_DUE` | 백그라운드 기능 스캔 1회 throttled 런치 (아래 ## 하네스 기능 스캔 참조) |
 | `🔁 하네스 버전 변경 vX→vY` | 사용자에게 **세션 재시작 안내**(MAJOR=필수, 그 외=권장). 현재 세션은 옛 agent 정의 사용 중. 자동 재시작 금지 — 안내만. (아래 ## 하네스 버전 관리 참조) |
@@ -569,6 +569,15 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - 머신 한정 사실(이 PC의 경로·임시 상태)은 wiki가 아니라 auto-memory. 설계 전문은 `docs/` 링크만.
 - **advisory** — 자동 커밋 금지. 사용자 승인 시에만 finalizer가 함께 커밋한다.
 
+## 하네스 운영 자가 회고 (post_commit 자가점검)
+
+wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다: **"이번 워크플로에 운영 고통이 있었나?"** — 과다 루프(LOOP ≥2/3, 결국 PASS여도)·게이트 escalation·출력/런타임 실패(codex hang 폴백·환경 FAIL·세션 한도 사망)·설계 반려 반복(DESIGN_MISMATCH 재게이트 ≥2).
+
+- 신호 중 **하나라도** 떴으면 → `/harness-check`를 Skill 도구로 호출(신호 수집 → 개선 후보 → `/harness-retro` 위임 → 승인 노티). 신호 0건이면 조용히 넘어간다.
+- **탐지=자동, 적용=사람 승인.** `/harness-check`는 후보·초안까지만 — 적용은 `/harness-retro`의 승인 게이트 뒤. 자기개선 루프 ③의 **입력 자동 생성**(사람이 회고를 안 가져와도 하네스가 스스로 고통을 잡아냄).
+- 신호 정의·절차는 `/harness-check` 스킬이 SSOT — 여기서 재서술하지 않는다(중복금지).
+- 외부요인(세션 토큰 한도 등) 1회성은 관찰만, 규칙화 안 함(YAGNI).
+
 ## 작업 컨텍스트 보존 (context-save / context-restore)
 
 세션 끊김에 대비해 두 시점에 `/context-save`를 Skill 도구로 자동 호출한다.
@@ -756,14 +765,11 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 > Write 도구는 MEMORY 디렉터리 파일 작성 용도로만 사용한다. 소스 코드 및 에이전트 md 수정에 사용 금지.
 
 
-## 하네스 자가 점검
+## 하네스 자가 점검 (→ /harness-check)
 
-사용자가 점검을 요청하거나 자가복구 트리거가 발동하면 아래 절차로 수행한다.
+사용자가 "하네스 자가 점검"을 요청하거나 자가복구 트리거(동일 영역 `failure_` 2건+, 또는 post_commit 운영 고통 감지)가 발동하면 **`/harness-check` 스킬을 호출**한다. 절차(운영 고통 신호 수집 → 개선 후보 변환 → `/harness-retro` 위임 → 승인 노티)는 그 스킬이 SSOT.
 
-1. MEMORY 디렉터리의 `failure_*` 파일 전체 읽기
-2. 반복 패턴 식별 (동일 영역에서 2회 이상 실패한 항목)
-3. 패턴별 에이전트 md 갱신 제안 출력
-4. 사용자 승인 후 해당 에이전트 md 수정
+- 옛 경로(`failure_` 읽고 agent md 직접 제안·수정)는 `/harness-check` + `/harness-retro`로 대체됐다. 자가점검 산출은 반드시 `/harness-retro`의 분류·bump추론·승인 게이트를 거친다(agent md 직접 수정 금지).
 
 ## 출력 책임
 - 각 단계 시작/종료만 짧게 보고
