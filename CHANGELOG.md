@@ -3,6 +3,15 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.2.0 — 2026-06-19
+- **orchestrator.md 문서 분리 (비대화 해소 + drift 방지).** GPT 지적("orchestrator가 하는 일이 너무 많다")을 검토 → 실행 부하가 아니라 **프롬프트 부하**(885줄이 매 세션 시스템프롬프트로 로드 → 컨텍스트 세금 + 규칙 희석)가 문제로 판정. 에이전트 분리 불가(메인스레드 단일)이므로 **트리거-조건부 절차/시각자료를 on-demand playbook으로 분리**, 항상 쓰는 라우팅 뇌만 인라인 유지.
+  - 신설 `docs/playbook-harness-ops.md`(기능스캔·회고반영·버전관리), `docs/playbook-design-mode.md`(설계모드·WI 게이트·템플릿), `docs/playbook-tdd.md`(TDD 7a~8 상세), `docs/routing-map.md`(전체 흐름 ASCII). orchestrator.md엔 트리거+요지+Read 지시 스텁만 남김.
+  - `orchestrator.md`: codex 호출 가드 압축(기계강제 detail → 1블록, 실패신호·폴백 라우팅·백스톱은 인라인 유지). `## 분리 문서 (버전 동기 대상)` 매니페스트 신설(4파일 매핑 + drift 방지 규칙). 세션 경고 테이블·내부 참조 갱신.
+  - **drift 방지 (사용자 요청)**: 분리 문서는 orchestrator.md와 한 몸. `finalizer.md ## 하네스 버전 bump 의식`에 **"분리 문서 정합성 점검"(1.5단계)** 추가 — orchestrator.md 라우팅/게이트/시퀀스/WI 템플릿 변경 시 대응 playbook 동기 여부를 기계 체크리스트로 대조, stale하면 자동커밋 금지·보고.
+  - 라우팅 뇌(모드판정·0단계·3트랙·설계패널 게이트·승인·FAIL분기·codex 가드)는 **인라인 유지** — 추출 안 함(매 턴 필요 + 게이트 판정은 orchestrator-only). 거버넌스 불변식·게이트 구조 변경 없음 → bump MINOR.
+  - **[감사 후속] 이식성 버그 수정**: Workflow `scriptPath`/`args` 경로의 하드코딩 절대경로 `C:/workspace/scourt/sb/.claude/...`(원저작 프로젝트 잔재 — 이 repo도 배포본도 아닌 제3 경로)를 **프로젝트 루트 기준 상대경로** `.claude/...`로 일반화(`orchestrator.md` 설계패널 + `playbook-harness-ops.md` 기능스캔). 다른 머신·프로젝트에서 Workflow 런치 실패하던 것 해소.
+  - **[감사 후속] README 정합**: 구조표에 분리 동작문서(playbook-*·routing-map) 명시. bump 규칙에 "`docs/playbook-*`·`routing-map`은 순수문서 예외 = 동작문서라 bump 대상" 카브아웃 추가(v3.2.0 분리로 생긴 "docs만=bump아님" 모순 해소).
+
 ## 3.1.0 — 2026-06-18
 - **하네스 운영 자가 회고 — `/harness-check` 스킬 신설.** 자기개선 루프 ③ 규칙화의 **입력을 자동 생성**: 사람이 회고를 가져오지 않아도, 하네스가 자기 운영 고통을 스스로 탐지해 `/harness-retro`에 먹인다. (사용자 요청: "하네스가 돌면서 겪은 실패·과다 루프를 스스로 회고해 개선사항을 사용자에게 승인 노티")
   - `skills/harness-check/SKILL.md`(repo SSOT): 운영 고통 신호 4종(과다 루프 LOOP≥2/3·게이트 escalation·출력/런타임 실패·설계 반려 반복) 수집 → 개선 후보 변환 → `/harness-retro` 위임 → 승인 노티. **탐지=자동, 적용=사람 승인**(불변식 유지).

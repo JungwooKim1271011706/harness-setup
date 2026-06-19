@@ -14,8 +14,10 @@
 # 대상 경로: <module>/src/test/** (표준 Maven 테스트 레이아웃, 실측 확인).
 # 차단 시 exit 2 + stderr → developer가 사유 받고 구현으로 복귀(테스트 약화 차단).
 #
-# 알려진 구멍(v1, #8과 동일 계열): Bash sed -i/tee 우회는 Edit매처에 안 걸림(백로그 #13).
-#   현실 트리거 낮아 v1 제외. 필요 시 block-orchestrator-exec.sh(Bash 훅) 확장.
+# 알려진 구멍(v1, #8과 동일 계열): Bash 내부쓰기(sed -i/tee/cp/> 리다이렉트/python·node
+#   write)는 Edit/Write/MultiEdit 매처에 안 걸림(백로그 #13=구멍, #14=적극차단 훅 후보).
+#   현실 트리거 낮아 v1 제외. 적극차단 시 PreToolUse(Bash) 훅이 명령 문자열을 스캔해
+#   보호경로 대상 쓰기 동사를 차단(block-orchestrator-exec.sh 계열 확장). MAJOR(거버넌스).
 
 input=$(cat)
 

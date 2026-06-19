@@ -104,6 +104,10 @@ memory: project
 
 ### 절차
 1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석).
+1.5. **분리 문서 정합성 점검 (drift 방지 — orchestrator.md 변경 커밋 시 필수)**: orchestrator.md는 트리거-조건부 절차를 `docs/playbook-*.md` + `docs/routing-map.md`로 분리한다(목록·매핑: `orchestrator.md ## 분리 문서`). 이 커밋이 orchestrator.md의 **라우팅·게이트·시퀀스·WI 템플릿**을 건드렸으면, 대응 playbook이 같은 변경을 반영했는지 대조한다.
+   - 매핑: 메타운영 절차 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`.
+   - 한쪽만 바뀌어 stale하면 **자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(분리 문서는 orchestrator.md와 한 몸). 분리 문서만 바뀐 커밋도 bump 대상(추적 범위 포함).
+   - orchestrator.md를 안 건드린 커밋이면 이 단계 스킵.
 2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(글로벌→로컬 미러, 네트워크 0).
    - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/learning-gate skills/grill-with-docs`.
    - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(orchestrator.md가 트리거 문구를 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.

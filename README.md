@@ -140,7 +140,7 @@ git -C .claude pull origin main
 
 - **SSOT**: `.claude/VERSION`. 변경 이력은 `CHANGELOG.md`.
 - **drift 안내**: 세션은 시작 시점 하네스(특히 agent md·settings)를 메모리에 들고 간다. 세션 도중 하네스가 갱신되면(다른 세션이 pull/커밋) `session-check.sh` 훅이 compact/resume 시 버전 차이를 감지해 **세션 재시작을 안내**한다(MAJOR=필수, 그 외=권장). 자동 변형 없음 — 순수 안내.
-- **bump 주체**: 하네스 **동작**(agent md 규칙·훅·settings·스킬)을 바꾸는 커밋에서 `finalizer`가 VERSION bump + CHANGELOG 갱신 + `sync-skills.sh` 동반 실행. 순수 문서(README/docs)만 바꾼 커밋은 bump 대상 아님.
+- **bump 주체**: 하네스 **동작**(agent md 규칙·훅·settings·스킬)을 바꾸는 커밋에서 `finalizer`가 VERSION bump + CHANGELOG 갱신 + `sync-skills.sh` 동반 실행. 순수 문서(README/순수 설계 docs)만 바꾼 커밋은 bump 대상 아님. ⚠ 단 `docs/playbook-*.md`·`docs/routing-map.md`는 orchestrator.md에서 분리한 **동작 문서**(라우팅 뇌 외부화분)라 bump 대상 — `finalizer`의 "분리 문서 정합성 점검"이 동기 강제.
 - 설계 전문: `docs/harness-versioning.md`.
 
 ## 구조
@@ -152,7 +152,7 @@ git -C .claude pull origin main
 | `hooks/` | 세션 점검 훅 | track |
 | `settings.json` | 공유 설정 | track |
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |
-| `docs/` | 설계 문서 (ADR·하네스 버전관리 등) | track |
+| `docs/` | 설계 문서(ADR·하네스 버전관리 등) + **orchestrator 분리 동작문서**(`playbook-harness-ops/design-mode/tdd.md`·`routing-map.md` — v3.2.0, on-demand Read) | track |
 | `wiki/` | 하네스 운영 지식·gotcha (엔티티 페이지+`[[링크]]`, 카파시 LLM wiki 패턴). 작성/라우팅 규칙은 `wiki/_schema.md` | track |
 | `rules/` | 프로젝트별 코딩 규칙 (rule-maker 생성) | ignore |
 | `agent-memory/` | 프로젝트별 메모리 (auto-memory, 머신로컬·휴대 안 됨) | ignore |
