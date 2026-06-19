@@ -173,7 +173,7 @@ memory: project
    - 워크트리/브랜치 식별: `git rev-parse --abbrev-ref HEAD` + 현재 worktree 경로(병렬 식별용).
    - 변경 모듈·파일: `git diff --cached --name-only`(경로 첫 세그먼트 모듈 매핑).
    - 기능 식별: 이번 트랙 feature 문서명(`docs/features/`) — 단순수정 트랙은 feature 문서 없음 → 원 요청 1줄.
-2. **자동 커버 식별**: tester가 **실제로 돌린** 변경검증 PASS 항목(단위 + L1 컨텍스트 기동). = 사람이 다시 안 봐도 되는 것.
+2. **자동 커버 식별**: tester가 **실제로 돌린** 변경검증 PASS 항목(단위 + L1 컨텍스트 기동). **+ `/qa-only`가 PASS한 실기동 UI 흐름**(UI 트랙에서 발동·PASS한 경우). = 사람이 다시 안 봐도 되는 것. qa-only가 스킵(URL 부재 등)됐으면 그 표면은 자동커버 아님 → 사람E2E에 남긴다.
 3. **사람 E2E 필요 식별**: 자동이 못 본 것(실기동 UI/통합 동작). oracle:
    - 신규기능/고복잡도 = **feature 문서 요구사항**.
    - 단순수정 = **원 요청**(oracle 빈약 — 단계표는 채우되 추출 못한 값은 `<...>` 정직 표기).

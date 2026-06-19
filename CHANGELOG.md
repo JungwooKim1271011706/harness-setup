@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.13.0 — 2026-06-20
+- **live-UI 자동 QA 도입 — `/qa-only`를 검증 체인에 추가 (사람E2E 부담 축소).** 자동 JUnit이 못 보는 실기동 UI를 사람E2E 점검표에만 의존하던 것을 gstack `/qa-only`(report-only)로 부분 자동화. orchestrator 라우팅 변경 → bump MINOR.
+  - **발동**: UI 트랙(프론트/혼합) + servable URL 확보 시, tester-frontend PASS 직후. URL 부재·앱 미기동·gstack 미설치 = 스킵(비차단, best-effort — L2 풀 런타임 무겁고 환경의존). URL 출처: `review/scenarios.local.md` 기동 URL 또는 tester-frontend 기동.
+  - **거버넌스**: report-only라 스킬 직접 사용(design-reviewer가 `/design-review` fix-loop 충돌로 루브릭만 빌린 것과 대비). 발견=/review 발견과 동일 차단형 취급 → developer-frontend 재작업, 수정분만 tester 재검증. 자동수정 변형 `/qa`는 충돌이라 **금지**.
+  - **연쇄 정합**: `orchestrator.md`(프론트·혼합 흐름 + 검증단계 짝 상세 + 라우팅표 행), `routing-map.md`(PASS 분기), `finalizer.md`(사람E2E 자동커버에 qa-only PASS 흐름 차감), `CONTEXT.md`(회귀 oracle 이원화에 live-UI 부분 자동화 명시).
+
 ## 3.12.0 — 2026-06-20
 - **사람 E2E 점검표 비밀 누출 가드 — gstack-redact 비차단 도구화 (P1①).** finalizer 사람E2E 점검표의 "민감값 평문 금지"가 LLM 기억 의존 규칙이었음 → `gstack-redact`로 출력 직전 자동 스캔. agent md 규칙 추가 → bump MINOR.
   - **`finalizer.md` ## 사람 E2E 점검 안내**: 절차에 단계 5(비밀 스캔) 신설. 렌더된 점검표를 `gstack-redact --json --repo-visibility private` 통과 → exit 2(MEDIUM/PII)는 `--auto-redact`로 치환본 출력, exit 3(HIGH/라이브 비밀)은 수동 `<...>` 치환 + WARN 보고(소스 하드코딩 의심). **커밋 비차단 유지**(채워진 점검표는 리포트 텍스트라 git 미포함). redact 실패는 가드만 생략.

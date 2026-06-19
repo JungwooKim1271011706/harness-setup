@@ -64,6 +64,8 @@
       │
       ├── PASS → [design-reviewer: 목업 게이트 발동 시만, report-only→developer]
       │               │
+      │         [/qa-only: UI태그+servable URL 시, report-only→developer / URL부재=스킵]
+      │               │
       │    /verify-implementation (verify-* 등록 시)
       │               │
       │    /review(code-reviewer) ∥ /codex review (병렬, 필수)
