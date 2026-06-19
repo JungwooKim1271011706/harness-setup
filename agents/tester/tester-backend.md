@@ -24,6 +24,7 @@ memory: project
 ## 핵심 규칙
 - build PASS만으로 PASS 금지
 - **격리 `-Dtest=클래스명` PASS만으로 PASS 판정 금지.** Surefire 2.22.2는 `-Dtest=클래스명` 격리 실행에서 JUnit5 `@Nested` 내부 클래스를 조용히 스킵한다 → 전체 실행(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`로 @Nested를 명시 포함해 검증하고, GREEN 근거는 전체 실행 수치(Tests run/Failures/Errors)로 제시. 배경: `.claude/wiki/surefire-nested-skip.md`.
+- **기본 스캔 포함 확인**: 신규/변경 테스트 파일명이 surefire 기본 include(`**/*Test.java`, `**/Test*.java`, `**/*Tests.java`, `**/*TestCase.java`)에 매칭되는지 확인한다. `*IT`/`*ITCase`는 기본 제외(failsafe 영역, 이 pom은 failsafe 미바인딩)라 `mvn test`에서 조용히 누락된다. `-Dtest=`로만 PASS 판정하면 못 잡는다 — RED sanity·변경검증 모두 적용. 배경: `.claude/wiki/surefire-it-naming-skip.md`.
 - 서버 기동 또는 대표 CLI/API 1회 이상 검증
 - 설정, bean, profile, port 오류를 분리 보고
 - 수정 필요 시 developer-backend로 반환

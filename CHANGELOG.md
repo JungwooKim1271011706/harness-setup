@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.10.0 — 2026-06-19
+- **feature-12 oauth-guard 버그수정 회고 5건 반영 — tester 규칙 + 운영 wiki 3건 (harness-retro).** feature-12 bug-fix의 /harness-check 자동 회고(출처 9cf2ae4)에서 도출. 거버넌스 불변식 불변(agent md 규칙 추가·wiki 신설) → bump MINOR. (feature-1-harness-ing 브랜치 머지 — 원 라벨 v3.8.0이 main v3.8/3.9 선점과 충돌해 **v3.10.0 재라벨**.)
+  - **`tester-backend.md` ## 핵심 규칙**: `*IT`/`*ITCase` 기본 스캔 누락 가드 추가. surefire 기본 include 4패턴 미매칭 시 `mvn test` 무음 누락 → `-Dtest=`만 PASS 판정 금지. 배경 `wiki/surefire-it-naming-skip.md`(신설, [[surefire-nested-skip]] 상호링크).
+  - **`tester-design.md` RED 규칙 R7/R8 추가** + `playbook-tdd.md` 주입 표기 `(R1~R4)`→`(R1~R8)`(기존 stale 정정). R7=메시지 단언 프로덕션 소스 verbatim 복사(현지화 추측 금지), R8=기존 테스트파일 보존(통째 replace 금지, git diff 점검).
+  - **운영 wiki 신설**: `codex-python-shim-windows.md`(codex --json이 Windows Store python shim 선택 → exit 101, PYTHON_CMD 명시 + 차단훅 mvn 오탐 회피 노트), `spring-profile-bean-eval-timing.md`(@Profile 등록시점 평가 → ApplicationContextRunner withPropertyValues로). index 등록.
+  - **reject**: C4 차단훅 heredoc mvn 오탐 — `block-orchestrator-exec.sh`는 이미 워드바운더리 매칭, 본문 안전제외엔 쉘파싱 필요(fragile+우회위험). 호출측 리터럴 회피로 대체.
+
 ## 3.9.0 — 2026-06-19
 - **회고 inbox 알림 — 매 프롬프트(UserPromptSubmit) 감지, dev clone 한정 (사용자 요청 + v3.8.0 §7 정정).** v3.8.0이 inbox 넛지를 `session-check.sh`(SessionStart)에 넣었으나 **실효 없음이 드러남**: dev clone은 자체 `.claude/` 서브디렉터리가 없어 repo 훅이 세션에 안 걸리고(글로벌 `~/.claude`로만 동작), 소비자 세션은 origin 게이트로 막혀 양쪽 다 안 떴다. 사용자 의도 = "dev clone 띄워두고 매 상호작용마다 감지·알림, 모아서 일괄 적용". → 비차단 훅 신설 → bump MINOR.
   - **신규 `hooks/harness-inbox-nudge.sh`** (비차단): `UserPromptSubmit`마다 inbox pending 스캔 → `additionalContext`로 "미처리 N건" 알림. **origin=harness-setup(dev clone)일 때만** 출력 — 글로벌 등록이라 모든 세션서 돌지만 제품/worktree 세션은 침묵(적용 불가 자리라 오인 방지).
@@ -15,7 +22,7 @@ semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
   - **`~/.claude/harness-retro-inbox/`** = 두 repo(harness-setup·gitlab 제품) 밖 중립 드롭박스. 같은 머신 모든 세션 공유.
   - **`harness-check/SKILL.md`** Step 2.5: 후보를 inbox 파일(`<UTC-ts>__<slug>.md`)로 **자동 드롭**(운반, 적용 아님). dev clone 세션이면 바로 `/harness-retro` 위임, 소비자 세션이면 드롭+안내까지.
   - **`harness-retro/SKILL.md`**: 무인자 호출 = **inbox 모드**(pending 스캔·드레인, 복붙 0). 적용 후 파일을 `applied/`·`rejected/`로 이동 → 상태 영속 + **원장 드리프트 해소**(딴 세션 로컬원장 draft ↔ dev backlog applied 단일 체인화).
-  - **`session-check.sh`** §7: 세션 시작 시 inbox pending N건 넛지 — **dev clone(origin=harness-setup)에서만**(소비자 세션엔 적용 불가하니 오인 방지). 비차단 안내.
+  - **`session-check.sh`** §7: 세션 시작 시 inbox pending N건 넛지 — **dev clone(origin=harness-setup)에서만**(소비자 세션엔 적용 불가하니 오인 방지). 비차단 안내. (v3.9.0서 UserPromptSubmit로 이전·제거.)
   - **한계(정직)**: 크로스머신은 `~/.claude` 비공유 → 그 경우만 수동 복붙 폴백. 같은 머신 가정.
 
 ## 3.7.0 — 2026-06-19
