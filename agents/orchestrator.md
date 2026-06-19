@@ -85,7 +85,7 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 | 경고 메시지 | 처리 |
 |------------|------|
 | `⚠ 미처리 실패 패턴 N건` | `/harness-check` 제안 (자가 회고 → /harness-retro 승인 게이트) |
-| `⚠ 스킬 동기화 N일 경과` | 사용자에게 `sync-skills.sh` 실행 제안 |
+| `⚠ gstack 마지막 갱신 N일 경과` | 사용자에게 `/gstack-upgrade` 실행 제안 |
 | `🔍 HARNESS_FEATURE_SCAN_DUE` | 백그라운드 기능 스캔 1회 throttled 런치 (절차: `.claude/docs/playbook-harness-ops.md`) |
 | `🔁 하네스 버전 변경 vX→vY` | 사용자에게 **세션 재시작 안내**(MAJOR=필수, 그 외=권장). 현재 세션은 옛 agent 정의 사용 중. 자동 재시작 금지 — 안내만. (`.claude/docs/playbook-harness-ops.md`) |
 

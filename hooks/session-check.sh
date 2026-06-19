@@ -46,25 +46,19 @@ if [ -d "$CHECKPOINT_DIR" ]; then
   fi
 fi
 
-# 3) 스킬 동기화 날짜 체크 (versions.md 기준 7일 초과 시 경고)
-VERSIONS="$PROJECT_DIR/.claude/skills/versions.md"
-if [ -f "$VERSIONS" ]; then
-  LAST_SYNC=$(grep -o '[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}' "$VERSIONS" | head -1)
-  if [ -n "$LAST_SYNC" ]; then
-    TODAY=$(date +%Y-%m-%d)
-    # macOS(date -j) / Linux(date -d) 모두 지원
-    if date --version 2>/dev/null | grep -q GNU; then
-      TODAY_TS=$(date -d "$TODAY" +%s 2>/dev/null)
-      SYNC_TS=$(date -d "$LAST_SYNC" +%s 2>/dev/null)
-    else
-      TODAY_TS=$(date -j -f "%Y-%m-%d" "$TODAY" +%s 2>/dev/null)
-      SYNC_TS=$(date -j -f "%Y-%m-%d" "$LAST_SYNC" +%s 2>/dev/null)
-    fi
-    if [ -n "$TODAY_TS" ] && [ -n "$SYNC_TS" ]; then
-      DAYS=$(( (TODAY_TS - SYNC_TS) / 86400 ))
-      if [ "$DAYS" -ge 7 ]; then
-        MESSAGES+=("⚠ 스킬 동기화 ${DAYS}일 경과 (마지막: ${LAST_SYNC}) — sync-skills.sh 실행 권장")
-      fi
+# 3) gstack staleness 체크 (마지막 갱신 후 7일 초과 시 gstack-upgrade 권장)
+#    네트워크 0 — gstack VERSION 파일 mtime 기준(gstack-upgrade=git pull 시 갱신됨).
+#    자체 스킬은 repo SSOT라 sync 넛지 불요(v3.11.0). 외부 grill-with-docs는 수동 게이트라 시간 넛지 안 함.
+GSTACK_VER_FILE="${HOME}/.claude/skills/gstack/VERSION"
+if [ -f "$GSTACK_VER_FILE" ]; then
+  GVER=$(grep -oE '[0-9]+(\.[0-9]+)+' "$GSTACK_VER_FILE" | head -1)
+  # mtime epoch: GNU(stat -c) / BSD·macOS(stat -f) fallback
+  GTS=$(stat -c %Y "$GSTACK_VER_FILE" 2>/dev/null || stat -f %m "$GSTACK_VER_FILE" 2>/dev/null)
+  NOW_TS=$(date +%s)
+  if [ -n "$GTS" ] && [ -n "$NOW_TS" ]; then
+    GDAYS=$(( (NOW_TS - GTS) / 86400 ))
+    if [ "$GDAYS" -ge 7 ]; then
+      MESSAGES+=("⚠ gstack 마지막 갱신 ${GDAYS}일 경과 (v${GVER:-?}) — /gstack-upgrade 권장")
     fi
   fi
 fi

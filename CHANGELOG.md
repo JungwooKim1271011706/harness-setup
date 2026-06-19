@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.11.0 — 2026-06-20
+- **스킬 sync 메커니즘 현실 정합 — sync 대상을 외부 제3자 스킬만으로 trim + gstack staleness 넛지 신설 (사용자 진단 세션).** sync-skills.sh SOURCES 4개가 전부 이 PC에서 phantom(글로벌 원본 부재)임이 드러남: co-plan·pair-impl·learning-gate는 **자체 authored = repo가 origin(SSOT)** 이라 받아올 상류가 없고, grill-with-docs(Matt Pocock 외부)만 실제 sync 대상. 거버넌스 불변식 불변(스크립트/넛지 정합) → bump MINOR.
+  - **`sync-skills.sh`**: SOURCES에서 자작 3개(co-plan·pair-impl·learning-gate) 제거, 외부 grill-with-docs 1개만 유지. CRITICAL_SKILLS도 grill만. versions.md 날짜 stamp **sed 버그 수정**(이전 패턴 `**마지막 전체 동기화**:`가 versions.md에 없어 sync 성공해도 날짜 갱신 0 → staleness 신호 영구 고장이었음 → 실제 스탬프 줄 `**마지막 동기화**:`로 정합).
+  - **`session-check.sh §3`**: versions.md 날짜 기반 스킬 sync 넛지(노이즈·고장) 제거 → **gstack staleness 넛지**로 교체. gstack VERSION mtime 7일 초과 시 `/gstack-upgrade` 권장(네트워크 0). 자체 스킬은 SSOT라 sync 넛지 불요, 외부 grill은 수동 게이트라 시간 넛지 안 함.
+  - **연쇄 정합**: `orchestrator.md`(경고 처리 표 스킬sync→gstack), `finalizer.md`(버전bump 의식 critical diff 대상 learning-gate 제거→grill만), `versions.md`(3출처 재구조: 자체 SSOT / 외부 sync / gstack), `README.md`.
+
 ## 3.10.0 — 2026-06-19
 - **feature-12 oauth-guard 버그수정 회고 5건 반영 — tester 규칙 + 운영 wiki 3건 (harness-retro).** feature-12 bug-fix의 /harness-check 자동 회고(출처 9cf2ae4)에서 도출. 거버넌스 불변식 불변(agent md 규칙 추가·wiki 신설) → bump MINOR. (feature-1-harness-ing 브랜치 머지 — 원 라벨 v3.8.0이 main v3.8/3.9 선점과 충돌해 **v3.10.0 재라벨**.)
   - **`tester-backend.md` ## 핵심 규칙**: `*IT`/`*ITCase` 기본 스캔 누락 가드 추가. surefire 기본 include 4패턴 미매칭 시 `mvn test` 무음 누락 → `-Dtest=`만 PASS 판정 금지. 배경 `wiki/surefire-it-naming-skip.md`(신설, [[surefire-nested-skip]] 상호링크).

@@ -120,7 +120,7 @@ codex provider는 **역할 분리**(A2)다: **자동 흐름**(TDD·`/codex revie
 git -C .claude pull origin main
 ```
 
-자체 스킬 동기화는 `bash .claude/skills/sync-skills.sh` (gstack 스킬은 대상 아님 — `gstack-upgrade`로 갱신).
+외부 제3자 스킬 동기화는 `bash .claude/skills/sync-skills.sh` (현재 grill-with-docs 1개). 자체 스킬은 repo가 SSOT라 sync 대상 아님. gstack 스킬은 `gstack-upgrade`로 갱신 — session-check.sh가 staleness 안내.
 
 ## 하네스 자기개선 루프
 

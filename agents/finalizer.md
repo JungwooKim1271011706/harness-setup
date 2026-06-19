@@ -108,9 +108,9 @@ memory: project
    - 매핑: 메타운영 절차 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`.
    - 한쪽만 바뀌어 stale하면 **자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(분리 문서는 orchestrator.md와 한 몸). 분리 문서만 바뀐 커밋도 bump 대상(추적 범위 포함).
    - orchestrator.md를 안 건드린 커밋이면 이 단계 스킵.
-2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(글로벌→로컬 미러, 네트워크 0).
-   - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/learning-gate skills/grill-with-docs`.
-   - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(orchestrator.md가 트리거 문구를 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
+2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(외부 스킬 글로벌→로컬 미러, 네트워크 0). sync 대상은 외부 제3자 스킬뿐(현재 grill-with-docs). 자체 스킬은 repo SSOT라 미동기화(v3.11.0).
+   - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/grill-with-docs`.
+   - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(planner 3종 + orchestrator가 grill 포맷을 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
 3. **VERSION bump**: `.claude/VERSION` 첫 줄 X.Y.Z를 레벨에 맞게 증가.
 4. **CHANGELOG 갱신**: `.claude/CHANGELOG.md` 최상단에 `## X.Y.Z — YYYY-MM-DD` + 변경 요약 1~3줄 추가.
 5. **한 커밋**: 하네스 변경분 + VERSION + CHANGELOG + (non-critical) 스킬 미러 갱신을 한 커밋으로. push는 기존 규칙(사내 products main 직접 push 금지 등).
