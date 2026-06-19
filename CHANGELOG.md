@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.12.0 — 2026-06-20
+- **사람 E2E 점검표 비밀 누출 가드 — gstack-redact 비차단 도구화 (P1①).** finalizer 사람E2E 점검표의 "민감값 평문 금지"가 LLM 기억 의존 규칙이었음 → `gstack-redact`로 출력 직전 자동 스캔. agent md 규칙 추가 → bump MINOR.
+  - **`finalizer.md` ## 사람 E2E 점검 안내**: 절차에 단계 5(비밀 스캔) 신설. 렌더된 점검표를 `gstack-redact --json --repo-visibility private` 통과 → exit 2(MEDIUM/PII)는 `--auto-redact`로 치환본 출력, exit 3(HIGH/라이브 비밀)은 수동 `<...>` 치환 + WARN 보고(소스 하드코딩 의심). **커밋 비차단 유지**(채워진 점검표는 리포트 텍스트라 git 미포함). redact 실패는 가드만 생략.
+  - 불변식: 민감값 평문 금지 규칙을 도구 강제로 승격(기억 의존 제거).
+  - **`review/human-script.template.md`**: 보안요건 c에 redact enforcement 명시(가드 — airtight 아님, 실수 차단용).
+  - 검증: 스모크로 라이브 AWS/OpenAI키=HIGH 포착, 이메일=MEDIUM 자동치환, doc예시/플레이스홀더(`<테스트PW>`)=무시(false positive 없음) 확인. gstack-redact는 PII+라이브 자격증명 탐지(doc-example heuristic으로 예시는 강등).
+
 ## 3.11.0 — 2026-06-20
 - **스킬 sync 메커니즘 현실 정합 — sync 대상을 외부 제3자 스킬만으로 trim + gstack staleness 넛지 신설 (사용자 진단 세션).** sync-skills.sh SOURCES 4개가 전부 이 PC에서 phantom(글로벌 원본 부재)임이 드러남: co-plan·pair-impl·learning-gate는 **자체 authored = repo가 origin(SSOT)** 이라 받아올 상류가 없고, grill-with-docs(Matt Pocock 외부)만 실제 sync 대상. 거버넌스 불변식 불변(스크립트/넛지 정합) → bump MINOR.
   - **`sync-skills.sh`**: SOURCES에서 자작 3개(co-plan·pair-impl·learning-gate) 제거, 외부 grill-with-docs 1개만 유지. CRITICAL_SKILLS도 grill만. versions.md 날짜 stamp **sed 버그 수정**(이전 패턴 `**마지막 전체 동기화**:`가 versions.md에 없어 sync 성공해도 날짜 갱신 0 → staleness 신호 영구 고장이었음 → 실제 스탬프 줄 `**마지막 동기화**:`로 정합).
