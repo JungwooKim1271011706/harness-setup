@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.3.0 — 2026-06-19
+- **harness_pain_2026-06-19 회고 4건 반영 — `/harness-check` 자가회고 → `/harness-retro` 적용.** 출처 세션(authpatch_draft feature-9) 운영 고통 4신호를 규칙으로 승격. 게이트구조·차단훅·거버넌스 불변식 변경 없음 → bump MINOR.
+  - **[#1] RED craft 체크리스트 R5/R6** — `tester-design.md ## RED 보안/negative 테스트 규칙`: (R5) 단언·호출 대상 DTO/메서드는 작성 전 grep 실존확인(유사명 DTO 혼동 → 컴파일에러로 RED 무효 방어 — web `TokenResponse` vs shell `GitLabTokenResponse`). (R6) ArgumentCaptor는 verify() 전용, when()/given() 스텁에 captor 금지(captor-in-when = NPE/무의미 스텁).
+  - **[#2] 변경검증 강화 + verdict 필수** — `tester-{backend,frontend}.md ## 핵심 규칙`: 변경검증 전체실행 금지(수십분/수백클래스 징후 = 스코프 미한정 의심 → 중단·재산정, 전체회귀는 tester-runtime 전담) + 판정 없이 종료 금지(PASS/FAIL/ESCALATION 필수). 근거: 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
+  - **[#3] codex TMP Windows 경로 gotcha 문서화** — 신규 `wiki/codex-tmp-windows-path.md`: gstack-paths TMP_ROOT가 `C:Users`(슬래시 누락)라 mktemp 실패 → /tmp 폴백 1회 재시도 지연. 벤더 수정 금지(sync 대기), 회피만. `wiki/index.md` 등록.
+  - **[#4] planner 핵심 참조대상 실존확인 우선** — `planner/{backend,frontend,high-complexity}.md ## 탐색 규칙`: 계획이 의존하는 메서드/시그니처/시크릿/설정키는 '미확정' 방치 금지, 탐색한도 내 1파일 더 읽어 실존 확인(미확정 핵심항목 = 설계패널 critical 재발견). 근거: 신호4 — readSecret/stubUrl 미확정 방치 → 패널 critical 재발견.
+  - sync-skills 실행(글로벌 소스 미설치 → 미러 변경 0, critical diff 없음). orchestrator.md 미변경 → 분리문서 정합성 점검 스킵.
+
 ## 3.2.0 — 2026-06-19
 - **orchestrator.md 문서 분리 (비대화 해소 + drift 방지).** GPT 지적("orchestrator가 하는 일이 너무 많다")을 검토 → 실행 부하가 아니라 **프롬프트 부하**(885줄이 매 세션 시스템프롬프트로 로드 → 컨텍스트 세금 + 규칙 희석)가 문제로 판정. 에이전트 분리 불가(메인스레드 단일)이므로 **트리거-조건부 절차/시각자료를 on-demand playbook으로 분리**, 항상 쓰는 라우팅 뇌만 인라인 유지.
   - 신설 `docs/playbook-harness-ops.md`(기능스캔·회고반영·버전관리), `docs/playbook-design-mode.md`(설계모드·WI 게이트·템플릿), `docs/playbook-tdd.md`(TDD 7a~8 상세), `docs/routing-map.md`(전체 흐름 ASCII). orchestrator.md엔 트리거+요지+Read 지시 스텁만 남김.

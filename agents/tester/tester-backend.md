@@ -30,6 +30,8 @@ memory: project
 - 근거 부족 시 "미확정"
 - 통합·전체회귀 금지. 단위 + 변경 스코프(직접 호출자)만 검증
 - 기동 검증은 L1 컨텍스트 기동(Spring ApplicationContext 로드 = bean/config wiring)까지만 담당. 변경 스코프에 context 로드 테스트가 있으면 실행해 보고, 없으면 컴파일까지만 확인하고 "L1 공백" 명시(공백 인정). L2 풀 런타임 기동(Tomcat WAR+HTTP)은 전체회귀 부채 또는 사람 검증으로 위임.
+- **변경검증 전체실행 금지.** 실행이 수십 분/수백 클래스 징후면 스코프 미한정을 의심하고 중단→스코프 재산정. 전체회귀는 tester-runtime 전담.
+- **판정(verdict) 없이 종료 금지.** 무거우면 스코프부터 줄인다. PASS/FAIL/ESCALATION 중 하나를 반드시 반환. 근거: harness_pain 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
 
 ## 단위테스트 실행 (skipTests 임시 오버라이드)
 

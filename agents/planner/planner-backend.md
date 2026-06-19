@@ -40,6 +40,7 @@ permissionMode: plan
   - API 계약 영향 범위가 식별된 경우
   - runtime risk를 설명할 수 있는 경우
 - 근거 부족 시 "미확정"으로 남기고 추측 금지
+- **핵심 참조대상은 실존확인 우선.** 계획이 의존하는 메서드/시그니처/시크릿/설정키는 '미확정'으로 남기지 말고 탐색한도 내에서 1파일 더 읽어 실존 확인. 미확정 핵심 항목은 설계패널서 critical로 재발견된다. 근거: harness_pain 신호4 — readSecret/stubUrl 미확정 방치 → 패널 critical 재발견.
 
 ## 모르는 코드 영역 탐색 프로토콜 (zoom-out)
 
