@@ -16,7 +16,9 @@ argument-hint: "[회고 텍스트 또는 회고 파일 경로]"
 
 ## 입력
 - 회고 텍스트(붙여넣기) 또는 회고 파일 경로. 보통 "🔴 우선순위 높음 / 🟡 중간" 형태의 제안 목록.
-- 없으면 사용자에게 회고 텍스트/경로를 요청한다.
+- **inbox 모드(무인자 호출)**: 인자 없이 호출되면 머신글로벌 inbox `~/.claude/harness-retro-inbox/*.md`(pending — `applied/`·`rejected/` 하위 제외)를 전부 읽어 입력으로 삼는다. check가 딴 세션(worktree 등)서 드롭한 후보를 **복붙 없이** 드레인한다. 여러 파일이면 묶어서 한 번에 분류(같은 결함클래스는 통합).
+- 둘 다 없으면(inbox도 비었으면) 사용자에게 회고 텍스트/경로를 요청한다.
+- ⚠ **적용은 dev clone(origin=harness-setup SSOT)에서만**. 소비자 세션(worktree=gitlab 제품 vendoring)은 harness-setup remote가 없어 push 불가 — 거기선 check 드롭까지만, 적용은 dev clone에서.
 
 ## Step 1 — 회고 항목 파싱
 각 제안을 개별 항목으로 분해한다. 항목마다 추출: `title`, 문제(증상), 제안 수정, 제안한 수정 위치(있으면), 근거(인용 failure 메모/사건).
@@ -77,7 +79,8 @@ argument-hint: "[회고 텍스트 또는 회고 파일 경로]"
 2. wiki 페이지 신설 시 `wiki/index.md` 등록 + 관련 페이지 `[[링크]]`.
 3. **finalizer 버전 bump 의식 수행** — `agents/finalizer.md`의 `## 하네스 버전 bump 의식`을 따른다(VERSION bump + CHANGELOG + sync-skills critical diff 게이트). 절차 중복 문서화 금지.
 4. 백로그 원장의 해당 항목 상태 draft→applied(거부분 rejected).
-5. 한 커밋. push는 사용자 승인 시.
+5. **inbox 모드였으면 처리한 파일 이동**: 적용분 inbox 파일은 `~/.claude/harness-retro-inbox/applied/`로, 거부분은 `rejected/`로 옮긴다(`mkdir -p` 후 `mv`). 재처리·중복 방지 + 상태 영속. = 처음 회고가 드러낸 "원장 드리프트"(딴 세션 로컬원장 draft ↔ dev backlog applied)를 단일 체인으로 해소.
+6. 한 커밋. push는 사용자 승인 시.
 
 ## 경계
 - 적용·커밋은 승인 후에만. 초안 단계에서 파일 수정 금지.

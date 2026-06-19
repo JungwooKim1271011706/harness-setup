@@ -34,9 +34,20 @@ argument-hint: "[선택: 특정 실행/영역]"
 각 고통 신호를 회고 항목으로 변환한다(= `/harness-retro` 입력 형식): `title` / 문제(증상: 무엇이 얼마나 비효율적이었나) / 추정 원인 / 제안 개선 방향 / 근거(이번 실행 인용·failure 파일).
 - 근거가 약하면(1회성·외부요인) priority를 낮추거나 제외한다. 예: **세션 한도 사망은 외부 토큰 문제** — 하네스 레버리지가 작으면 규칙화 후보에서 빼고 관찰만 한다(YAGNI).
 
-## Step 3 — /harness-retro에 위임
-변환한 후보를 회고 텍스트로 정리해 **`/harness-retro`를 호출**한다. 분류·라우팅·bump추론·초안·승인요청은 그 스킬이 수행한다(중복 재구현 금지).
-- 후보가 전부 reject(1회성·외부요인)면 `/harness-retro` 호출 없이 "개선 후보 없음 — 관찰 N건만 보고"로 종료.
+## Step 2.5 — inbox 자동 드롭 (transport, 머신글로벌)
+check는 보통 **실작업 세션**(worktree·제품 repo)에서 돈다. 적용 자리(harness-setup SSOT dev clone)와 다른 repo이라 거기서 바로 적용 못 한다. 후보를 복붙 없이 dev clone으로 나르기 위해 **머신글로벌 inbox에 파일로 자동 드롭**한다. 적용이 아니라 **운반** — 탐지 자동의 일부.
+- 경로: `~/.claude/harness-retro-inbox/<UTC타임스탬프>__<프로젝트slug>.md`
+  - 타임스탬프 = `date -u +%Y%m%dT%H%M%SZ` (실세션이라 Bash `date` 사용 가능).
+  - slug = `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`의 `$SLUG`, 없으면 `basename "$PWD"`.
+  - `mkdir -p`로 디렉터리 보장.
+- 내용 = Step 2 변환 회고 텍스트 그대로(= `/harness-retro` 입력 형식) + 프런트매터(`source_session`/`project`/`date`).
+- **중복 방지**: 같은 신호의 pending 파일이 inbox에 이미 있으면 새 파일 만들지 말고 갱신.
+- 두 repo(harness-setup·제품 gitlab) 어디도 안 건드린다 — inbox는 중립지대. 후보 0건이면 드롭도 생략.
+
+## Step 3 — /harness-retro에 위임 (또는 inbox 안내)
+- **dev clone(origin=harness-setup) 세션이면**: 변환 후보로 바로 **`/harness-retro`를 호출**한다. 분류·라우팅·bump추론·초안·승인요청은 그 스킬이 수행(중복 재구현 금지).
+- **실작업 세션(소비자)이면**: 적용 불가하니 retro 호출 안 함. Step 2.5 inbox 드롭 + "dev clone(harness-setup)에서 `/harness-retro`로 처리" 1줄 안내로 끝낸다. inbox에 떨궜으니 dev clone 세션 시작 시 session-check 넛지가 집어준다.
+- 후보가 전부 reject(1회성·외부요인)면 inbox 드롭·retro 호출 없이 "개선 후보 없음 — 관찰 N건만 보고"로 종료.
 
 ## Step 4 — 승인 노티
 `/harness-retro`의 승인 요청을 사용자에게 그대로 띄운다:

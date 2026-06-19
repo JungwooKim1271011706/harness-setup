@@ -145,6 +145,20 @@ elif [ ! -f "${HOME}/.claude/skills/context-save/SKILL.md" ]; then
   MESSAGES+=("⚠ gstack 설치됨·스킬 미등록 — 슬래시 호출(/context-save 등) 불가. 등록: cd ~/.claude/skills/gstack && ./setup --no-prefix")
 fi
 
+# 7) 하네스 회고 inbox pending (dev clone에서만 — 적용 가능한 자리)
+#    inbox는 머신글로벌(~/.claude/harness-retro-inbox). check가 딴 세션서 드롭한 후보.
+#    소비자(worktree=gitlab 제품)엔 안 띄운다 — 거긴 harness-setup remote 없어 적용 불가(오인 방지).
+ORIGIN_URL=$(git -C "$PROJECT_DIR" remote get-url origin 2>/dev/null)
+if printf '%s' "$ORIGIN_URL" | grep -q 'harness-setup'; then
+  INBOX_DIR="${HOME}/.claude/harness-retro-inbox"
+  if [ -d "$INBOX_DIR" ]; then
+    INBOX_PENDING=$(find "$INBOX_DIR" -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$INBOX_PENDING" -gt 0 ]; then
+      MESSAGES+=("🔧 미처리 회고 후보 ${INBOX_PENDING}건 (inbox) — /harness-retro로 분류·승인·적용")
+    fi
+  fi
+fi
+
 # 메시지 없으면 조용히 종료
 if [ ${#MESSAGES[@]} -eq 0 ]; then
   exit 0

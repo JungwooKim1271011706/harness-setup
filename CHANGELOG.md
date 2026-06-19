@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.8.0 — 2026-06-19
+- **회고 inbox 자동화 — check 드롭 / retro 드레인, 머신글로벌 transport (사용자 요청).** 실작업 세션(worktree)서 check가 후보를 만들면 적용 자리(harness-setup SSOT dev clone)와 다른 repo이라 지금껏 **수동 복붙**으로 날랐음. 게다가 worktree `.claude`=gitlab 제품 vendoring이라 harness-setup remote가 없어 거기선 적용·push 불가. 적용 게이트(사람 승인)는 불변 → transport만 자동화 → bump MINOR.
+  - **`~/.claude/harness-retro-inbox/`** = 두 repo(harness-setup·gitlab 제품) 밖 중립 드롭박스. 같은 머신 모든 세션 공유.
+  - **`harness-check/SKILL.md`** Step 2.5: 후보를 inbox 파일(`<UTC-ts>__<slug>.md`)로 **자동 드롭**(운반, 적용 아님). dev clone 세션이면 바로 `/harness-retro` 위임, 소비자 세션이면 드롭+안내까지.
+  - **`harness-retro/SKILL.md`**: 무인자 호출 = **inbox 모드**(pending 스캔·드레인, 복붙 0). 적용 후 파일을 `applied/`·`rejected/`로 이동 → 상태 영속 + **원장 드리프트 해소**(딴 세션 로컬원장 draft ↔ dev backlog applied 단일 체인화).
+  - **`session-check.sh`** §7: 세션 시작 시 inbox pending N건 넛지 — **dev clone(origin=harness-setup)에서만**(소비자 세션엔 적용 불가하니 오인 방지). 비차단 안내.
+  - **한계(정직)**: 크로스머신은 `~/.claude` 비공유 → 그 경우만 수동 복붙 폴백. 같은 머신 가정.
+
 ## 3.7.0 — 2026-06-19
 - **커밋요청 시 사람 E2E 점검 안내 신설 — finalizer (사용자 요청).** 워크트리 병렬 진행 시 "이 변경에서 사람이 직접 봐야 할 게 뭔지"를 놓침. 커밋요청과 함께 **변경 표면 + 자동 커버 vs 사람 E2E 필요**를 짚어준다. 기존 게이트 판정로직 불변(비차단 통지 추가) → bump MINOR.
   - **`finalizer.md` `## 사람 E2E 점검 안내`**: 커밋 직전, **전체회귀 부채 안내와 동일한 비차단 단방향 통지**(출력 후 커밋 무조건 진행, AskUserQuestion·차단 금지). 변경 표면(워크트리/브랜치 식별 + `git diff --cached` 모듈 매핑 + feature 문서명) → 자동 커버(tester 변경검증 PASS) → 사람 E2E 필요(실기동 UI/통합) 단계형 점검표.
