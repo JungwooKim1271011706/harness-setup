@@ -41,6 +41,8 @@ memory: project
 - **(R5) 단언·호출 대상 DTO/메서드는 작성 전 실존 확인(grep).** 유사명 DTO 혼동 금지 — 예: web `TokenResponse`(refresh 필드 없음)와 shell `GitLabTokenResponse` 혼동 시 컴파일에러로 RED 무효. 필드/메서드 존재를 grep으로 확인 후 단언.
 - **(R6) ArgumentCaptor는 verify() 전용.** when()/given() 스텁 인자에 captor 사용 금지(captor-in-when = NPE/무의미 스텁). 스텁은 matcher(eq/any), captor는 호출 후 검증에만.
 - **외부 API 응답 매핑 DTO는 실제 JSON 문자열 ↔ DTO round-trip(`ObjectMapper.readValue`) 단위테스트 1건 필수.** 목킹 `RestTemplate`은 DTO 객체를 직접 반환해 `@JsonProperty`(snake_case) 매핑·헤더 형식을 안 탄다 → 런타임 100% 실패할 필드매핑 통합버그가 단위테스트를 통과하는 구멍을 막는다.
+- **(R7) 메시지 단언은 프로덕션 소스에서 verbatim 복사** — `hasMessageContaining` 등 기대 substring은 실제 프로덕션 메시지 문자열에서 그대로 복사한다. 추측 금지(특히 한국어/현지화 메시지 — 괄호·조사 때문에 영어 추측이 빗나간다). 복사 출처 라인(file:line)을 보고에 남긴다.
+- **(R8) 기존 테스트 파일 보존** — 대상 테스트 파일이 이미 있으면 통째 replace 금지. 기존 케이스를 보존하며 신규 케이스를 append하고, 변경 후 `git diff`로 삭제된 기존 케이스가 없는지 점검한다. 의도적 삭제는 사유를 명시.
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일

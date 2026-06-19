@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.8.0 — 2026-06-19
+- **feature-12 oauth-guard 버그수정 회고 5건 반영 — tester 규칙 + 운영 wiki 3건 (harness-retro).** feature-12 bug-fix의 /harness-check 자동 회고(출처 9cf2ae4)에서 도출. 거버넌스 불변식 불변(agent md 규칙 추가·wiki 신설) → bump MINOR.
+  - **`tester-backend.md` ## 핵심 규칙**: `*IT`/`*ITCase` 기본 스캔 누락 가드 추가. surefire 기본 include 4패턴 미매칭 시 `mvn test` 무음 누락 → `-Dtest=`만 PASS 판정 금지. 배경 `wiki/surefire-it-naming-skip.md`(신설, [[surefire-nested-skip]] 상호링크).
+  - **`tester-design.md` RED 규칙 R7/R8 추가** + `playbook-tdd.md` 주입 표기 `(R1~R4)`→`(R1~R8)`(기존 stale 정정). R7=메시지 단언 프로덕션 소스 verbatim 복사(현지화 추측 금지), R8=기존 테스트파일 보존(통째 replace 금지, git diff 점검).
+  - **운영 wiki 신설**: `codex-python-shim-windows.md`(codex --json이 Windows Store python shim 선택 → exit 101, PYTHON_CMD 명시 + 차단훅 mvn 오탐 회피 노트), `spring-profile-bean-eval-timing.md`(@Profile 등록시점 평가 → ApplicationContextRunner withPropertyValues로). index 등록.
+  - **reject**: C4 차단훅 heredoc mvn 오탐 — `block-orchestrator-exec.sh`는 이미 워드바운더리 매칭, 본문 안전제외엔 쉘파싱 필요(fragile+우회위험). 호출측 리터럴 회피로 대체.
+
 ## 3.7.0 — 2026-06-19
 - **커밋요청 시 사람 E2E 점검 안내 신설 — finalizer (사용자 요청).** 워크트리 병렬 진행 시 "이 변경에서 사람이 직접 봐야 할 게 뭔지"를 놓침. 커밋요청과 함께 **변경 표면 + 자동 커버 vs 사람 E2E 필요**를 짚어준다. 기존 게이트 판정로직 불변(비차단 통지 추가) → bump MINOR.
   - **`finalizer.md` `## 사람 E2E 점검 안내`**: 커밋 직전, **전체회귀 부채 안내와 동일한 비차단 단방향 통지**(출력 후 커밋 무조건 진행, AskUserQuestion·차단 금지). 변경 표면(워크트리/브랜치 식별 + `git diff --cached` 모듈 매핑 + feature 문서명) → 자동 커버(tester 변경검증 PASS) → 사람 E2E 필요(실기동 UI/통합) 단계형 점검표.

@@ -31,7 +31,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - **작성자(codex/tester) ≠ 구현자(developer)** 원칙 엄수
 - codex 실패 시 tester-design 폴백 (실패 신호 정의·무한대기 백스톱은 orchestrator.md `## codex 호출 가드`)
 - codex 호출 시 rule 경로 주입 필수
-- **RED 보안/negative 규칙(R1~R4) + 외부 API DTO JSON round-trip 규칙 주입 필수** — codex가 작성자일 때도 `tester-design.md`의 `## RED 보안/negative 테스트 규칙`을 컨텍스트로 전달한다(공허 단언 방어).
+- **RED 보안/negative 규칙(R1~R8) + 외부 API DTO JSON round-trip 규칙 주입 필수** — codex가 작성자일 때도 `tester-design.md`의 `## RED 보안/negative 테스트 규칙`을 컨텍스트로 전달한다(공허 단언 방어).
 
 ## 7.6 — RED sanity (컴파일 + RED 실행 검증)
 
