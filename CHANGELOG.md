@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.4.0 — 2026-06-19
+- **/review 실행주체 부재 해소 — code-reviewer 서브에이전트 신설 (harness_pain 신호3, feature-10 세션).** orchestrator가 `/review ∥ /codex review` 병렬 시 claude `/review`를 위임할 수단이 없어(general-purpose/code-reviewer subagent_type 부재) 직접 코드대조로 우회하던 문제 — orchestrator 자기검토 = 가짜 2소스. 게이트 구조·불변식 변경 없음 → bump MINOR.
+  - **신규 `agents/reviewer/code-reviewer.md`** (read-only: Read/Glob/Grep/Bash/Skill, 수정권한 없음). 개발을 안 본 fresh 컨텍스트에서 **기존 `/code-review` 스킬 재사용**(0에서 루브릭 신설 안 함) → codex(타모델)와 상관없는 독립 둘째 의견. 보안룰 SSOT(`claude-security-guidance.md`)·rule 경로 Read 주입. `--fix`/`--comment` 금지.
+  - **결정**: 옵션 A 변형(스킬 재사용 + 서브에이전트 래퍼). B(orchestrator 인라인)·C(직접대조 공식화)는 독립성 약화로 기각.
+  - `orchestrator.md`: 라우팅표 실행주체 명시 + `▸ /review 실행주체 (SSOT)` 권위 노트 신설 + flow 라인(고수준 요약·3트랙) + codex 미가용 폴백 문구를 전부 `/review(code-reviewer)`로 정정.
+  - drift 동기: `docs/routing-map.md`(flow), `README.md`(mermaid REV 노드 + `agents/` 구조표에 reviewer 추가).
+  - sync-skills 실행(글로벌 소스 미설치 → 미러 변경 0, critical diff 없음).
+
 ## 3.3.0 — 2026-06-19
 - **harness_pain_2026-06-19 회고 4건 반영 — `/harness-check` 자가회고 → `/harness-retro` 적용.** 출처 세션(authpatch_draft feature-9) 운영 고통 4신호를 규칙으로 승격. 게이트구조·차단훅·거버넌스 불변식 변경 없음 → bump MINOR.
   - **[#1] RED craft 체크리스트 R5/R6** — `tester-design.md ## RED 보안/negative 테스트 규칙`: (R5) 단언·호출 대상 DTO/메서드는 작성 전 grep 실존확인(유사명 DTO 혼동 → 컴파일에러로 RED 무효 방어 — web `TokenResponse` vs shell `GitLabTokenResponse`). (R6) ArgumentCaptor는 verify() 전용, when()/given() 스텁에 captor 금지(captor-in-when = NPE/무의미 스텁).

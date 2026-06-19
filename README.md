@@ -34,7 +34,7 @@ flowchart TD
   POST["tester-backend ∥ tester-frontend<br/>변경검증: 단위+변경스코프1홉+회귀범위+L1 context P1<br/>JUnit skipTests 임시오버라이드 C1-temp"]
   POST --> PF{PASS?}
   PF -->|PASS 변경검증 종료| VER["/verify-implementation 등록시"]
-  VER --> REV["/review ∥ /codex review<br/>스냅샷=변경검증 PASS시점 합집합 N1"]
+  VER --> REV["/review(code-reviewer) ∥ /codex review<br/>스냅샷=변경검증 PASS시점 합집합 N1"]
   REV --> CSO["/cso 인증·권한·암호화시"] --> FIN["finalizer 승인후 커밋 명시경로<br/>커밋직전 전체회귀 부채 비차단 안내(📊/⚠)+state갱신"]
   FIN --> LG["learning-gate post_commit"] --> DONE["완료 보고 / push=승인시"]
 
@@ -147,7 +147,7 @@ git -C .claude pull origin main
 
 | 경로 | 내용 | 추적 |
 |------|------|------|
-| `agents/` | 오케스트레이터·planner·developer·tester·finalizer | track |
+| `agents/` | 오케스트레이터·planner·developer·tester·reviewer(code-reviewer)·finalizer | track |
 | `skills/` | 자체 스킬 + sync 스크립트 (gstack 스킬은 미러 안 함 — 글로벌 의존, §셋업 4) | track |
 | `hooks/` | 세션 점검 훅 | track |
 | `settings.json` | 공유 설정 | track |

@@ -1,4 +1,4 @@
-3.3.0
+3.4.0
 # 하네스 버전 (semver MAJOR.MINOR.PATCH). 이 파일이 SSOT.
 # 첫 줄의 X.Y.Z 만 기계 파싱(session-check.sh). 아래 주석은 사람용.
 #

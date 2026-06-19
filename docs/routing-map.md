@@ -60,7 +60,7 @@
       │
       ├── PASS → /verify-implementation (verify-* 등록 시)
       │               │
-      │    /review ∥ /codex review (병렬, 필수)
+      │    /review(code-reviewer) ∥ /codex review (병렬, 필수)
       │               │
       │    /cso (인증/권한/암호화 변경 시 필수)
       │               │
