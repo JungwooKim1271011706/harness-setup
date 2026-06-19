@@ -4,10 +4,11 @@ semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
 ## 3.13.0 — 2026-06-20
-- **live-UI 자동 QA 도입 — `/qa-only`를 검증 체인에 추가 (사람E2E 부담 축소).** 자동 JUnit이 못 보는 실기동 UI를 사람E2E 점검표에만 의존하던 것을 gstack `/qa-only`(report-only)로 부분 자동화. orchestrator 라우팅 변경 → bump MINOR.
-  - **발동**: UI 트랙(프론트/혼합) + servable URL 확보 시, tester-frontend PASS 직후. URL 부재·앱 미기동·gstack 미설치 = 스킵(비차단, best-effort — L2 풀 런타임 무겁고 환경의존). URL 출처: `review/scenarios.local.md` 기동 URL 또는 tester-frontend 기동.
-  - **거버넌스**: report-only라 스킬 직접 사용(design-reviewer가 `/design-review` fix-loop 충돌로 루브릭만 빌린 것과 대비). 발견=/review 발견과 동일 차단형 취급 → developer-frontend 재작업, 수정분만 tester 재검증. 자동수정 변형 `/qa`는 충돌이라 **금지**.
-  - **연쇄 정합**: `orchestrator.md`(프론트·혼합 흐름 + 검증단계 짝 상세 + 라우팅표 행), `routing-map.md`(PASS 분기), `finalizer.md`(사람E2E 자동커버에 qa-only PASS 흐름 차감), `CONTEXT.md`(회귀 oracle 이원화에 live-UI 부분 자동화 명시).
+- **live-UI QA를 tester-frontend로 귀속 — gstack qa 택소노미를 SSOT Read로 (손복제 drift 제거).** 최초 설계(별도 orchestrator `/qa-only` 단계)가 **tester-frontend와 중복**임이 드러남: tester-frontend가 이미 `$B`(browse) + "gstack QA issue-taxonomy"로 실기동 UI를 report-only 검증 중이고, 그 택소노미를 **손으로 베껴** 둠. → 별도 단계는 잉여라 폐기하고, tester-frontend가 정본 택소노미 파일을 Read하게 정합. 자체 검증 흐름 변경 없음(귀속·SSOT화) → bump MINOR.
+  - **`tester-frontend.md`**: 검증 착수 전 `~/.claude/skills/gstack/qa/references/issue-taxonomy.md`를 Read해 카테고리·페이지별 탐색 체크리스트의 SSOT로 사용(인라인 목록 = CWE/KISA/WCAG·심각도·YAGNI 보강 스냅샷, 파일 최신이면 파일 우선). 부재 시 인라인 폴백. 점수/PASS·FAIL/변경-스코프 한정은 하네스 규칙 유지.
+  - **tester-backend 무관**: 브라우저/UI 없음(JUnit·API). qa-only는 프론트 전용. `/qa`(자동수정) 변형은 거버넌스 충돌이라 미사용 — report-only만.
+  - **정합**: `CONTEXT.md`(회귀 oracle 이원화 — tester-frontend가 택소노미 SSOT로 변경-스코프 UI 부분 자동화), `finalizer.md`(사람E2E 자동커버 = tester-frontend UI 스모크 포함).
+  - 참고: 별도 `/qa-only` 단계는 직전 커밋(38511d0, 동일 v3.13.0 라벨)에서 추가됐다가 본 커밋에서 **revert**(orchestrator 흐름·라우팅표·검증단계 짝, routing-map 노드 원복). VERSION은 3.13.0 유지(같은 날 교정 — 별도 bump 안 함).
 
 ## 3.12.0 — 2026-06-20
 - **사람 E2E 점검표 비밀 누출 가드 — gstack-redact 비차단 도구화 (P1①).** finalizer 사람E2E 점검표의 "민감값 평문 금지"가 LLM 기억 의존 규칙이었음 → `gstack-redact`로 출력 직전 자동 스캔. agent md 규칙 추가 → bump MINOR.

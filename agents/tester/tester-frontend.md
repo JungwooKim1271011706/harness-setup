@@ -21,6 +21,8 @@ memory: project
 - 모듈 경로가 없으면: Glob으로 `.claude/rules/package/**/frontend.md` 탐색 후 전부 Read
 - 읽은 규칙을 기준으로 코드 품질 검증 시 taglib 헤더, i18n, JS 네이밍, CSS 클래스 패턴 준수 여부를 평가한다
 
+**QA 택소노미 SSOT Read (있으면)**: `~/.claude/skills/gstack/qa/references/issue-taxonomy.md`를 Read한다. 이 파일이 카테고리 목록(Visual/Functional/UX/Content/Performance/Console/Accessibility)과 **페이지별 탐색 체크리스트**의 정본(SSOT)이다 — 아래 ## 검증 영역의 인라인 목록은 이 파일을 하네스용으로 보강(CWE/KISA/WCAG 매핑·심각도·YAGNI)한 스냅샷이므로, 파일이 최신이면 **파일 기준을 우선**한다(gstack 업글 시 자동 동기화, 손복제 drift 방지). 파일 부재(gstack 미설치) 시 인라인 목록으로 폴백.
+
 ## 핵심 규칙
 - build만으로 PASS 금지
 - 변경 라우트/페이지 실제 진입 확인
@@ -49,6 +51,8 @@ B=~/.claude/skills/gstack/browse/dist/browse  # gstack 글로벌(미설치 시 s
 - 바이너리 없으면 Bash curl/fetch로 대체
 
 ## 검증 영역 (3개, 각 0-10점)
+
+> 카테고리·페이지별 탐색 절차의 정본 = `gstack qa/references/issue-taxonomy.md`(검증 착수 전 Read). 아래 인라인은 그 파일에 하네스 코드매핑(CWE/KISA/WCAG)·심각도·YAGNI를 덧댄 스냅샷이다. `$B`로 변경 라우트를 돌 때 그 파일의 "Per-Page Exploration Checklist"(Visual scan→Interactive→Forms→Navigation→States→Console→Responsive→Auth)를 절차로 삼고, 점수/심각도/PASS·FAIL은 아래 하네스 규칙으로 판정한다. **스코프는 변경 라우트만**(전체앱 X — 그건 전체회귀/사람).
 
 ### 영역 1: 기능 (Functional)
 변경된 페이지/컴포넌트/라우트가 의도한 대로 동작하는지 검증한다.

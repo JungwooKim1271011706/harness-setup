@@ -76,7 +76,7 @@ GitLab 이슈로 등록되는 단일 작업 단위. WI 번호로 설계→생성
 - **자동(tester-runtime)**: oracle = 기존 테스트 스위트. "변경 무관 도메인이 안 깨졌나"를 본다. 새 요구사항 불필요(기대값이 코드에 박힘).
 - **사람(옆집아저씨)**: oracle = feature 문서 요구사항. "변경이 의도대로 + 실제 UI/통합 동작"을 본다. feature 문서는 신규기능·고복잡도 트랙에만 생성된다.
 
-사람 몫의 **실기동 UI 부분은 `/qa-only`(gstack, report-only)가 부분 자동화**한다. UI 트랙에서 servable URL 확보 시 tester-frontend PASS 직후 클릭스루로 자동 점검 → PASS 흐름은 사람E2E 점검표에서 차감, 발견은 developer-frontend로(차단형, /review 발견과 동일 취급). URL 부재·앱 미기동이면 스킵하고 사람이 본다(best-effort, L2 풀 런타임은 무겁고 환경의존). 자동수정 변형 `/qa`는 거버넌스 충돌(수정=developer)이라 금지 — report-only만 쓴다.
+사람 몫의 **변경-스코프 실기동 UI는 tester-frontend가 `$B`(browse) + gstack qa 택소노미로 부분 자동화**한다(변경 라우트 UI 스모크 = 변경검증 책임). 그 택소노미 기준은 `~/.claude/skills/gstack/qa/references/issue-taxonomy.md`를 SSOT로 Read한다(손복제 drift 방지). 전체앱 통합·L2 풀 런타임은 여전히 사람/전체회귀 몫(무겁고 환경의존). 자동수정 변형 `/qa`는 거버넌스 충돌(수정=developer)이라 금지 — report-only 검증만.
 
 ### 반복 ≠ 신뢰 (재실행/교차검증 원칙)
 검증에서 confidence는 "같은 걸 N번"으로 안 늘어난다. 정보가 느는 건 두 경우뿐: ① **상태가 바뀜**(코드 변경 후 재실행=회귀) ② **종류가 다름**(단위→통합, claude→codex, 렌즈 A→렌즈 B). 이 원칙이 하네스 여러 결정의 근거다.
