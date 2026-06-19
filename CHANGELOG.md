@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.7.0 — 2026-06-19
+- **커밋요청 시 사람 E2E 점검 안내 신설 — finalizer (사용자 요청).** 워크트리 병렬 진행 시 "이 변경에서 사람이 직접 봐야 할 게 뭔지"를 놓침. 커밋요청과 함께 **변경 표면 + 자동 커버 vs 사람 E2E 필요**를 짚어준다. 기존 게이트 판정로직 불변(비차단 통지 추가) → bump MINOR.
+  - **`finalizer.md` `## 사람 E2E 점검 안내`**: 커밋 직전, **전체회귀 부채 안내와 동일한 비차단 단방향 통지**(출력 후 커밋 무조건 진행, AskUserQuestion·차단 금지). 변경 표면(워크트리/브랜치 식별 + `git diff --cached` 모듈 매핑 + feature 문서명) → 자동 커버(tester 변경검증 PASS) → 사람 E2E 필요(실기동 UI/통합) 단계형 점검표.
+  - **항상 단계형**: `review/human-script.template.md`(옆집 아저씨) 구조 차용. oracle = feature 문서 요구사항(신규/고복잡도) / 원 요청(단순수정). 추출 못한 라우트·버튼은 `<...>` 정직 플레이스홀더(추측 금지). 민감값 평문 금지(scenarios.local.md 참조).
+  - **근거**: CONTEXT.md `회귀 oracle 이원화`(자동 JUnit이 못 보는 실기동 UI/통합은 사람이 본다)의 풀사이클 적용 — 기존엔 리뷰모드에만 옆집아저씨 스크립트가 있었음.
+
 ## 3.6.0 — 2026-06-19
 - **검증단계 디자인 폴리시 리뷰 — design-reviewer 서브에이전트 신설 (사용자 요청).** 목업 게이트(v3.5.0)는 구현 *전* 시각 확인만이라, 구현 *결과*의 미적 폴리시·목업 정합 QA가 비어 있었음. tester-frontend 영역3은 기능 UI QA(깨짐/WCAG/콘솔)뿐. 기존 게이트 판정로직 불변 → bump MINOR.
   - **신규 `agents/reviewer/design-reviewer.md`** (read-only: Read/Glob/Grep/Bash, Edit/Write 없음 → 물리적 소스 수정 불가, 커밋 안 함). tester-frontend PASS 후 **목업↔구현 드리프트 + 디자이너 시선 폴리시**(간격/위계/일관성/AI슬롭/느린 인터랙션) 리뷰 → 발견→developer-frontend.
