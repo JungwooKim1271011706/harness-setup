@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.9.0 — 2026-06-19
+- **회고 inbox 알림 — 매 프롬프트(UserPromptSubmit) 감지, dev clone 한정 (사용자 요청 + v3.8.0 §7 정정).** v3.8.0이 inbox 넛지를 `session-check.sh`(SessionStart)에 넣었으나 **실효 없음이 드러남**: dev clone은 자체 `.claude/` 서브디렉터리가 없어 repo 훅이 세션에 안 걸리고(글로벌 `~/.claude`로만 동작), 소비자 세션은 origin 게이트로 막혀 양쪽 다 안 떴다. 사용자 의도 = "dev clone 띄워두고 매 상호작용마다 감지·알림, 모아서 일괄 적용". → 비차단 훅 신설 → bump MINOR.
+  - **신규 `hooks/harness-inbox-nudge.sh`** (비차단): `UserPromptSubmit`마다 inbox pending 스캔 → `additionalContext`로 "미처리 N건" 알림. **origin=harness-setup(dev clone)일 때만** 출력 — 글로벌 등록이라 모든 세션서 돌지만 제품/worktree 세션은 침묵(적용 불가 자리라 오인 방지).
+  - **`session-check.sh`**: v3.8.0 §7(SessionStart inbox 넛지) **제거** — dev clone에 안 걸리는 죽은 자리였음. 주석으로 UserPromptSubmit·글로벌 등록 경로 명시.
+  - **머신 셋업(repo 밖)**: 글로벌 `~/.claude/settings.json`에 `UserPromptSubmit` → `bash <dev-clone>/hooks/harness-inbox-nudge.sh` 1회 등록. README "회고 inbox" 절에 문서화. 크로스머신 비공유 한계 정직 명시.
+  - **검증**: pending 0=침묵 / pending N=유효 JSON 알림 / gitlab origin=침묵 확인.
+
 ## 3.8.0 — 2026-06-19
 - **회고 inbox 자동화 — check 드롭 / retro 드레인, 머신글로벌 transport (사용자 요청).** 실작업 세션(worktree)서 check가 후보를 만들면 적용 자리(harness-setup SSOT dev clone)와 다른 repo이라 지금껏 **수동 복붙**으로 날랐음. 게다가 worktree `.claude`=gitlab 제품 vendoring이라 harness-setup remote가 없어 거기선 적용·push 불가. 적용 게이트(사람 승인)는 불변 → transport만 자동화 → bump MINOR.
   - **`~/.claude/harness-retro-inbox/`** = 두 repo(harness-setup·gitlab 제품) 밖 중립 드롭박스. 같은 머신 모든 세션 공유.

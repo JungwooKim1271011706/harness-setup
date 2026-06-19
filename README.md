@@ -136,6 +136,22 @@ git -C .claude pull origin main
 
 ①·③은 백로그(`agent-memory/orchestrator/project_harness_improvement_backlog.md`)를 단일 원장으로 공유한다. ③의 입력은 사람이 회고를 가져오거나(`/harness-retro`), 하네스가 자기 운영 고통을 스스로 탐지해(`/harness-check`) 자동 생성한다 — **탐지·초안은 자동, 적용은 사람 승인**.
 
+### 회고 inbox (transport — check 드롭 / retro 드레인)
+
+③의 입력을 **실작업 세션 → 적용 세션**으로 복붙 없이 나르는 머신글로벌 드롭박스다. 실작업 세션(worktree)의 `.claude`는 제품 gitlab repo가 vendoring한 파일이라 harness-setup remote가 없어 **거기선 적용·push 불가** — 적용은 harness-setup **단독 clone(= dev clone, origin=harness-setup)**에서만 가능하다.
+
+- **드롭(생성)**: `/harness-check`가 후보를 `~/.claude/harness-retro-inbox/<UTC-ts>__<slug>.md`로 자동 기록(운반, 적용 아님). 두 repo 어디도 안 건드리는 중립지대.
+- **드레인(적용)**: dev clone에서 `/harness-retro`를 **무인자**로 호출하면 inbox pending을 전부 읽어 분류·승인·적용하고, 처리분을 `applied/`·`rejected/`로 옮긴다.
+- **알림(설치 필요)**: dev clone은 자체 `.claude/`가 없어 repo 훅이 안 걸린다. 매 프롬프트마다 pending을 알리려면 **글로벌** `~/.claude/settings.json`에 `UserPromptSubmit` 훅으로 `hooks/harness-inbox-nudge.sh`를 등록한다(머신 1회 셋업). 글로벌이라 모든 세션서 돌지만 **origin=harness-setup(dev clone)일 때만** 출력 — 제품 세션은 침묵.
+  ```json
+  // ~/.claude/settings.json  (machine-global, repo 밖 — 같은 머신 가정)
+  "UserPromptSubmit": [
+    { "hooks": [ { "type": "command",
+        "command": "bash \"<dev-clone-절대경로>/hooks/harness-inbox-nudge.sh\"", "timeout": 10 } ] }
+  ]
+  ```
+- **한계(정직)**: inbox는 같은 머신 공유 전제(`~/.claude`). 크로스머신이면 비공유 → 수동 복붙 폴백.
+
 ## 버전 관리
 
 하네스는 `VERSION`(semver `MAJOR.MINOR.PATCH`)으로 동작 버전을 관리한다.
