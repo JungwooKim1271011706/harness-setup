@@ -68,6 +68,7 @@ B=~/.claude/skills/gstack/browse/dist/browse  # gstack 글로벌(미설치 시 s
 
 ### 영역 3: UI/UX
 (gstack QA issue-taxonomy Visual/UX/Console 기준)
+> 범위 경계: 여기는 **기능적** UI QA(깨짐·콘솔·WCAG)다. 미적 폴리시·목업↔구현 정합은 **design-reviewer**(목업 게이트 발동 시 검증단계)가 본다 — 중복 지적 피한다.
 
 **Visual**
 - 레이아웃 깨짐 없음 (요소 겹침, 텍스트 잘림, 가로 스크롤) (WCAG-1.4.10)

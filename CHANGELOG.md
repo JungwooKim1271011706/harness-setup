@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.6.0 — 2026-06-19
+- **검증단계 디자인 폴리시 리뷰 — design-reviewer 서브에이전트 신설 (사용자 요청).** 목업 게이트(v3.5.0)는 구현 *전* 시각 확인만이라, 구현 *결과*의 미적 폴리시·목업 정합 QA가 비어 있었음. tester-frontend 영역3은 기능 UI QA(깨짐/WCAG/콘솔)뿐. 기존 게이트 판정로직 불변 → bump MINOR.
+  - **신규 `agents/reviewer/design-reviewer.md`** (read-only: Read/Glob/Grep/Bash, Edit/Write 없음 → 물리적 소스 수정 불가, 커밋 안 함). tester-frontend PASS 후 **목업↔구현 드리프트 + 디자이너 시선 폴리시**(간격/위계/일관성/AI슬롭/느린 인터랙션) 리뷰 → 발견→developer-frontend.
+  - **거버넌스**: gstack `/design-review` 스킬은 소스 자동수정+원자커밋(CHECKPOINT_MODE)이라 하네스 불변식(수정=developer, 커밋=finalizer) 충돌 → **fix-loop 안 쓰고 루브릭만 재사용**(SKILL.md Read). report-only 강제.
+  - **범위**: 디자인 목업 게이트가 발동한 경우(UI+신규화면)만. 기존화면 소소수정은 tester-frontend 영역3로 충분(중복 금지 경계 명시).
+  - `orchestrator.md`: Agent() 허용목록 + flow(300/302) + 라우팅표 + 목업 게이트 "검증단계 짝" 노트. `tester-frontend.md`: 영역3 범위 경계. drift 동기: `docs/routing-map.md`(검증측), `README.md`(mermaid DR 노드).
+
 ## 3.5.0 — 2026-06-19
 - **설계단계 디자인 목업 게이트 신설 — gstack design-* 통합 (사용자 요청).** "설계에서 디자인도 포함, mock UI 만들어 실제로 보고 진행." 현 하네스는 계획 디자인 리뷰(design-panel UI 페르소나) + 기능 UI QA(tester-frontend)만 있고 **"어떻게 보일지" 시각 확인 부재**가 설계 약점이었음. 게이트 판정로직·거버넌스 불변식 불변(조건부 단계 추가) → bump MINOR(재시작 권장).
   - **새 게이트**: 설계패널 통과 후·사용자 승인 전, **`UI` 태그 + 신규화면/큰 레이아웃**일 때 `/design-shotgun`(변형 N + 비교보드, 사용자 택1) → `/design-html`(택1을 실 HTML로 마감) 파이프라인. orchestrator **직접 실행**(인터랙티브·사용자 대면이라 서브에이전트 위임 안 함).

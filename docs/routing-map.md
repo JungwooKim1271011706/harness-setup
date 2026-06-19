@@ -62,7 +62,9 @@
       ▼
  tester-backend ∥ tester-frontend
       │
-      ├── PASS → /verify-implementation (verify-* 등록 시)
+      ├── PASS → [design-reviewer: 목업 게이트 발동 시만, report-only→developer]
+      │               │
+      │    /verify-implementation (verify-* 등록 시)
       │               │
       │    /review(code-reviewer) ∥ /codex review (병렬, 필수)
       │               │
