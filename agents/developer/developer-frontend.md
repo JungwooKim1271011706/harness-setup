@@ -29,6 +29,7 @@ planner-frontend 결과만 구현한다.
 - 페이지/컴포넌트/store 책임 재정의 금지
 - planner에 없는 API shape 가정 추가 금지
 - 디자인 전면 수정 금지
+- **승인된 디자인 목업이 전달되면 그것을 시각 스펙으로 삼아 구현한다.** 단 목업은 standalone HTML(Pretext, JSP 아님) → 목업 마크업을 복붙·커밋하지 않고 프로젝트 JSP/taglib(`c:`/`fmt:`/`spring:`/`cr:`)·CSS 규칙으로 **변환** 구현한다.
 - 빌드/실행 금지
 - 백엔드 파일(CLAUDE.md Harness Configuration의 `backendRoot` 하위) 수정 금지
 

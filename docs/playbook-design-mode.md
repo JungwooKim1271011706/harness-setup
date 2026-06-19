@@ -13,7 +13,7 @@
 0단계(복잡도·보안·모듈 판정)
 → /office-hours → /grill-with-docs → /co-plan(OOP5)
 → planner-*  → 설계패널 게이트(3~4, 연관기반)
-→ critical 0건 확인 → 사용자 "설계 승인"
+→ critical 0건 확인 → [디자인 목업 게이트: UI태그+신규화면 시 /design-shotgun→/design-html] → 사용자 "설계 승인"
 → [분기] developer로 가지 않고 ↓ WI 출력 게이트로
 ```
 

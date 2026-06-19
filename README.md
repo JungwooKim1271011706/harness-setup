@@ -22,7 +22,8 @@ flowchart TD
   PL --> GATE["설계패널 게이트 최소3/최대4 연관기반(eng항상+cso/design/devex 태그매칭)<br/>eng 렌즈=gstack plan-eng-review(고복잡도 다라운드 loop-until-dry)<br/>PASS 근거 기계심사 C5b<br/>보안 재스캔 태그보정 C2"]
   GATE --> CRIT{critical 0?}
   CRIT -->|NO| PLRE["planner 재작업 루프3"] --> GATE
-  CRIT -->|YES| APV{{"사용자 승인 설계만"}}
+  CRIT -->|YES| MOCK["디자인 목업 게이트<br/>UI태그+신규화면 시 /design-shotgun→/design-html<br/>목업=승인 아티팩트(JSP아님), developer가 JSP변환"]
+  MOCK --> APV{{"사용자 승인 설계+목업"}}
 
   APV --> T7A["7a tester-design ∥ 7b codex<br/>폴백시 교차검증없음 C4"]
   T7A --> T7C["7c diff 합의"] --> T75["7.5 codex RED public행위"] --> T76["7.6 RED sanity<br/>tester-backend: 컴파일+RED실행 올바른이유FAIL"] --> T77["7.7 tester-quality 품질게이트"]

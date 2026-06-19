@@ -3,6 +3,15 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.5.0 — 2026-06-19
+- **설계단계 디자인 목업 게이트 신설 — gstack design-* 통합 (사용자 요청).** "설계에서 디자인도 포함, mock UI 만들어 실제로 보고 진행." 현 하네스는 계획 디자인 리뷰(design-panel UI 페르소나) + 기능 UI QA(tester-frontend)만 있고 **"어떻게 보일지" 시각 확인 부재**가 설계 약점이었음. 게이트 판정로직·거버넌스 불변식 불변(조건부 단계 추가) → bump MINOR(재시작 권장).
+  - **새 게이트**: 설계패널 통과 후·사용자 승인 전, **`UI` 태그 + 신규화면/큰 레이아웃**일 때 `/design-shotgun`(변형 N + 비교보드, 사용자 택1) → `/design-html`(택1을 실 HTML로 마감) 파이프라인. orchestrator **직접 실행**(인터랙티브·사용자 대면이라 서브에이전트 위임 안 함).
+  - **거버넌스 불변식**: 목업 = **승인 아티팩트(볼 용도), 산출물 아님**. standalone HTML(Pretext)이라 JSP 아님 → `developer-frontend`가 승인 목업을 시각 스펙으로 삼아 프로젝트 JSP/taglib/CSS로 **변환** 구현, 목업 마크업 제품 미커밋. 목업 산출은 머신로컬(`~/.gstack/...`)/scratch → bump·전체회귀 부채 무관. gstack 미설치/비대면 세션은 스킵 폴백.
+  - **결정**: shotgun→html 파이프라인 + 트리거(UI+신규화면). design-review(verify-time, 소스 자동수정 = developer/finalizer 독점 거버넌스 충돌)·design-consultation(기존 엔터프라이즈앱 저fit)은 강제 체인서 제외.
+  - `orchestrator.md`: `## 디자인 목업 게이트` 섹션 + 승인 게이트 목업 첨부 + flow(199/300/302) + 라우팅표. `planner-{frontend,high-complexity}.md`: `## 화면 규모` 명시(발동 판단). `developer-frontend.md`: 목업 JSP 변환 규칙.
+  - drift 동기: `docs/routing-map.md`, `docs/playbook-design-mode.md`(설계모드 동일 시퀀스), `README.md`(mermaid MOCK 노드).
+  - **동반 버그픽스(v3.4.0 후속)**: `orchestrator.md` frontmatter `Agent()` 허용목록에 **code-reviewer 누락** 수정 — v3.4.0서 신설했으나 허용목록 미등재로 orchestrator가 spawn 불가였음.
+
 ## 3.4.0 — 2026-06-19
 - **/review 실행주체 부재 해소 — code-reviewer 서브에이전트 신설 (harness_pain 신호3, feature-10 세션).** orchestrator가 `/review ∥ /codex review` 병렬 시 claude `/review`를 위임할 수단이 없어(general-purpose/code-reviewer subagent_type 부재) 직접 코드대조로 우회하던 문제 — orchestrator 자기검토 = 가짜 2소스. 게이트 구조·불변식 변경 없음 → bump MINOR.
   - **신규 `agents/reviewer/code-reviewer.md`** (read-only: Read/Glob/Grep/Bash/Skill, 수정권한 없음). 개발을 안 본 fresh 컨텍스트에서 **기존 `/code-review` 스킬 재사용**(0에서 루브릭 신설 안 함) → codex(타모델)와 상관없는 독립 둘째 의견. 보안룰 SSOT(`claude-security-guidance.md`)·rule 경로 Read 주입. `--fix`/`--comment` 금지.
