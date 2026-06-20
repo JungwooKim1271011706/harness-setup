@@ -139,6 +139,15 @@ elif [ ! -f "${HOME}/.claude/skills/context-save/SKILL.md" ]; then
   MESSAGES+=("⚠ gstack 설치됨·스킬 미등록 — 슬래시 호출(/context-save 등) 불가. 등록: cd ~/.claude/skills/gstack && ./setup --no-prefix")
 fi
 
+# 7) wiki 운영지식 카탈로그 인지 (읽기 트리거 — 작업/디버깅 전 관련 gotcha 참조 유도)
+WIKI_DIR="$PROJECT_DIR/.claude/wiki"
+if [ -d "$WIKI_DIR" ]; then
+  WIKI_COUNT=$(find "$WIKI_DIR" -maxdepth 1 -name '*.md' ! -name '_*' ! -name 'index.md' 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$WIKI_COUNT" -gt 0 ]; then
+    MESSAGES+=("📚 wiki 운영지식 ${WIKI_COUNT}건 (카탈로그: wiki/index.md) — 디버깅·훅·테스트·codex·PATH 작업 전 관련 gotcha 먼저 Grep")
+  fi
+fi
+
 # 회고 inbox pending 알림은 SessionStart가 아니라 UserPromptSubmit(매 프롬프트)로 처리한다.
 #   dev clone은 자체 .claude/가 없어 이 session-check(repo 훅)가 안 걸린다 → 글로벌 등록 필요.
 #   → hooks/harness-inbox-nudge.sh + 글로벌 ~/.claude/settings.json UserPromptSubmit (README §inbox 알림).

@@ -42,6 +42,7 @@ check는 보통 **실작업 세션**(worktree·제품 repo)에서 돈다. 적용
   - `mkdir -p`로 디렉터리 보장.
 - 내용 = Step 2 변환 회고 텍스트 그대로(= `/harness-retro` 입력 형식) + 프런트매터(`source_session`/`project`/`date`).
 - **중복 방지**: 같은 신호의 pending 파일이 inbox에 이미 있으면 새 파일 만들지 말고 갱신.
+- 이 inbox 파일(경로 + 프런트매터)은 이후 `/harness-retro`가 wiki 페이지 `sources`로 참조한다 — 증상/추정원인/제안/근거/관련파일/발생세션이 보존돼야 한다.
 - 두 repo(harness-setup·제품 gitlab) 어디도 안 건드린다 — inbox는 중립지대. 후보 0건이면 드롭도 생략.
 
 ## Step 3 — /harness-retro에 위임 (또는 inbox 안내)

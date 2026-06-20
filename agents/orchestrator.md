@@ -492,6 +492,14 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - 머신 한정 사실(이 PC의 경로·임시 상태)은 wiki가 아니라 auto-memory. 설계 전문은 `docs/` 링크만.
 - **advisory** — 자동 커밋 금지. 사용자 승인 시에만 finalizer가 함께 커밋한다.
 
+## wiki 운영지식 참조 (읽기 — capture의 짝)
+
+capture가 쓰기면 이건 읽기다. 쌓인 wiki가 죽은 지식고가 안 되게 작업 중 **능동 참조**한다.
+
+- **작업 착수 시**: `wiki/index.md` 카탈로그를 인지한다(어떤 gotcha·노하우가 쌓였나). 전체 본문 로드 아님 — 목록만.
+- **디버깅·실패·환경 함정 진입 시 (가장 중요)**: 재디버깅 전에 먼저 `wiki/`를 Grep — "전에 밟은 함정인가?" gotcha 페이지(surefire 무음스킵·codex shim·stale PATH 등)가 정확히 이 순간용이다. 관련 페이지 있으면 Read해서 회피책 적용, **같은 걸 두 번 디버깅하지 않는다**.
+- 형식·라우팅은 `wiki/_schema.md` SSOT — 여기서 재서술 금지(중복금지).
+
 ## 하네스 운영 자가 회고 (post_commit 자가점검)
 
 wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다: **"이번 워크플로에 운영 고통이 있었나?"** — 과다 루프(LOOP ≥2/3, 결국 PASS여도)·게이트 escalation·출력/런타임 실패(codex hang 폴백·환경 FAIL·세션 한도 사망)·설계 반려 반복(DESIGN_MISMATCH 재게이트 ≥2).

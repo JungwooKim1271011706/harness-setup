@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.14.0 — 2026-06-20
+- **source-aware LLM wiki + 읽기 트리거 도입 (capture의 짝).** 기존 wiki는 capture(쓰기)만 트리거되고 ① 페이지에 근거(provenance)가 안 박히고 ② 세션이 쌓인 지식을 보러 가는 읽기 트리거가 약해 죽은 지식고 위험. agent md 규칙 추가 + 비차단 훅 + 스킬 갱신 → bump MINOR. (카파시 LLM wiki 패턴·라우팅·lint 개념은 이미 구현돼 있어 재작성 안 함 — sources 연결 + 읽기 인지만 보강.)
+  - **A. sources 연결**: `wiki/_schema.md` frontmatter에 `sources` 필드 추가(gotcha는 가능한 한 필수, 근거 없으면 invent 금지·"근거 부족" 표시), capture 절차·lint 항목에 sources 규칙 1줄씩. `harness-retro` Step5가 Step1 추출 근거(회고·failure·CHANGELOG·docs·inbox `source_session`)를 페이지 `sources`로 보존 + 같은 결함클래스는 기존 페이지 갱신·sources 병합. `harness-check` Step2.5 inbox 파일이 retro의 sources 소스가 됨을 명시.
+  - **B. 읽기 트리거**: `orchestrator.md`에 "wiki 운영지식 참조(읽기)" 절 신설 — 작업 착수 시 `index.md` 카탈로그 인지, **디버깅·환경 함정 진입 시 재디버깅 전 `wiki/` Grep**(같은 함정 두 번 안 밟기). `session-check.sh` block7 신설 — 세션 시작에 wiki 페이지 수 + 카탈로그 경로 1줄 넛지(소비자 세션 `.claude/wiki` 기준, 항상 노출).
+  - 기존 wiki 페이지 소급 sources는 안 함(근거 invent 위험) — 신규·갱신분부터 적용. 새 스킬·README 보강 없음(YAGNI / 이미 설명됨).
+
 ## 3.13.0 — 2026-06-20
 - **live-UI QA를 tester-frontend로 귀속 — gstack qa 택소노미를 SSOT Read로 (손복제 drift 제거).** 최초 설계(별도 orchestrator `/qa-only` 단계)가 **tester-frontend와 중복**임이 드러남: tester-frontend가 이미 `$B`(browse) + "gstack QA issue-taxonomy"로 실기동 UI를 report-only 검증 중이고, 그 택소노미를 **손으로 베껴** 둠. → 별도 단계는 잉여라 폐기하고, tester-frontend가 정본 택소노미 파일을 Read하게 정합. 자체 검증 흐름 변경 없음(귀속·SSOT화) → bump MINOR.
   - **`tester-frontend.md`**: 검증 착수 전 `~/.claude/skills/gstack/qa/references/issue-taxonomy.md`를 Read해 카테고리·페이지별 탐색 체크리스트의 SSOT로 사용(인라인 목록 = CWE/KISA/WCAG·심각도·YAGNI 보강 스냅샷, 파일 최신이면 파일 우선). 부재 시 인라인 폴백. 점수/PASS·FAIL/변경-스코프 한정은 하네스 규칙 유지.
