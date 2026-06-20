@@ -20,7 +20,7 @@ N=$(find "$INBOX" -maxdepth 1 -name '*.md' -type f 2>/dev/null | wc -l | tr -d '
 
 LIST=$(find "$INBOX" -maxdepth 1 -name '*.md' -type f 2>/dev/null \
   | xargs -n1 basename 2>/dev/null | head -5 | tr '\n' ',' | sed 's/,$//')
-MSG="🔧 하네스 회고 inbox 미처리 ${N}건 (${LIST}) — 모아서 /harness-retro 무인자 호출로 일괄 적용 가능"
+MSG="🔧 하네스 회고 inbox 미처리 ${N}건 (${LIST}) — '하네스 inbox 처리해줘' 요청 시 일괄 적용(dev clone은 /harness-retro 슬래시 미등록 → skills/harness-retro/SKILL.md 절차 실행)"
 
 ESCAPED=$(printf '%s' "$MSG" | sed 's/\\/\\\\/g; s/"/\\"/g')
 printf '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"%s"}}' "$ESCAPED"

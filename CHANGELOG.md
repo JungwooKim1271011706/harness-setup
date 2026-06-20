@@ -3,6 +3,10 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.18.0 — 2026-06-20
+- **inbox 안내문 보정 — dev clone `/harness-retro` 슬래시 미등록 명시.** 넛지·문서가 "dev clone에서 `/harness-retro` 호출"이라 안내했으나, 클코는 슬래시 스킬을 `.claude/skills/`에서만 등록 → harness가 repo 루트(`skills/...`)인 dev clone엔 미등록(소비자 세션의 vendored `.claude/skills/`에선 정상). dangling 슬래시 안내가 혼란 유발. 안내문만 보정(슬래시 억지 등록 안 함 — YAGNI). bump MINOR(넛지 훅·스킬 문구).
+  - `hooks/harness-inbox-nudge.sh`·`skills/harness-check/SKILL.md` Step3·`README.md` §inbox: dev clone은 "'하네스 inbox 처리해줘' 요청 = `skills/harness-retro/SKILL.md` 절차 실행"으로 보정. 소비자 세션은 슬래시 등록됨을 명시.
+
 ## 3.17.0 — 2026-06-20
 - **회고 반영 3건 (다른 세션 post_commit 탐지 + inbox 드레인) — 전부 MINOR, 거버넌스 무영향.** autoPatch 세션 + PR-D2 inbox 후보. C2(stdin)와 inbox 후보1(가용성)이 같은 결함의 두 면이라 **통합**.
   - **A. tester codex 교차검증 신뢰성** (`tester-backend.md`·`tester-frontend.md`·`orchestrator.md`): tester codex 호출이 `codex "..."`(stdin 미리다이렉트)라 "stdin is not a terminal"로 즉시 실패 → tester가 '미설치'로 오인 폴백 → 독립 2번째 소스 조용한 상실. ① 호출형을 `codex exec "..." -s read-only < /dev/null`로 수정. ② 실행조건에 "가용성 = orchestrator SSOT, tester 자기판단 금지, probe 없이 '미설치' 단정 금지" 명문화. ③ orchestrator `## codex 호출 가드`에 「가용성 확정 — orchestrator SSOT」 절 신설(세션 1회 probe → 컨텍스트 주입, 비대화형 표준 호출형 박음). 스코프 축소: session-check.sh probe 주입은 제외(규칙으로 충분, YAGNI).

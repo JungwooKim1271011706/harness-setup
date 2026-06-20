@@ -46,8 +46,8 @@ check는 보통 **실작업 세션**(worktree·제품 repo)에서 돈다. 적용
 - 두 repo(harness-setup·제품 gitlab) 어디도 안 건드린다 — inbox는 중립지대. 후보 0건이면 드롭도 생략.
 
 ## Step 3 — /harness-retro에 위임 (또는 inbox 안내)
-- **dev clone(origin=harness-setup) 세션이면**: 변환 후보로 바로 **`/harness-retro`를 호출**한다. 분류·라우팅·bump추론·초안·승인요청은 그 스킬이 수행(중복 재구현 금지).
-- **실작업 세션(소비자)이면**: 적용 불가하니 retro 호출 안 함. Step 2.5 inbox 드롭 + "dev clone(harness-setup)에서 `/harness-retro`로 처리" 1줄 안내로 끝낸다. inbox에 떨궜으니 dev clone 세션 시작 시 session-check 넛지가 집어준다.
+- **dev clone(origin=harness-setup) 세션이면**: 변환 후보로 바로 **harness-retro 절차를 실행**한다(분류·라우팅·bump추론·초안·승인요청 = `skills/harness-retro/SKILL.md` SSOT, 중복 재구현 금지). ⚠ dev clone은 `/harness-retro` 슬래시 미등록(harness가 repo 루트라 `.claude/skills/` 경로 없음) → **파일 절차로 실행**, 슬래시 호출 아님.
+- **실작업 세션(소비자)이면**: 적용 불가하니 retro 실행 안 함. Step 2.5 inbox 드롭 + "dev clone에서 inbox 처리"(소비자 세션은 `/harness-retro` 슬래시 등록됨, dev clone은 SKILL.md 절차) 1줄 안내로 끝낸다. inbox에 떨궜으니 dev clone 세션 시작 시 session-check 넛지가 집어준다.
 - 후보가 전부 reject(1회성·외부요인)면 inbox 드롭·retro 호출 없이 "개선 후보 없음 — 관찰 N건만 보고"로 종료.
 
 ## Step 4 — 승인 노티
