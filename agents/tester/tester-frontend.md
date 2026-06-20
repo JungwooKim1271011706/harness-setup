@@ -156,16 +156,18 @@ ESCALATION: 3회 검증 후 미달
 ## Codex 보조 리뷰 (선택)
 
 ### 실행 조건
-아래 순서로 Codex CLI 가용성을 확인한다:
-1. `which codex 2>/dev/null` 또는 `codex --version 2>/dev/null` 실행
-2. 실패 시 Claude 단독 평가로 폴백 (출력에 "Codex 미사용 (CLI 미설치)" 1줄 기록)
+- **가용성 판정 주체 = orchestrator (SSOT)**: orchestrator가 세션 1회 probe한 결과를 신뢰한다. tester는 codex 가용성을 자기판단하지 않는다 — orchestrator가 "가용"으로 준 컨텍스트가 있으면 그대로 호출한다.
+- orchestrator 컨텍스트가 없을 때만 자체 확인: `codex --version 2>/dev/null` (실 probe). **probe 없이 '미설치' 단정 금지**.
+- 폴백은 **실제 probe 실패**일 때만. 호출이 "stdin is not a terminal"로 죽는 건 미설치가 아니라 호출형 오류(`< /dev/null` 누락) → 폴백 사유 아님, 호출형을 고친다.
 
 ### 호출 방법
 ```bash
-codex "Review the following frontend changes: [변경 파일 목록].
+# ⚠ codex는 인터랙티브 stdin 기대 → 미리다이렉트 시 "stdin is not a terminal"로 즉시 실패('미설치' 오인 폴백).
+# 반드시 `codex exec` + `< /dev/null` (orchestrator `## codex 호출 가드`의 비대화형 호출 규약과 동일).
+codex exec "Review the following frontend changes: [변경 파일 목록].
 Evaluate: 1) Functional correctness 2) Regression risk 3) UI/UX quality.
 For each area, provide a score (0-10) and key findings.
-Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \"regression\": {\"score\": N, \"findings\": \"...\"}, \"quality\": {\"score\": N, \"findings\": \"...\"}}"
+Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \"regression\": {\"score\": N, \"findings\": \"...\"}, \"quality\": {\"score\": N, \"findings\": \"...\"}}" -s read-only < /dev/null
 ```
 
 ### 타임아웃

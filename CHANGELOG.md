@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.17.0 — 2026-06-20
+- **회고 반영 3건 (다른 세션 post_commit 탐지 + inbox 드레인) — 전부 MINOR, 거버넌스 무영향.** autoPatch 세션 + PR-D2 inbox 후보. C2(stdin)와 inbox 후보1(가용성)이 같은 결함의 두 면이라 **통합**.
+  - **A. tester codex 교차검증 신뢰성** (`tester-backend.md`·`tester-frontend.md`·`orchestrator.md`): tester codex 호출이 `codex "..."`(stdin 미리다이렉트)라 "stdin is not a terminal"로 즉시 실패 → tester가 '미설치'로 오인 폴백 → 독립 2번째 소스 조용한 상실. ① 호출형을 `codex exec "..." -s read-only < /dev/null`로 수정. ② 실행조건에 "가용성 = orchestrator SSOT, tester 자기판단 금지, probe 없이 '미설치' 단정 금지" 명문화. ③ orchestrator `## codex 호출 가드`에 「가용성 확정 — orchestrator SSOT」 절 신설(세션 1회 probe → 컨텍스트 주입, 비대화형 표준 호출형 박음). 스코프 축소: session-check.sh probe 주입은 제외(규칙으로 충분, YAGNI).
+  - **B. design-panel 필수 페르소나 부분실패 자동 재런치** (`orchestrator.md` 패널 실행): transient API 오류로 eng·cso가 죽어도 빈 criticals로 통과되던 문제. "orchestrator가 한다(반환 후)" 블록 맨 앞에 0번(완전성 검사) 삽입 — failures[] 非空/필수 페르소나 passEvidence<2면 그 페르소나만 1회 자동 재런치, 재런치도 실패면 에스컬레이션. 폴백 줄을 "전부 실패 시만 수동합성, 부분실패는 재런치 우선"으로 보정.
+  - **C. developer narrowing 금지** (`developer-backend.md`·`developer-frontend.md`): 설계 SSOT 무조건 동작을 기존(stale) 테스트 통과 목적으로 조건부로 좁히는 narrowing 금지 — 충돌 시 좁히지 말고 DESIGN_MISMATCH/stale 반환. test-edit 훅이 못 막는 구현 narrowing을 규칙으로 보강.
+  - inbox `DEVUNIT-repostitch.md` → `applied/` 이동. 관찰만(전체회귀 부채 N=6=D4 비차단 불변식 working-as-designed)은 reject.
+
 ## 3.16.0 — 2026-06-20
 - **harness-check Stop 훅 백스톱 — post_commit 자가점검 enforcement 보강.** orchestrator post_commit 자가회고가 소프트(모델이 끝에서 기억해야 발동)라 자주 새서 `/harness-check`가 수동 호출로 전락. 결정적 enforcement 추가 → bump MINOR(비게이트·detection-only, 권한·게이트구조·불변식 무변).
   - **`hooks/harness-check-backstop.sh`** 신규: Stop 훅. 결정적 신호(`failure_*.md`·체크포인트 `[LOOP 2|3/3]`) 탐지 → 세션시작 baseline 이후 **신규** 고통이면 `decision:block`으로 turn 종료 1회 막아 `/harness-check` 호출 강제. 지문 스탬프로 신호당 1회(스탬프 먼저 갱신 후 block → 미준수해도 다음 Stop 허용, 루프 방지). `--seed` 모드는 SessionStart에서 baseline만 기록(차단 X) → 기존 고통엔 안 터짐.

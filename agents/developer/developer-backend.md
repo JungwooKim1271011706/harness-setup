@@ -111,3 +111,4 @@ mvn compile -f <모듈>/pom.xml
 ### 블로커
 - 구현 중 해결 불가 문제 명시
 - planner 설계와 실제 코드 구조가 불일치하면 `블로커 유형: DESIGN_MISMATCH` 명시 후 구현 중단
+- **stale 테스트에 구현을 좁혀 맞추지 않는다**: 설계 SSOT의 무조건 동작을 기존 테스트 통과 목적으로 조건부로 좁히는(narrowing) 것 금지. 설계 SSOT ↔ 기존 테스트 충돌 = stale 테스트 의심 → 구현을 좁히지 말고 `블로커 유형: DESIGN_MISMATCH`(또는 stale 플래그)로 반환. (test-edit 기계강제는 테스트 편집만 막고 구현 narrowing은 못 막음 — 규칙으로 보강.)
