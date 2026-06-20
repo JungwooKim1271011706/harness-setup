@@ -509,6 +509,7 @@ wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다:
 - **탐지=자동, 적용=사람 승인.** `/harness-check`는 후보·초안까지만 — 적용은 `/harness-retro`의 승인 게이트 뒤. 자기개선 루프 ③의 **입력 자동 생성**(사람이 회고를 안 가져와도 하네스가 스스로 고통을 잡아냄).
 - 신호 정의·절차는 `/harness-check` 스킬이 SSOT — 여기서 재서술하지 않는다(중복금지).
 - 외부요인(세션 토큰 한도 등) 1회성은 관찰만, 규칙화 안 함(YAGNI).
+- **백스톱(enforcement)**: 이 자가점검은 소프트(모델이 기억해야 발동)라 자주 샌다 → `hooks/harness-check-backstop.sh`(Stop 훅)가 결정적 신호(failure_*.md·체크포인트 LOOP≥2)를 탐지하면 turn 종료를 1회 막아 `/harness-check` 호출을 강제한다(신호당 1회, 세션시작 baseline 이후 신규분만). 훅은 탐지·강제까지만 — 적용은 여전히 `/harness-retro` 승인 게이트.
 
 ## 작업 컨텍스트 보존 (context-save / context-restore)
 

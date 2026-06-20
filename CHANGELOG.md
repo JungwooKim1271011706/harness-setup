@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.16.0 — 2026-06-20
+- **harness-check Stop 훅 백스톱 — post_commit 자가점검 enforcement 보강.** orchestrator post_commit 자가회고가 소프트(모델이 끝에서 기억해야 발동)라 자주 새서 `/harness-check`가 수동 호출로 전락. 결정적 enforcement 추가 → bump MINOR(비게이트·detection-only, 권한·게이트구조·불변식 무변).
+  - **`hooks/harness-check-backstop.sh`** 신규: Stop 훅. 결정적 신호(`failure_*.md`·체크포인트 `[LOOP 2|3/3]`) 탐지 → 세션시작 baseline 이후 **신규** 고통이면 `decision:block`으로 turn 종료 1회 막아 `/harness-check` 호출 강제. 지문 스탬프로 신호당 1회(스탬프 먼저 갱신 후 block → 미준수해도 다음 Stop 허용, 루프 방지). `--seed` 모드는 SessionStart에서 baseline만 기록(차단 X) → 기존 고통엔 안 터짐.
+  - **`settings.json`**: SessionStart에 `harness-check-backstop.sh --seed` 추가, Stop 훅 신설. 소비자 세션용(거기서 워크플로 돌고 vendoring된 .claude/settings.json 적용). dev clone은 repo훅 미발동.
+  - **`agents/orchestrator.md`** 자가회고 절에 백스톱 enforcement 1줄(SSOT는 훅·harness-check). 훅은 탐지·강제까지만 — 적용은 `/harness-retro` 승인 게이트 불변.
+
 ## 3.15.0 — 2026-06-20
 - **소비자 세션 wiki gotcha 운반 — capture의 push 비대칭 해소.** wiki capture(post_commit 자가점검)가 dev clone을 조용히 가정했음: gotcha는 보통 **소비자 세션**(worktree=제품 repo, origin≠harness-setup)에서 발견되는데 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받고 유실. 개선후보(check→retro)가 이미 푼 비대칭과 동일 → **기존 회고 inbox 운반 재사용**(새 운반로 0, retro 변경 0). agent md 규칙 + 룰 doc → bump MINOR.
   - **`wiki/_schema.md`** capture 절차에 "어디로 가나" 분기 추가: dev clone은 직접 wiki 커밋, 소비자 세션은 직접커밋 금지·회고 inbox 드롭(`~/.claude/harness-retro-inbox/`, 형식 = `/harness-check` Step2.5 SSOT; content = gotcha 스텁 + sources 후보). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성(inbox 경로가 `sources`로).
