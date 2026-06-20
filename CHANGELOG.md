@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.20.0 — 2026-06-20
+- **bugfix-2-autopatch 회고 2건 — #1 적용 / #2 기각. MINOR, 거버넌스 무영향.**
+  - **#1 적용 (위치보정)** — codex 7.7 소규모 critical 수정 시 "전체 파일 재출력" 요청 → codex가 직전 합의 설계를 자기 기억으로 재생성하며 회귀(findAllByAccountId→단건, 빈값/모호성 가드·R1·바이트동일 메시지 소실). `playbook-tdd.md` 7.7 게이트 처리에 "전체 재출력 금지 → 지목 라인 받아쓰기(tester-design) 또는 unified patch-diff만 + orchestrator 대조" 추가 + `orchestrator.md ## codex 호출 가드`에 cross-ref 1줄. 소비자는 orchestrator.md 7.7로 지목했으나 SSOT선 7.7=playbook-tdd.md(v3.2.0 분리) → 라우팅 보정.
+  - **#2 기각 (stale — 적용 시 회귀)** — "/review 범용 reviewer 서브에이전트 부재" 제안은 SSOT v3.4.0(code-reviewer 서브에이전트, orchestrator:690)을 부정 → 자기검토=가짜2소스로 회귀. 소비자 에러(general-purpose not found)의 원인 = vendored 하네스가 v3.4.0 이전 → git pull로 해소. SSOT 수정 불요.
+
 ## 3.19.0 — 2026-06-20
 - **PR-D4 회고 inbox 2건 — 전부 MINOR, 거버넌스 무영향.** repostitch PR-D4 세션 inbox 드레인.
   - **A. tester codex 거짓 미가용 재발 차단** (`tester-frontend.md`·`tester-backend.md` + wiki 신설): v3.17.0(232b168)이 "probe 없이 미설치 단정 금지"를 코드로 적용했으나 PR-D4서 tester-frontend 3/3 또 거짓보고. 진짜 원인 = 소비자 프로젝트 per-agent 메모리(`agent-memory/tester-frontend/feedback_codex_stdin.md`)의 "항상 폴백" 잘못된 일반화가 agent md 규칙을 덮어씀(agent md는 휴대, per-agent 메모리는 프로젝트 로컬 → 안 따라옴 → 규칙이 메모리 못 이기면 재발). 수정: 실행조건에 "agent-memory/feedback의 codex 미가용 단정 비신뢰, SSOT=orchestrator probe, 메모리 근거로 probe 스킵 금지" 1줄 + `wiki/agent-memory-overrides-rule.md` 신설(재발 클래스 영속화) + 소비자 stale 메모리 삭제(하네스 밖).

@@ -71,6 +71,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - critical 1건 이상 → **작성자(codex 또는 tester-design)에게 반환해 재작성** [LOOP n/3]
   - 루프 상한: 최대 3회. 초과 시 사용자에게 에스컬레이션.
   - **반환 시 동일 결함 클래스 전수 sweep 지시(첫 루프부터)**: 인용된 케이스만 고치지 말고 **모든 테스트 파일에서 같은 결함 클래스**(예: 공허 예외단언·strict stub 겹침·primitive 매처)를 한 번에 sweep하게 한다. 케이스별로 고치면 검증자가 un-scrutinized 케이스에서 같은 패턴을 재발견해 루프가 낭비된다.
+  - **codex 작성분의 소규모 critical 수정(소수 라인)은 codex 재호출로 "전체 파일 재출력"을 요청하지 않는다**: codex가 직전 합의 설계를 자기 기억으로 재생성하며 회귀시킨 사례 관측(2026-06-20: `findAllByAccountId`(목록)→`findByAccountId`(단건), 빈값/모호성 가드·R1(`.isNotInstanceOf`)·바이트동일 메시지 단언 전부 소실). 대신 ① 직전 통과분(또는 첫 산출)을 베이스로 작성자측(tester-design)이 **검증자 지목 라인만 받아쓰기로 직접 적용**(작성자≠검증자 유지 — 검증자는 tester-quality), 또는 ② 재작성 불가피 시 **전체파일 아닌 unified patch-diff만** 요청하고 orchestrator가 직전 합의본과 대조해 회귀 차단. (cross-ref: orchestrator `## codex 호출 가드`.)
 - 사용자는 테스트를 승인하지 않는다 — 테스트 품질은 이 게이트가 책임진다(6단계 사용자 승인은 설계 한정).
 
 ## 8 — developer GREEN 구현
