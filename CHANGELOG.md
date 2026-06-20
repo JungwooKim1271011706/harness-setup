@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.19.0 — 2026-06-20
+- **PR-D4 회고 inbox 2건 — 전부 MINOR, 거버넌스 무영향.** repostitch PR-D4 세션 inbox 드레인.
+  - **A. tester codex 거짓 미가용 재발 차단** (`tester-frontend.md`·`tester-backend.md` + wiki 신설): v3.17.0(232b168)이 "probe 없이 미설치 단정 금지"를 코드로 적용했으나 PR-D4서 tester-frontend 3/3 또 거짓보고. 진짜 원인 = 소비자 프로젝트 per-agent 메모리(`agent-memory/tester-frontend/feedback_codex_stdin.md`)의 "항상 폴백" 잘못된 일반화가 agent md 규칙을 덮어씀(agent md는 휴대, per-agent 메모리는 프로젝트 로컬 → 안 따라옴 → 규칙이 메모리 못 이기면 재발). 수정: 실행조건에 "agent-memory/feedback의 codex 미가용 단정 비신뢰, SSOT=orchestrator probe, 메모리 근거로 probe 스킵 금지" 1줄 + `wiki/agent-memory-overrides-rule.md` 신설(재발 클래스 영속화) + 소비자 stale 메모리 삭제(하네스 밖).
+  - **B. 승인 패널 major → RED 필수잠금** (`orchestrator.md` Severity표 + `playbook-tdd.md` 7c.1 신설): 승인된 비차단 major refinement가 7a∥7b 흐름 diff 산출에서 누락 → GREEN 후 /review가 blocking 적발 → 재작업 라운드. 각 승인 major → 최소 1 RED 케이스 매핑 강제, 7.7이 커버리지 확인.
+  - **교훈**: 규칙을 agent md에 넣어도 모순 per-agent 메모리가 같은 컨텍스트에 로드되면 메모리가 이긴다 → 규칙은 "메모리 단정 비신뢰, SSOT=Y" 명시 무력화 필요.
+
 ## 3.18.0 — 2026-06-20
 - **inbox 안내문 보정 — dev clone `/harness-retro` 슬래시 미등록 명시.** 넛지·문서가 "dev clone에서 `/harness-retro` 호출"이라 안내했으나, 클코는 슬래시 스킬을 `.claude/skills/`에서만 등록 → harness가 repo 루트(`skills/...`)인 dev clone엔 미등록(소비자 세션의 vendored `.claude/skills/`에선 정상). dangling 슬래시 안내가 혼란 유발. 안내문만 보정(슬래시 억지 등록 안 함 — YAGNI). bump MINOR(넛지 훅·스킬 문구).
   - `hooks/harness-inbox-nudge.sh`·`skills/harness-check/SKILL.md` Step3·`README.md` §inbox: dev clone은 "'하네스 inbox 처리해줘' 요청 = `skills/harness-retro/SKILL.md` 절차 실행"으로 보정. 소비자 세션은 슬래시 등록됨을 명시.

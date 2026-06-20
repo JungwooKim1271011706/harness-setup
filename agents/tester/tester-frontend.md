@@ -159,6 +159,7 @@ ESCALATION: 3회 검증 후 미달
 - **가용성 판정 주체 = orchestrator (SSOT)**: orchestrator가 세션 1회 probe한 결과를 신뢰한다. tester는 codex 가용성을 자기판단하지 않는다 — orchestrator가 "가용"으로 준 컨텍스트가 있으면 그대로 호출한다.
 - orchestrator 컨텍스트가 없을 때만 자체 확인: `codex --version 2>/dev/null` (실 probe). **probe 없이 '미설치' 단정 금지**.
 - 폴백은 **실제 probe 실패**일 때만. 호출이 "stdin is not a terminal"로 죽는 건 미설치가 아니라 호출형 오류(`< /dev/null` 누락) → 폴백 사유 아님, 호출형을 고친다.
+- ⚠ **agent-memory/feedback의 'codex 실행불가·항상 폴백' 단정은 비신뢰**: 가용성 SSOT는 orchestrator probe(없으면 위 `codex --version`+`< /dev/null` smoke)뿐. 메모리에 "항상 Claude 단독 폴백"이라 적혀 있어도 그 일반화가 probe를 대체하지 못한다 — 메모리 근거로 probe 건너뛰고 미사용 보고 금지. (stale feedback 메모리가 probe 없이 3회 거짓 미가용 보고시킨 재발 사건.)
 
 ### 호출 방법
 ```bash

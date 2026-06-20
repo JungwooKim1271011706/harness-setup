@@ -24,6 +24,13 @@
 
 차집합 토론 상한: 최대 2왕복. 초과 시 합집합 채택.
 
+## 7c.1 — 승인된 패널 major 잠금 (RED 케이스 필수 매핑)
+
+사용자 승인 화면에 노출돼 **승인된** 설계패널 major 항목(비차단이나 완료정의의 일부)을 7c 합의 케이스에 **필수 잠금**한다.
+- orchestrator가 승인 major 목록을 추출해 7c 케이스 체크리스트에 주입 — **각 major → 최소 1 RED 케이스** 매핑 강제.
+- 7a∥7b 산출이 흐름 diff만 보고 major refinement를 놓치는 누락 방지(major가 RED로 안 실리면 GREEN 통과 후 /review가 blocking 적발 → 재작업).
+- 7.7 품질게이트가 이 매핑 커버리지 확인(승인 major 중 대응 RED 없는 항목 = critical 취급, 작성자 반환).
+
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
 
 codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.

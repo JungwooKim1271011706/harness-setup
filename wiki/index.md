@@ -13,6 +13,7 @@
 - [[surefire-it-naming-skip]] — `*IT` 명명 테스트가 surefire 기본 스캔에서 무음 누락(failsafe 미바인딩 pom) → `-Dtest=`만 PASS는 거짓 GREEN. *Test 명명/기본 include 매칭으로 회피
 - [[codex-tmp-windows-path]] — codex 호출 시 gstack-paths TMP_ROOT가 `C:Users`(슬래시 누락) → mktemp 실패 → /tmp 폴백 1회 재시도 지연
 - [[codex-python-shim-windows]] — codex --json 파서가 Windows Store python shim을 골라 broken pipe(exit 101) → PYTHON_CMD로 실제 인터프리터 명시. 차단훅 mvn 오탐 회피 노트 포함
+- [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)

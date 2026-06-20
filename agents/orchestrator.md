@@ -409,7 +409,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 | Severity | 처리 |
 |----------|------|
 | **critical** | orchestrator dedup+코드대조 후 생존 시 게이트 차단. planner 재작업 후 패널 재실행. 최대 3회 루프. |
-| **major** | 통과 허용. 사용자 승인 화면에 리포트로 노출. |
+| **major** | 통과 허용. 사용자 승인 화면에 리포트로 노출. **승인된 major는 7c 합의 시 RED 케이스 필수잠금 목록으로 주입**(각 major→최소 1 RED 케이스, `playbook-tdd.md` 7c.1). 미매핑 major는 GREEN 후 /review서 blocking 재발견 = 재작업 라운드 낭비. |
 | **minor** | 통과 허용. 리포트만 기록. |
 
 **충돌 조정 우선순위**: 보안 > 아키텍처 > 기타
