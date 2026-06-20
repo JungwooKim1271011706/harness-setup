@@ -491,6 +491,7 @@ key_concept: 가르칠 핵심 개념 (예: emit 패턴, BOM 인코딩, svn diff 
 - 있으면 → `wiki/_schema.md`의 **"언제 기록하나 (capture 트리거)"** 절차를 따른다(스텁 준비 → `index.md` 등록 → `[[링크]]` → 사용자에게 기록 제안). 기준·형식은 그 파일이 SSOT — 여기서 재서술하지 않는다(중복금지).
 - 머신 한정 사실(이 PC의 경로·임시 상태)은 wiki가 아니라 auto-memory. 설계 전문은 `docs/` 링크만.
 - **advisory** — 자동 커밋 금지. 사용자 승인 시에만 finalizer가 함께 커밋한다.
+- **세션 종류 분기**: dev clone(origin=harness-setup)은 직접 wiki 커밋. **소비자 세션(origin≠harness-setup)은 직접커밋 금지 — 회고 inbox로 드롭**(개선후보와 동일 운반; 경로·형식·드레인은 `wiki/_schema.md` "어디로 가나" 절 SSOT). retro가 dev clone에서 드레인해 SSOT에 안착.
 
 ## wiki 운영지식 참조 (읽기 — capture의 짝)
 

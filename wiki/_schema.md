@@ -44,6 +44,11 @@
 2. `index.md`에 한 줄 등록 + 관련 페이지에 `[[링크]]` 연결.
 3. 사용자에게 **"wiki에 이거 기록할까?"** 제안한다(자동 저장 X). 승인 시 커밋.
 
+**어디로 가나 (세션 종류 분기 — gotcha의 push 비대칭):**
+gotcha는 보통 **소비자 세션**(worktree=제품 repo, origin≠harness-setup)에서 발견된다. 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받는다(개선후보 inbox와 같은 비대칭).
+- **dev clone**(origin=harness-setup): 위 절차대로 직접 wiki 커밋(승인 시).
+- **소비자 세션**: 직접 커밋 금지. 준비한 스텁을 **회고 inbox로 드롭**(`~/.claude/harness-retro-inbox/`, 경로·형식은 `/harness-check` Step2.5 SSOT). content = gotcha 스텁(증상→원인→회피) + sources 후보(failure·CHANGELOG·발생세션). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성(inbox 경로가 `sources`로). SSOT 커밋·push 후 전 세션 git pull로 환원, 이후 읽기 트리거(orchestrator "wiki 참조" 절)가 집어준다.
+
 ## 페이지 형식
 파일명 = `kebab-case.md` (개념 1개당 1파일). frontmatter + 본문:
 

@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.15.0 — 2026-06-20
+- **소비자 세션 wiki gotcha 운반 — capture의 push 비대칭 해소.** wiki capture(post_commit 자가점검)가 dev clone을 조용히 가정했음: gotcha는 보통 **소비자 세션**(worktree=제품 repo, origin≠harness-setup)에서 발견되는데 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받고 유실. 개선후보(check→retro)가 이미 푼 비대칭과 동일 → **기존 회고 inbox 운반 재사용**(새 운반로 0, retro 변경 0). agent md 규칙 + 룰 doc → bump MINOR.
+  - **`wiki/_schema.md`** capture 절차에 "어디로 가나" 분기 추가: dev clone은 직접 wiki 커밋, 소비자 세션은 직접커밋 금지·회고 inbox 드롭(`~/.claude/harness-retro-inbox/`, 형식 = `/harness-check` Step2.5 SSOT; content = gotcha 스텁 + sources 후보). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성(inbox 경로가 `sources`로).
+  - **`agents/orchestrator.md`** capture 절에 세션종류 분기 1줄(경로·드레인은 _schema SSOT 참조).
+  - retro 드레인(inbox 모드 = 전부 읽어 분류 + Step2 gotcha→wiki 행)·check Step2.5(inbox 형식)는 이미 처리분 — 수정 없음. v3.14.0 읽기 트리거(B1/B2)가 환원된 페이지를 집어주는 짝.
+
 ## 3.14.0 — 2026-06-20
 - **source-aware LLM wiki + 읽기 트리거 도입 (capture의 짝).** 기존 wiki는 capture(쓰기)만 트리거되고 ① 페이지에 근거(provenance)가 안 박히고 ② 세션이 쌓인 지식을 보러 가는 읽기 트리거가 약해 죽은 지식고 위험. agent md 규칙 추가 + 비차단 훅 + 스킬 갱신 → bump MINOR. (카파시 LLM wiki 패턴·라우팅·lint 개념은 이미 구현돼 있어 재작성 안 함 — sources 연결 + 읽기 인지만 보강.)
   - **A. sources 연결**: `wiki/_schema.md` frontmatter에 `sources` 필드 추가(gotcha는 가능한 한 필수, 근거 없으면 invent 금지·"근거 부족" 표시), capture 절차·lint 항목에 sources 규칙 1줄씩. `harness-retro` Step5가 Step1 추출 근거(회고·failure·CHANGELOG·docs·inbox `source_session`)를 페이지 `sources`로 보존 + 같은 결함클래스는 기존 페이지 갱신·sources 병합. `harness-check` Step2.5 inbox 파일이 retro의 sources 소스가 됨을 명시.
