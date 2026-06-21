@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.23.0 — 2026-06-21
+- **설계패널 게이트에 codex 형제(cross-model 플랜비평) 추가 — MINOR, 가산·폴백안전.** 구현은 `/review ∥ /codex review`로 교차검증하면서 설계는 claude 단일모델이던 비대칭을 메움(CONTEXT.md "반복≠신뢰": claude→codex=종류 다름=정보 증가). 코드단계 union 패턴의 설계단계 대칭 복제.
+  - `orchestrator.md ### codex 형제` 신설: 패널 Workflow와 **병렬**로 `/codex` consult 모드 1회 호출(review 아님=diff 없음, challenge 아님=코드 대상). 프롬프트=패널 reviewPrompt 동형(rulePaths Read+준수, planText, severity+location+quote+recommendation, quote 못 달면 confidence 강등). 보안렌즈는 cso 페르소나가 SSOT라 codex엔 아키텍처·정합·엣지케이스 렌즈 명시.
+  - **페르소나 아님 (인원규칙 불변)**: codex는 floor=3 인원·passEvidence≥2(claude lazy-PASS 가드)에 미포함. 패널 구성(최소3/최대4 연관기반) 그대로. codex=패널 옆 독립 cross-source.
+  - **게이트 합류=합집합**: codex findings는 패널 findings와 같은 dedup+코드대조 게이트로. codex critical도 dedup→인용라인 코드대조→생존 시 차단, **단독 생존도 차단**(코드단계 "blocking 1건이라도 처리, 취사선택 금지" 동형). major/minor도 합쳐 동일 처리.
+  - **폴백**(§codex 호출 가드 신호): codex 죽으면 패널(claude)만 게이트 진행 + `⚠ 교차검증 없음(codex 미사용, 단일소스)` 태그, 재시도 1회. 패널 정상이므로 비차단(코드단계 /codex review 폴백 동형). 기계강제는 /codex 스킬 담당(orchestrator 재지시 안 함).
+  - **design-panel.js 미변경** — sibling이라 워크플로 안 안 건드림. `## codex 호출 가드` 진입점 5곳→6곳, 폴백 라우팅·라우팅표·routing-map.md·playbook-design-mode.md(설계모드 상속)·3트랙 one-liner 동기.
+
 ## 3.22.0 — 2026-06-21
 - **DESIGN_MISMATCH 예외 재분류 (드리프트 환원) — MINOR, 거버넌스 무영향.** repostitch 로컬에만 있던 휴대용 개선을 SSOT로 환원(소비자서 push하면 프로젝트 전용 보안룰이 딸려가므로 dev clone서 정식 반영).
   - `orchestrator.md` FAIL 분기 + FAIL 3분기 처리표: 기존 테스트 깨짐의 원인이 '설계 SSOT가 이미 승인한 **스키마·동작계약 변경**'(7c.2 인벤토리 대상)이면 DESIGN_MISMATCH 아님 → stale-test 마이그레이션(tester-design 위임, planner 재게이트·재승인 불요). 설계 미승인 구조 충돌만 정상 DESIGN_MISMATCH. v3.21.0 7c.2 인벤토리와 짝(stale 발견 시 잘못된 planner 재게이트 루프 차단).

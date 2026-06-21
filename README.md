@@ -19,7 +19,7 @@ flowchart TD
   CPX -->|고복잡도| NF1
 
   NF1 --> NF2["/grill-with-docs"] --> NF3["/co-plan OOP5 freeze=public"] --> PL["planner-*<br/>고복잡도=planner-high-complexity<br/>+변경영역태그"]
-  PL --> GATE["설계패널 게이트 최소3/최대4 연관기반(eng항상+cso/design/devex 태그매칭)<br/>eng 렌즈=gstack plan-eng-review(고복잡도 다라운드 loop-until-dry)<br/>PASS 근거 기계심사 C5b<br/>보안 재스캔 태그보정 C2"]
+  PL --> GATE["설계패널 게이트 최소3/최대4 연관기반(eng항상+cso/design/devex 태그매칭)<br/>∥ codex 형제(consult, cross-model 플랜비평) → 합집합 dedup+코드대조<br/>eng 렌즈=gstack plan-eng-review(고복잡도 다라운드 loop-until-dry)<br/>PASS 근거 기계심사 C5b<br/>보안 재스캔 태그보정 C2"]
   GATE --> CRIT{critical 0?}
   CRIT -->|NO| PLRE["planner 재작업 루프3"] --> GATE
   CRIT -->|YES| MOCK["디자인 목업 게이트<br/>UI태그+신규화면 시 /design-shotgun→/design-html<br/>목업=승인 아티팩트(JSP아님), developer가 JSP변환"]

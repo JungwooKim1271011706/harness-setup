@@ -17,7 +17,7 @@
 → [분기] developer로 가지 않고 ↓ WI 출력 게이트로
 ```
 
-- 위 단계는 풀사이클과 **동일 agent·스킬·게이트**를 재사용한다(별도 규칙 없음).
+- 위 단계는 풀사이클과 **동일 agent·스킬·게이트**를 재사용한다(별도 규칙 없음). 설계패널 게이트의 codex 형제(cross-model 플랜비평, `orchestrator.md ### codex 형제`)도 그대로 상속된다 — 설계모드 WI 품질에도 cross-model 검증이 붙는다.
 - 사용자 설계승인 직후 `## TDD 합의 구간`·developer 단계로 진입하지 않는다. 아래 WI 출력 게이트로 분기한다.
 - planner는 평소처럼 `docs/features/...md`를 기록한다(설계 산출물 보존).
 
