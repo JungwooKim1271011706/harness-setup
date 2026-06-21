@@ -397,6 +397,19 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 - 워크플로 산출은 **보조 입력**이다. dedup·코드대조·차단 판정은 orchestrator가 내린다.
 - 워크플로 **전부 실패**/도구 미가용 시 폴백: 기존 수동 페르소나 합성(fire-and-forget 금지, orchestrator 검토). **부분 실패는 위 0번 자동 재런치로 처리**(수동 합성 전 재런치 우선).
 
+### 세션 끊김 후 복구 (백그라운드 패널)
+
+설계패널은 백그라운드 Workflow라 호출 직후 세션이 끊기면(토큰·세션 한도) 재개 세션에서 산출을 **명시 절차**로 복구한다. `resumeFromRunId`는 same-session 캐시라 세션이 죽으면 무의미 — cross-session은 transcript 산출물로 판정한다.
+
+1. **완료 여부**: `subagents/workflows/wf_<runId>/journal.jsonl`에 `completed` 이벤트 있으면 산출 수령. 없으면 미완(아래 2).
+2. **부분 완주 판정**: 각 페르소나 `agent-*.jsonl`의 마지막 type + StructuredOutput 호출 유무로 페르소나별 완주를 본다.
+3. **부분 완주 처리 (2갈래)**:
+   - 기본 = **재실행**(부분 산출 신뢰 금지 — 위 0번 "완전성 검사" 정신과 동일). 미완 페르소나만 부분집합 재런치.
+   - 또는 완주 페르소나의 StructuredOutput을 직접 추출해 합집합 게이트(dedup+코드대조)로 진행 가능(패널은 findings 생산만이라 가능). 단 **필수 페르소나(eng 항상·cso 보안태그) 누락이면 이 옵션 금지 → 재실행**.
+4. codex 형제도 같은 끊김에 노출 — 미완이면 §codex 호출 가드 폴백(패널 단독+태그) 또는 재호출.
+
+> 근거: repostitch 설계 세션 — 1차 패널 `wf_518d1b4e-571` 끊김(journal started 4/completed 0, agent jsonl 4개 중 StructuredOutput 1개) → 재실행으로 해소.
+
 ### codex 형제 (cross-model 플랜비평 — 패널과 병렬)
 
 설계패널(claude 페르소나)과 **나란히** codex를 1회 호출해 cross-model 비상관 소스를 1개 더 둔다. 코드단계 `/review ∥ /codex review`의 설계단계 대칭 — 구현은 교차검증하면서 설계는 안 하던 비대칭을 메운다(CONTEXT.md "반복≠신뢰": claude→codex=종류 다름=정보 증가). 이 codex = **gstack `/codex`**(자동흐름 경로), 공식 플러그인 아님 — `## codex provider — 역할 분리` 참조.

@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.25.0 — 2026-06-22
+- **백그라운드 패널 세션끊김 복구 절차 추가 (inbox 드레인 1건) — MINOR, 거버넌스 무영향.** repostitch 소비자 세션 inbox(`/harness-check` 자동 드롭) 처리. 설계패널을 백그라운드 Workflow로 띄운 직후 세션이 끊기면 재개 세션에서 산출 수령/완주판정 절차가 부재했음(`resumeFromRunId`는 same-session 캐시라 세션 죽으면 무의미).
+  - `orchestrator.md` §설계 패널 게이트에 `### 세션 끊김 후 복구 (백그라운드 패널)` 신설: journal `completed` 확인 → 부분완주는 재실행(기존 0번 완전성 검사 정신) → 필수 페르소나(eng·cso) 누락 시 StructuredOutput 추출 우회 금지 → codex 형제도 동일 끊김 폴백.
+  - **관찰 2건 reject**: 패널 LOOP 2/3은 정당한 안전검증(하네스 결함 아님), 세션 끊김은 외부요인(토큰 한도) — 규칙화 안 함.
+
 ## 3.24.0 — 2026-06-21
 - **tester maven 호출에 폭주 테스트 fail-fast 타임아웃 강제 — MINOR, 거버넌스 무영향.** JDK 메모리 미반환 진단 세션 발. 무한루프 테스트(제품 버그)가 surefire 포크 JVM을 수 GB·GC 죽음나선으로 무한 점유 → 머신 메모리 90% 도달. 타임아웃 없으면 fail-fast 안 됨. tester 스코프가드("수백 클래스면 중단")는 단일 테스트 무한루프를 못 잡음(폭주 1개 ≠ 수백).
   - `tester-backend.md` (단위/변경검증): mvn에 `-Dsurefire.timeout=600`(per-fork 백스톱) + `-Djunit.jupiter.execution.timeout.default=120s`(Jupiter per-test, JUnit4면 무시) 추가 + ## 핵심 규칙 설명.
