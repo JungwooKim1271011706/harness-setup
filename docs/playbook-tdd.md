@@ -29,7 +29,11 @@
 사용자 승인 화면에 노출돼 **승인된** 설계패널 major 항목(비차단이나 완료정의의 일부)을 7c 합의 케이스에 **필수 잠금**한다.
 - orchestrator가 승인 major 목록을 추출해 7c 케이스 체크리스트에 주입 — **각 major → 최소 1 RED 케이스** 매핑 강제.
 - 7a∥7b 산출이 흐름 diff만 보고 major refinement를 놓치는 누락 방지(major가 RED로 안 실리면 GREEN 통과 후 /review가 blocking 적발 → 재작업).
-- 7.7 품질게이트가 이 매핑 커버리지 확인(승인 major 중 대응 RED 없는 항목 = critical 취급, 작성자 반환).
+- **major 유형 분기 (단위검증 가능성)**: 'major→RED 1개' 강제는 **단위테스트로 행위 검증 가능한 major**에만 적용한다.
+  - **단위검증 가능 major** → RED 케이스 필수 잠금(위 규칙 그대로). 7.7이 RED 부재를 critical 취급.
+  - **config/배선/통합 major**(단위 RED로 행위 커버 불가 — 예: allowedDeployRoot 전사, bean wiring, 외부설정 전달): RED 락 대신 **① 구현 위치 명시(어느 파일·메서드에 배선) + ② /review 체크리스트 항목**으로 추적한다. 7.7은 이 유형에 RED 부재를 critical로 치지 않는다 — '주석-대신-구현' 갭은 /review가 본다.
+  - 근거: config major를 단위RED로 락하면 '미설정시 차단'만 검증돼 developer가 값 전사를 주석만 달고 미구현해도 RED PASS → GREEN 후 /review P1 적발 → 재작업(2026-06-22 M7 allowedDeployRoot).
+- 7.7 품질게이트가 이 매핑 커버리지 확인(승인 **단위검증 가능** major 중 대응 RED 없는 항목 = critical 취급, 작성자 반환. config/배선 유형은 구현위치+/review 추적 여부로 확인).
 
 ## 7c.2 — 스키마·계약 변경 시 영향 테스트 인벤토리
 
@@ -60,6 +64,11 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
   - 통과 → 7.7 진행.
   - 불통과 → **작성자(codex/tester-design)에게 반환해 재작성** [LOOP n/3, 7.7과 루프 카운트 공유]. 컴파일/셋업 결함 종류를 명시해 반환.
 - codex 미가용 폴백(claude 단일 소스)이어도 7.6은 동일 수행(오히려 단일 소스라 더 필요).
+- **greenfield(신설 클래스 — prod 미존재) 처리**: 신설 클래스는 prod stub이 없어 RED가 GREEN 전 컴파일 불가 → 7.6 선검증이 구조적으로 막힌다. 이때 **developer가 GREEN 전 최소 prod stub(public 시그니처만, 미구현)을 먼저 생성**한다(2단계: stub → 7.6 → GREEN).
+  - stub은 **benign 기본값 반환**(null/빈 컬렉션/false 등). `UnsupportedOperationException`·throw 금지 — 그건 7.6 ②의 "잘못된 이유 FAIL"이 된다. RED가 stub의 benign 반환에 대해 **단언 실패(올바른 이유)**로 FAIL해야 7.6 통과.
+  - 경계 유지: stub=prod라 developer 소유(작성자≠구현자 불변 — 테스트는 여전히 codex/tester-design). developer는 7.6 통과용 시그니처만 만들고 실제 로직은 8(GREEN)에서 채운다.
+  - 7c 합의서 freeze된 public 시그니처를 그대로 stub에 쓴다(추측 금지). prod가 일부 존재하면 그 시그니처를 Grep해 정합(시그니처 불일치 컴파일에러 사전차단).
+  - 근거: greenfield서 7.6 생략 시 setup 결함(시그니처·픽스처·stub)이 병합 후 tester-backend서 라운드당 1건씩 노출(2026-06-22 authpatch 6+회전 × run 3~13분). stub 선생성으로 컴파일·구조 결함을 GREEN 전 1회에 수렴.
 - **프론트(vitest) RED sanity·변경검증은 파일 전체를 describe 순서대로 실행**(단일 describe·`-t` 격리 단독 금지). cross-describe 누출(`vi.doMock`·모듈 내부상태·DOM 잔존)은 순서 실행서만 FAIL한다. 상세는 `tester-frontend.md` 변경검증 규칙(backend `@Nested` 무음스킵과 같은 클래스).
 
 ## 7.7 — 테스트 품질 게이트 (tester-quality)

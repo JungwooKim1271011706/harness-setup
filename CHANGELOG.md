@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.26.0 — 2026-06-22
+- **authpatch_draft 자가점검 3건 (inbox 드레인) — MINOR, 거버넌스 무영향.** 삭제 라이프사이클 통합(고복잡도) 소비자 세션 `/harness-check` 자동드롭 처리.
+  - **#1 (HIGH) codex probe false-positive**: smoke `ping`은 exit0 빠르게 통과하나 실프롬프트(7b consult·review)는 모델 API stall로 exit124 hang → TDD+리뷰 단일소스 격하 + probe 미탐지로 20분 낭비. `orchestrator.md ### 가용성 확정`의 probe를 초소형 ping → **대표 프롬프트 + `timeout 60` 하드캡**으로 강화, probe 타임아웃(exit124)도 불가로 간주(smoke exit0만으로 가용 단정 금지). `wiki/codex-model-stall-windows.md` 신설(--json shim broken pipe와 별개 = 모델 stall). 학습기반 probe 스킵(①)은 false-skip 위험으로 기각.
+  - **#2 (HIGH) greenfield 7.6 RED sanity 갭**: 신설 클래스(prod 미존재)는 RED가 GREEN 전 컴파일 불가 → 7.6 선검증 구조적 불가 → setup 결함이 병합 후 tester-backend서 라운드당 1건씩 노출(6+회전). `playbook-tdd.md` 7.6에 greenfield 2단계 명문화 — **developer가 GREEN 전 최소 prod stub(시그니처만, benign 반환·throw 금지) 생성 → 7.6 → GREEN**(작성자≠구현자 유지, 7c freeze 시그니처 사용).
+  - **#3 (MED) config/배선 major RED 갭**: 7c.1 일률 'major→RED 1개'가 단위검증 불가 major(allowedDeployRoot 전사·bean wiring 등)엔 부적합 → developer가 주석만 달고 미구현해도 RED PASS → GREEN 후 /review P1 적발. `playbook-tdd.md` 7c.1에 **major 유형 분기**(단위가능=RED락 / config·배선·통합=구현위치 명시+/review 체크리스트, 7.7 critical 취급 제외).
+  - **관찰 reject**: 토큰 한도 서브에이전트 mid-run 사망 = 외부요인(레버리지 작음).
+
 ## 3.25.0 — 2026-06-22
 - **백그라운드 패널 세션끊김 복구 절차 추가 (inbox 드레인 1건) — MINOR, 거버넌스 무영향.** repostitch 소비자 세션 inbox(`/harness-check` 자동 드롭) 처리. 설계패널을 백그라운드 Workflow로 띄운 직후 세션이 끊기면 재개 세션에서 산출 수령/완주판정 절차가 부재했음(`resumeFromRunId`는 same-session 캐시라 세션 죽으면 무의미).
   - `orchestrator.md` §설계 패널 게이트에 `### 세션 끊김 후 복구 (백그라운드 패널)` 신설: journal `completed` 확인 → 부분완주는 재실행(기존 0번 완전성 검사 정신) → 필수 페르소나(eng·cso) 누락 시 StructuredOutput 추출 우회 금지 → codex 형제도 동일 끊김 폴백.

@@ -573,7 +573,8 @@ codex 진입점 6곳: TDD 7b·7.5·7.7 폴백, **설계패널 형제(consult)**,
 
 ### 가용성 확정 — orchestrator SSOT (서브에이전트 자기보고 비신뢰)
 
-codex 가용성은 **orchestrator가 세션 1회 직접 probe**한 결과가 SSOT다: `codex --version` + 1-shot smoke `codex exec "ping" -s read-only < /dev/null`. 결과(가용/불가)를 tester·review 단계 컨텍스트에 주입한다.
+codex 가용성은 **orchestrator가 세션 1회 직접 probe**한 결과가 SSOT다: `codex --version` + **대표 프롬프트 smoke**를 **짧은 하드 타임아웃**으로 실행한다 — 초소형 `ping`이 아니라 실제 수백토큰 추론 1개를 `timeout 60 codex exec "<대표 프롬프트>" -s read-only < /dev/null`로. 결과(가용/불가)를 tester·review 단계 컨텍스트에 주입한다.
+- ⚠ **smoke false-positive 차단**: 초소형 `ping`은 exit0로 빠르게 통과하나 실프롬프트(7b consult·review)는 모델 API stall로 exit124 hang하는 PC가 있다(`wiki/codex-model-stall-windows.md` — `codex-python-shim`의 --json broken pipe와 **별개**, 이건 모델 stall). probe가 hang을 예측 못 하면 7b·7.5·review가 실호출서야 각 ~5분 타임아웃 → 20분 낭비 후 단일소스 격하. 대표크기 프롬프트 + 60s 타임아웃이면 stall을 probe서 조기 발각 → 즉시 단일소스 폴백. **probe 타임아웃(exit124)도 codex 불가로 간주**(smoke exit0만으로 가용 단정 금지).
 - tester 서브에이전트는 codex 가용성을 **자기판단하지 않는다**(주어진 사실만 사용). 과거 tester가 호출형 오류("stdin is not a terminal")를 '미설치'로 오인해 독립 2번째 소스를 조용히 상실한 사건.
 - **비대화형 호출 표준**: 전 codex 호출은 `codex exec "..." -s read-only < /dev/null`. `codex` 단독·stdin 미리다이렉트 금지(인터랙티브 stdin 기대 → 즉시 실패). `--json` 파이프는 이 PC python Windows Store stub로 broken pipe(`wiki/codex-python-shim-windows.md`) → 텍스트 캡처 사용.
 
