@@ -32,6 +32,7 @@ memory: project
 - 통합·전체회귀 금지. 변경 라우트 + 직접 include 스코프만 검증
 - 변경 라우트/페이지 UI 스모크까지만 담당(변경검증 책임). 전체 도메인 통합·L2 풀 런타임 스모크는 전체회귀 부채 또는 사람 검증으로 위임.
 - **변경검증 전체실행 금지.** 실행이 수십 분/수백 클래스 징후면 스코프 미한정을 의심하고 중단→스코프 재산정. 전체회귀는 tester-runtime 전담.
+- **변경 스코프 파일은 파일 전체를 describe 순서대로 실행해 판정**(단일 describe·`-t` 필터 격리 PASS 단독 금지). cross-describe 누출(앞 describe의 `vi.doMock`·모듈 내부상태 `_running` 등·DOM 잔존)은 격리실행서 안 보이고 전체파일 순서실행서만 FAIL한다. (backend `@Nested`/surefire 무음스킵과 같은 클래스 — 격리 PASS = 거짓 GREEN. RED sanity·변경검증 모두 적용.)
 - **판정(verdict) 없이 종료 금지.** 무거우면 스코프부터 줄인다. PASS/FAIL/ESCALATION 중 하나를 반드시 반환. 근거: harness_pain 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
 
 ## 브라우저 자동화 ($B)

@@ -31,6 +31,16 @@
 - 7a∥7b 산출이 흐름 diff만 보고 major refinement를 놓치는 누락 방지(major가 RED로 안 실리면 GREEN 통과 후 /review가 blocking 적발 → 재작업).
 - 7.7 품질게이트가 이 매핑 커버리지 확인(승인 major 중 대응 RED 없는 항목 = critical 취급, 작성자 반환).
 
+## 7c.2 — 스키마·계약 변경 시 영향 테스트 인벤토리
+
+7c 합의에 **기존 함수의 반환 shape·동작계약을 바꾸는** 항목이 있으면, 7.5 RED 작성 전에 **영향 테스트 전수 인벤토리 1회**를 강제한다(stale 테스트 사전 식별 — GREEN/변경검증/리뷰서 라운드마다 발견되는 루프 낭비 차단).
+
+인벤토리 대상 두 부류:
+- **가산 변경**(반환에 필드 추가): 변경 함수 반환값을 `toEqual`(exact)/`toMatchObject`로 잠근 **모든 기존 테스트**를 grep 전수(예: `grep -rn "toEqual" test/` + 변경 함수 호출처).
+- **동작계약 변경**(severity/status 산출규칙·타임아웃 등 상수값·early-return/skip 조건): 그 **동작·값을 단언하는 기존 테스트**를 전수 grep. 예: 상수 `600`→`900`이면 `600`을 단언한 테스트, "error→warn" severity 격상이면 옛 severity를 단언한 테스트.
+- 영향 테스트는 tester-design이 **일괄 마이그레이션**(신계약 기대값, 검증의도·exact 보존). piecemeal(라운드마다 1건씩 발견) 금지. developer는 테스트 못 고침(hook) → 마이그레이션 주체 = tester-design(작성자≠구현자 유지).
+> 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경) 재발.
+
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
 
 codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
@@ -50,6 +60,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
   - 통과 → 7.7 진행.
   - 불통과 → **작성자(codex/tester-design)에게 반환해 재작성** [LOOP n/3, 7.7과 루프 카운트 공유]. 컴파일/셋업 결함 종류를 명시해 반환.
 - codex 미가용 폴백(claude 단일 소스)이어도 7.6은 동일 수행(오히려 단일 소스라 더 필요).
+- **프론트(vitest) RED sanity·변경검증은 파일 전체를 describe 순서대로 실행**(단일 describe·`-t` 격리 단독 금지). cross-describe 누출(`vi.doMock`·모듈 내부상태·DOM 잔존)은 순서 실행서만 FAIL한다. 상세는 `tester-frontend.md` 변경검증 규칙(backend `@Nested` 무음스킵과 같은 클래스).
 
 ## 7.7 — 테스트 품질 게이트 (tester-quality)
 

@@ -3,6 +3,15 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.21.0 — 2026-06-21
+- **repostitch 고복잡도 풀사이클 회고 4건 — #1·2a·2b·3 적용 / #4 무변경. MINOR, 거버넌스 무영향.** inbox 드레인(소비자 v3.15.0 구버전).
+  - ⚠ **드리프트 환원**: 소비자엔 `7c.1 스키마/계약 인벤토리`가 있으나 SSOT엔 부재였음(로컬 드리프트) → 포팅 + 확장.
+  - **#1 (포팅+확장)** `playbook-tdd.md` 신규 **7c.2** — stale-test 영향 인벤토리. 가산 변경(필드추가)뿐 아니라 **동작계약 변경**(severity 규칙·타임아웃 등 상수·early-return)도 그 값/규칙 단언 기존테스트 전수 grep + tester-design 일괄 마이그레이션. 근거: E7-04 severity 격상·git-runner 600s 상수가 변경검증/리뷰서야 발견.
+  - **#2a** `tester-quality.md` 기준9 ④ — 신규 describe 격리(beforeEach clearAllMocks·DOM reset) 정합 점검 추가(격리 PASS·전체파일 FAIL 순서의존 결함 차단).
+  - **#2b** `tester-frontend.md`+`playbook-tdd.md` 7.6 — 프론트 변경검증/RED sanity는 파일 전체를 describe 순서대로 실행(격리 단독 PASS 금지 = backend @Nested 무음스킵과 동일 클래스).
+  - **#3** `tester-quality.md` 기준5 — 횡단 불변식(분모 step===total·보안경계 순서)은 happy-path뿐 아니라 모든 early-return/skip/error 경로 커버 점검.
+  - **#4 (무변경)** tester 거짓 codex 미설치 재발 = v3.19.0 메모리 override 가드가 이미 처리 + repostitch stale 메모리 삭제 완료 → 소비자 `git pull`로 해소. 보조절 제거 제안은 기각(YAGNI).
+
 ## 3.20.0 — 2026-06-20
 - **bugfix-2-autopatch 회고 2건 — #1 적용 / #2 기각. MINOR, 거버넌스 무영향.**
   - **#1 적용 (위치보정)** — codex 7.7 소규모 critical 수정 시 "전체 파일 재출력" 요청 → codex가 직전 합의 설계를 자기 기억으로 재생성하며 회귀(findAllByAccountId→단건, 빈값/모호성 가드·R1·바이트동일 메시지 소실). `playbook-tdd.md` 7.7 게이트 처리에 "전체 재출력 금지 → 지목 라인 받아쓰기(tester-design) 또는 unified patch-diff만 + orchestrator 대조" 추가 + `orchestrator.md ## codex 호출 가드`에 cross-ref 1줄. 소비자는 orchestrator.md 7.7로 지목했으나 SSOT선 7.7=playbook-tdd.md(v3.2.0 분리) → 라우팅 보정.
