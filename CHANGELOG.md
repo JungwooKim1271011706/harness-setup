@@ -3,6 +3,10 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.22.0 — 2026-06-21
+- **DESIGN_MISMATCH 예외 재분류 (드리프트 환원) — MINOR, 거버넌스 무영향.** repostitch 로컬에만 있던 휴대용 개선을 SSOT로 환원(소비자서 push하면 프로젝트 전용 보안룰이 딸려가므로 dev clone서 정식 반영).
+  - `orchestrator.md` FAIL 분기 + FAIL 3분기 처리표: 기존 테스트 깨짐의 원인이 '설계 SSOT가 이미 승인한 **스키마·동작계약 변경**'(7c.2 인벤토리 대상)이면 DESIGN_MISMATCH 아님 → stale-test 마이그레이션(tester-design 위임, planner 재게이트·재승인 불요). 설계 미승인 구조 충돌만 정상 DESIGN_MISMATCH. v3.21.0 7c.2 인벤토리와 짝(stale 발견 시 잘못된 planner 재게이트 루프 차단).
+
 ## 3.21.0 — 2026-06-21
 - **repostitch 고복잡도 풀사이클 회고 4건 — #1·2a·2b·3 적용 / #4 무변경. MINOR, 거버넌스 무영향.** inbox 드레인(소비자 v3.15.0 구버전).
   - ⚠ **드리프트 환원**: 소비자엔 `7c.1 스키마/계약 인벤토리`가 있으나 SSOT엔 부재였음(로컬 드리프트) → 포팅 + 확장.
