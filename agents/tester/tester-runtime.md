@@ -54,9 +54,10 @@ git checkout -- "$POM" 2>/dev/null || true
 cp "$POM" "$POM.harnessbak"
 trap 'mv -f "$POM.harnessbak" "$POM" 2>/dev/null' EXIT INT TERM
 sed -i 's#<skipTests>true</skipTests>#<skipTests>false</skipTests>#g' "$POM"
-mvn test -DskipTests=false
+mvn test -DskipTests=false -Dsurefire.timeout=1800
 ```
 
+- **폭주 테스트 백스톱**: `-Dsurefire.timeout=1800`(per-fork 30분)으로 무한루프 포크 JVM을 강제 종료한다 — 타임아웃 없으면 폭주 테스트가 수 GB 점유하며 머신을 무한 점유(GC 죽음나선). 전체회귀는 정당한 통합테스트가 느릴 수 있어 **Jupiter per-test 타임아웃(`junit.jupiter.execution.timeout.default`)은 쓰지 않는다**(느린 통합테스트 오탐 위험) — generous per-fork 백스톱만. 프로젝트 정상 전체스위트가 30분을 넘으면 이 값을 상향한다. 단위 스코프의 더 촘촘한 가드는 tester-backend 참조. 배경: `.claude/wiki/surefire-runaway-test-timeout.md`.
 - 실행 후 `git status --porcelain pom.xml` clean 확인. 안 되면 수동 원복 후 FAIL.
 - 빌드/기동/스모크 검증은 기존대로 병행.
 - 백업/임시변경분 stage·commit 금지.

@@ -32,6 +32,7 @@ memory: project
 - 통합·전체회귀 금지. 단위 + 변경 스코프(직접 호출자)만 검증
 - 기동 검증은 L1 컨텍스트 기동(Spring ApplicationContext 로드 = bean/config wiring)까지만 담당. 변경 스코프에 context 로드 테스트가 있으면 실행해 보고, 없으면 컴파일까지만 확인하고 "L1 공백" 명시(공백 인정). L2 풀 런타임 기동(Tomcat WAR+HTTP)은 전체회귀 부채 또는 사람 검증으로 위임.
 - **변경검증 전체실행 금지.** 실행이 수십 분/수백 클래스 징후면 스코프 미한정을 의심하고 중단→스코프 재산정. 전체회귀는 tester-runtime 전담.
+- **폭주 테스트 fail-fast (타임아웃 강제).** mvn 호출에 `-Dsurefire.timeout=600`(per-fork 백스톱, surefire가 600s 초과 포크 JVM을 강제 종료 → BUILD FAILURE) + `-Djunit.jupiter.execution.timeout.default=120s`(Jupiter per-test 기본 타임아웃, 단일 테스트 무한루프를 120s에 끊음; JUnit4면 무시)을 항상 붙인다. 위 스코프가드(수백 클래스)는 **단일 테스트 무한루프**를 못 잡는다(폭주 1개 ≠ 수백 클래스). 무한루프는 GC 죽음나선으로 포크 JVM이 수 GB를 점유하며 머신을 무한 점유 → 타임아웃이 없으면 fail-fast가 안 된다. surefire가 포크를 죽이면 부모 maven은 정상 종료 → trap이 pom 원복(고아·잔재 없음). 힙 캡(-Xmx)은 프로젝트 argLine을 덮을 위험이 있어 강제하지 않는다(폭주 힙은 루프의 증상이라 타임아웃 종료 시 회수됨). 배경: `.claude/wiki/surefire-runaway-test-timeout.md`.
 - **판정(verdict) 없이 종료 금지.** 무거우면 스코프부터 줄인다. PASS/FAIL/ESCALATION 중 하나를 반드시 반환. 근거: harness_pain 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
 
 ## 단위테스트 실행 (skipTests 임시 오버라이드)
@@ -50,7 +51,7 @@ git checkout -- "$POM" 2>/dev/null || true
 cp "$POM" "$POM.harnessbak"
 trap 'mv -f "$POM.harnessbak" "$POM" 2>/dev/null' EXIT INT TERM
 sed -i 's#<skipTests>true</skipTests>#<skipTests>false</skipTests>#g' "$POM"
-mvn test -DskipTests=false -Dtest='<변경스코프 테스트클래스>'   # @Nested 포함 클래스는 -Dtest='클래스명$Nested클래스명' (격리는 @Nested 무음 스킵)
+mvn test -DskipTests=false -Dsurefire.timeout=600 -Djunit.jupiter.execution.timeout.default=120s -Dtest='<변경스코프 테스트클래스>'   # @Nested 포함 클래스는 -Dtest='클래스명$Nested클래스명' (격리는 @Nested 무음 스킵)
 ```
 
 - `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당. **변경 스코프에 `@Nested`가 있으면 `-Dtest='클래스명$Nested클래스명'`로 명시 포함**한다(Surefire 2.22.2 무음 스킵 — 격리 PASS가 거짓 GREEN을 만든다. `.claude/wiki/surefire-nested-skip.md`).

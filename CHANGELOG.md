@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.24.0 — 2026-06-21
+- **tester maven 호출에 폭주 테스트 fail-fast 타임아웃 강제 — MINOR, 거버넌스 무영향.** JDK 메모리 미반환 진단 세션 발. 무한루프 테스트(제품 버그)가 surefire 포크 JVM을 수 GB·GC 죽음나선으로 무한 점유 → 머신 메모리 90% 도달. 타임아웃 없으면 fail-fast 안 됨. tester 스코프가드("수백 클래스면 중단")는 단일 테스트 무한루프를 못 잡음(폭주 1개 ≠ 수백).
+  - `tester-backend.md` (단위/변경검증): mvn에 `-Dsurefire.timeout=600`(per-fork 백스톱) + `-Djunit.jupiter.execution.timeout.default=120s`(Jupiter per-test, JUnit4면 무시) 추가 + ## 핵심 규칙 설명.
+  - `tester-runtime.md` (전체회귀): `-Dsurefire.timeout=1800`(per-fork 30분)만. 정당한 느린 통합테스트 오탐 막으려 Jupiter per-test 미사용. 정상 스위트 30분 초과 시 상향.
+  - 힙 캡(-Xmx)은 강제 안 함(프로젝트 argLine 덮을 위험; 폭주 힙은 루프 증상이라 타임아웃 종료 시 회수).
+  - surefire가 포크 종료 → 부모 maven BUILD FAILURE 정상 종료 → trap이 pom 원복(고아·잔재 없음).
+  - `wiki/surefire-runaway-test-timeout.md` 신설(증상·원인·회피·jps/jstack 응급대응) + index 등록. 제품 버그(MetaCommitRangeSelector.handleBranchSwitch 무한루프)는 제품 담당 세션 위임(하네스는 머신 보호만 책임).
+
 ## 3.23.0 — 2026-06-21
 - **설계패널 게이트에 codex 형제(cross-model 플랜비평) 추가 — MINOR, 가산·폴백안전.** 구현은 `/review ∥ /codex review`로 교차검증하면서 설계는 claude 단일모델이던 비대칭을 메움(CONTEXT.md "반복≠신뢰": claude→codex=종류 다름=정보 증가). 코드단계 union 패턴의 설계단계 대칭 복제.
   - `orchestrator.md ### codex 형제` 신설: 패널 Workflow와 **병렬**로 `/codex` consult 모드 1회 호출(review 아님=diff 없음, challenge 아님=코드 대상). 프롬프트=패널 reviewPrompt 동형(rulePaths Read+준수, planText, severity+location+quote+recommendation, quote 못 달면 confidence 강등). 보안렌즈는 cso 페르소나가 SSOT라 codex엔 아키텍처·정합·엣지케이스 렌즈 명시.
