@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.27.0 — 2026-06-22
+- **사용자 의사결정 요청 = 시나리오 기반 형식 강제 — MINOR, 거버넌스 무영향.** 사용자 요청. 추상 옵션표(시맨틱·결과 칼럼)만으론 사용자가 결정 불가 → planner 유저 시나리오 비교 템플릿(기존/신규 시나리오 단계별, 변경부 굵게)을 베이스로 옵션을 각각 완결된 신규 시나리오 흐름으로 제시.
+  - `orchestrator.md` 신설 `## 사용자 의사결정 요청 형식`: 기존 시나리오(⚠ 깨지는 단계 명시) + 신규 시나리오 A/B(옵션별 완결 흐름, 변경부 굵게, 권장 표기) + 결정 요청. 옵션은 추상 시맨틱 아닌 **시나리오 결과로** 서술 강제.
+  - 적용: 동작/설계 변경 결정 필수(순수 취향은 경량). 적용 지점 = 설계패널 생존/모순 critical 에스컬레이션, 7c 상호배타, FAIL 3분기, 3루프 ESCALATION 등 모든 사용자 판단 위임. 핵심 위임 지점(모순 critical·3루프 위임)에 형식 cross-ref.
+
 ## 3.26.0 — 2026-06-22
 - **authpatch_draft 자가점검 3건 (inbox 드레인) — MINOR, 거버넌스 무영향.** 삭제 라이프사이클 통합(고복잡도) 소비자 세션 `/harness-check` 자동드롭 처리.
   - **#1 (HIGH) codex probe false-positive**: smoke `ping`은 exit0 빠르게 통과하나 실프롬프트(7b consult·review)는 모델 API stall로 exit124 hang → TDD+리뷰 단일소스 격하 + probe 미탐지로 20분 낭비. `orchestrator.md ### 가용성 확정`의 probe를 초소형 ping → **대표 프롬프트 + `timeout 60` 하드캡**으로 강화, probe 타임아웃(exit124)도 불가로 간주(smoke exit0만으로 가용 단정 금지). `wiki/codex-model-stall-windows.md` 신설(--json shim broken pipe와 별개 = 모델 stall). 학습기반 probe 스킵(①)은 false-skip 위험으로 기각.
