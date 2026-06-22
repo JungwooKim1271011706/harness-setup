@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.28.0 — 2026-06-22
+- **repostitch PR-S1 자가점검 2건 (inbox 드레인) — MINOR, 거버넌스 무영향.**
+  - **#1 (중·누적) 7c.2 stale 인벤토리에 "신규 의존 edge" 부류 추가**: 변경 모듈이 새 외부함수(`api.searchBranches` 등)를 호출하면 그 모듈을 mock한 기존 테스트 팩토리가 신규함수 미정의로 무더기 FAIL(PR-S1 9건 — undefined 호출 TypeError). 반환shape도 값도 안 바뀌고 호출 edge만 추가돼 기존 2부류(가산/동작계약) grep엔 안 걸리는 별개 축. `playbook-tdd.md` 7c.2를 "두 부류 → 세 부류"로 확장(신규 의존 시 mock 팩토리 grep→stub 일괄 마이그레이션). 테스트 인벤토리 불완전 테마 4번째.
+  - **#2 tester codex 거짓보고 "고쳐도 재발" 근본수정 (관찰 격상)**: v3.17.0(규칙)·v3.19.0(소프트룰 "메모리 비신뢰")이 **둘 다 재발**. 원인 = 소비자 per-agent 메모리 "항상 폴백"이 in-context서 소프트룰 이김 + self-probe 탈출구가 메모리 유입구. **메커니즘 수정 = tester 가용성 판단 surface 제거**: 가용성=orchestrator 단독권한(tester self-probe·판단 0), self-probe 탈출구 제거(미주입 시 NEEDS_CONTEXT), tester "폴백" 출력 금지(raw 결과·실패신호만), orchestrator 주입 의무. `tester-{backend,frontend}.md` + `orchestrator.md ### 가용성 확정` + `wiki/agent-memory-overrides-rule.md`(3차 회피·교훈 격상). 교훈: 소프트룰 반복 패배 재발클래스는 "모델에게 X 믿지마"가 아니라 **판단 surface 제거**.
+  - **관찰 reject**: API 529 Overloaded = Anthropic 외부 1회성.
+
 ## 3.27.0 — 2026-06-22
 - **사용자 의사결정 요청 = 시나리오 기반 형식 강제 — MINOR, 거버넌스 무영향.** 사용자 요청. 추상 옵션표(시맨틱·결과 칼럼)만으론 사용자가 결정 불가 → planner 유저 시나리오 비교 템플릿(기존/신규 시나리오 단계별, 변경부 굵게)을 베이스로 옵션을 각각 완결된 신규 시나리오 흐름으로 제시.
   - `orchestrator.md` 신설 `## 사용자 의사결정 요청 형식`: 기존 시나리오(⚠ 깨지는 단계 명시) + 신규 시나리오 A/B(옵션별 완결 흐름, 변경부 굵게, 권장 표기) + 결정 요청. 옵션은 추상 시맨틱 아닌 **시나리오 결과로** 서술 강제.

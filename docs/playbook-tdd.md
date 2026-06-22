@@ -39,9 +39,10 @@
 
 7c 합의에 **기존 함수의 반환 shape·동작계약을 바꾸는** 항목이 있으면, 7.5 RED 작성 전에 **영향 테스트 전수 인벤토리 1회**를 강제한다(stale 테스트 사전 식별 — GREEN/변경검증/리뷰서 라운드마다 발견되는 루프 낭비 차단).
 
-인벤토리 대상 두 부류:
+인벤토리 대상 세 부류 (변경이 기존 테스트를 깨뜨리는 3축):
 - **가산 변경**(반환에 필드 추가): 변경 함수 반환값을 `toEqual`(exact)/`toMatchObject`로 잠근 **모든 기존 테스트**를 grep 전수(예: `grep -rn "toEqual" test/` + 변경 함수 호출처).
 - **동작계약 변경**(severity/status 산출규칙·타임아웃 등 상수값·early-return/skip 조건): 그 **동작·값을 단언하는 기존 테스트**를 전수 grep. 예: 상수 `600`→`900`이면 `600`을 단언한 테스트, "error→warn" severity 격상이면 옛 severity를 단언한 테스트.
+- **신규 의존 edge**(변경 모듈이 **새로운 외부 함수/모듈을 호출**하게 됨): 그 변경 모듈을 로드하면서 해당 의존을 `vi.mock`/`vi.doMock`(또는 Mockito) 팩토리로 가짜화한 **모든 기존 테스트**를 grep → 팩토리에 신규 함수 stub(`vi.fn().mockResolvedValue(기본값)` 등) 추가를 일괄 마이그레이션. 안 하면 mock 팩토리가 신규 함수 미정의 → `undefined` 호출 TypeError로 무관 테스트가 무더기 FAIL. grep 예: 신규로 `api.X()` 호출 추가 시 → `grep -rln "vi\.\(do\)\?mock.*api" test/` + 그 파일이 변경 모듈을 로드하는지 확인. (반환 shape도 값도 안 바뀌고 **호출 edge만 추가**돼 위 두 부류 grep엔 안 걸리는 별개 축.)
 - 영향 테스트는 tester-design이 **일괄 마이그레이션**(신계약 기대값, 검증의도·exact 보존). piecemeal(라운드마다 1건씩 발견) 금지. developer는 테스트 못 고침(hook) → 마이그레이션 주체 = tester-design(작성자≠구현자 유지).
 > 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경) 재발.
 

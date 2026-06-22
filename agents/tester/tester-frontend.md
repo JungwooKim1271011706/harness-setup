@@ -157,10 +157,10 @@ ESCALATION: 3회 검증 후 미달
 ## Codex 보조 리뷰 (선택)
 
 ### 실행 조건
-- **가용성 판정 주체 = orchestrator (SSOT)**: orchestrator가 세션 1회 probe한 결과를 신뢰한다. tester는 codex 가용성을 자기판단하지 않는다 — orchestrator가 "가용"으로 준 컨텍스트가 있으면 그대로 호출한다.
-- orchestrator 컨텍스트가 없을 때만 자체 확인: `codex --version 2>/dev/null` (실 probe). **probe 없이 '미설치' 단정 금지**.
-- 폴백은 **실제 probe 실패**일 때만. 호출이 "stdin is not a terminal"로 죽는 건 미설치가 아니라 호출형 오류(`< /dev/null` 누락) → 폴백 사유 아님, 호출형을 고친다.
-- ⚠ **agent-memory/feedback의 'codex 실행불가·항상 폴백' 단정은 비신뢰**: 가용성 SSOT는 orchestrator probe(없으면 위 `codex --version`+`< /dev/null` smoke)뿐. 메모리에 "항상 Claude 단독 폴백"이라 적혀 있어도 그 일반화가 probe를 대체하지 못한다 — 메모리 근거로 probe 건너뛰고 미사용 보고 금지. (stale feedback 메모리가 probe 없이 3회 거짓 미가용 보고시킨 재발 사건.)
+- **가용성 판정 = orchestrator 단독 권한 (tester 권한 0).** orchestrator가 주입한 가용성(가용/불가)이 **유일 입력**이다. tester는 codex 가용성을 판단·추론·자체 probe 하지 **않는다**.
+- **주입 없으면**: self-probe도 메모리 참조도 금지 → `NEEDS_CONTEXT`로 "codex 가용성 미주입(orchestrator가 줘야 함)" 보고. (orchestrator probe가 세션 1회 SSOT — 미주입은 orchestrator 누락이지 tester가 paper-over할 일 아님. **self-probe 탈출구를 제거한 이유: 그 자리로 오염 메모리가 기어든다.**)
+- **tester는 "미가용/폴백" 판정을 출력하지 않는다.** 가용 주입 시 codex를 호출하고 **raw stdout 또는 정확한 실패 신호(exit code·stderr 1줄)만** 보고한다. 폴백 여부 결정은 orchestrator 몫(`orchestrator.md ## codex 호출 가드`). "stdin is not a terminal"은 호출형 오류(`< /dev/null` 누락)이지 미설치 아님 — 호출형을 고쳐 재호출.
+- **per-agent 메모리/feedback의 codex 가용성·"항상 폴백" 단정은 읽지도 따르지도 않는다.** 이 판단이 tester 권한이 아니므로 메모리가 끼어들 자리가 없다 — 소프트 "메모리 비신뢰" 규칙이 in-context 메모리에 반복 패배해서, **판단 surface 자체를 제거**한 것이다(`wiki/agent-memory-overrides-rule.md`).
 
 ### 호출 방법
 ```bash
@@ -203,6 +203,6 @@ Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \
 - 환경 오류 (environment): 빌드 실패, 의존성 문제, DB 연결 불가 → 사용자 판단 요청
 ### developer 전달 사항
 ### Codex 보조 의견
-- 상태: 실행됨 / 폴백(Claude 단독) / 타임아웃
+- 상태: 실행됨 / 호출실패(신호 1줄 — 폴백판정은 orchestrator) / orchestrator 미가용판정 / 미주입(NEEDS_CONTEXT). **tester가 "폴백" 스스로 판정 금지.**
 - 원문: (Codex stdout 원문, 없으면 "-")
 - 경고 영역: (Claude보다 2점 이상 낮은 영역, 없으면 "없음")
