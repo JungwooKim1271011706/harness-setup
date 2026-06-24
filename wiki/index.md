@@ -11,6 +11,7 @@
 - [[gstack-install-windows]] — gstack/setup이 브라우저 추출에서 hang → 스킬 미등록. 등록만 수동 재현 + bun stale PATH
 - [[surefire-nested-skip]] — Surefire 2.22.2 `-Dtest=클래스` 격리 실행이 JUnit5 @Nested를 무음 스킵 → 거짓 GREEN. 전체실행/`$Nested` 명시로 회피
 - [[surefire-it-naming-skip]] — `*IT` 명명 테스트가 surefire 기본 스캔에서 무음 누락(failsafe 미바인딩 pom) → `-Dtest=`만 PASS는 거짓 GREEN. *Test 명명/기본 include 매칭으로 회피
+- [[device-guard-blocks-jdk-javac]] — Windows Device Guard(WDAC)가 서명 안 된 OpenJDK javac.exe 실행 차단 → maven fork 컴파일이 `.java` 에러 0줄로 무음 실패. cmd서 `javac -version` 직접 실행해 진단, 통과 JDK로 `-Djdk-1.8-home` 오버라이드
 - [[surefire-runaway-test-timeout]] — 폭주(무한루프) 테스트가 surefire 포크 JVM을 무한 점유(수 GB·GC 죽음나선) → 머신 메모리 고갈. mvn에 per-fork(`-Dsurefire.timeout`)+Jupiter per-test 타임아웃 강제로 fail-fast. jps/jstack 응급대응
 - [[codex-tmp-windows-path]] — codex 호출 시 gstack-paths TMP_ROOT가 `C:Users`(슬래시 누락) → mktemp 실패 → /tmp 폴백 1회 재시도 지연
 - [[codex-python-shim-windows]] — codex --json 파서가 Windows Store python shim을 골라 broken pipe(exit 101) → PYTHON_CMD로 실제 인터프리터 명시. 차단훅 mvn 오탐 회피 노트 포함

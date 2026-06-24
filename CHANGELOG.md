@@ -3,6 +3,9 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.30.1 — 2026-06-24
+- **inbox 드레인 1건 (wiki gotcha) — PATCH, 거버넌스 무영향.** `wiki/device-guard-blocks-jdk-javac.md` 신설: Windows Device Guard(WDAC)가 서명 안 된 OpenJDK javac.exe 실행을 차단 → maven fork 컴파일(`<fork>true</fork>` + `${jdk-1.8-home}/bin/javac`)이 `.java` 에러 본문 0줄로 무음 실패. fork stderr 삼킴으로 오인하기 쉬움(실제론 javac 起動 자체 실패). 진단: cmd서 `"<jdk>\bin\javac.exe" -version` 직접 실행(MSYS는 Permission denied로 오인). 회피: 통과 JDK로 `-Djdk-1.8-home` 오버라이드(영구=빌드코드 주입 91bacbd0). authpatch_draft 소비자 세션 발견. index 등록.
+
 ## 3.30.0 — 2026-06-24
 - **inbox 드레인 1건 (repostitch PR-F1) — MINOR, 거버넌스 무영향. stale 인벤토리 불완전 6회째 근본 격상.**
   - **(누적 6회) 7c.2를 "단순 grep" → "계약 파급 양면 분석"으로 격상 + 값-생성 픽스처 4번째 축**: PR-F1(enum `BRANCH_EXISTS`→`FF_PENDING`)에서 7c.2가 `BRANCH_EXISTS` 문자열 grep으로 detect 21건 마이그레이션했으나, `branchExists:true` **픽스처로 충돌 유발**하고 `conflicts` 카운트·rename 입력만 간접 단언한 3건(D4-DT-3/4, B1-6)을 놓침 → 변경검증 재FAIL 1라운드. 공통 뿌리 = **단언측(바뀐 값 문자열) 1축만 보고 생성측(그 값을 유발하는 입력 픽스처) 안 봄**. `playbook-tdd.md` 7c.2 intro에 양면 원칙(①값 단언 테스트 + ②값 생성/유발 입력 픽스처·seam·edge 둘 다 grep) 명문화 + 4번째 축 "값-생성 픽스처/트리거"(`grep "branchExists:\s*true"` 식 입력측 grep) 추가. 부류=닫힌 목록 아닌 양면 원칙의 사례로 재framing. 재발 누적: failure_06-15 → PR-D1 → 0621 cross-test → PR-F0 가산필드 → PR-S1 mock 팩토리 → PR-F1 픽스처.
