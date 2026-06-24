@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.29.0 — 2026-06-24
+- **inbox 드레인 4건 (Vue 세션 3 + repostitch IPC 1) — MINOR, 거버넌스 무영향.**
+  - **#1 (HIGH) tester-frontend UI 렌더버그 false PASS**: 대시보드 "차트 안 나옴" 수정에서 첫 tester-frontend가 vue-tsc exit0 + vitest 12 PASS로 **PASS** 줬으나 차트 실제 미렌더(canvas client=300x150·style NONE = `new Chart()` 미실행) → 사용자 재보고 + 수동 브라우저 조사 1라운드 낭비. 검증 oracle이 화면결과 아닌 코드구조였음. `tester-frontend.md` 핵심규칙에 **렌더 영향 변경은 실브라우저 렌더 실측 없이 PASS 금지**(요소 painted/canvas 비-0 크기) + **렌더 미검증을 PASS로 위장 금지**(인증·환경 제약 시 ESCALATION으로 실측 위임, "부분확인" 약표기 PASS 금지). `orchestrator.md` 라우팅에 렌더버그 정적 PASS 종결 금지 룰.
+  - **#2 wiki gotcha `vite-stale-served-source-windows`**: Windows Vite dev server 워처가 편집 miss → stale transform 서빙. 디스크≠서빙. `curl localhost:PORT/src/...`로 서빙 소스 확인 후 재시작.
+  - **#3 wiki gotcha `vue-immediate-watch-template-ref`**: `watch(...,{immediate:true})`가 mount 전 동기 실행 → template ref null → 차트 조용히 미렌더. flush:'post'로도 안 고쳐짐. 첫 렌더는 `onMounted(renderChart)`. (#1 버그의 근인, #2와 한 묶음.)
+  - **#4 (누적) IPC 경계 반환 shape 계약 — 7c.3 신설**: repostitch PR-S1에서 핸들러가 `{ok,branches}` wrapper 반환, 소비부는 raw array 기대. 단위테스트가 api를 string[]로 직접 mock해 shape 불일치 **우회** → GREEN 거짓통과 → /review 적발. 7c.2(stale 기존테스트·mock 팩토리 함수목록)와 **다른 축**(신규 계약 producer↔consumer shape 일치). `playbook-tdd.md` 7c.3 신설 — **양끝 동일 단언 또는 실 핸들러 반환 계약테스트 1건** 강제. planner-{frontend,backend}에 IPC 반환 shape 양끝 명시 룰. 근거: PR-S1 + PR-D2/D4 payload 필드누락 + 실버그 bc303a7.
+
 ## 3.28.0 — 2026-06-22
 - **repostitch PR-S1 자가점검 2건 (inbox 드레인) — MINOR, 거버넌스 무영향.**
   - **#1 (중·누적) 7c.2 stale 인벤토리에 "신규 의존 edge" 부류 추가**: 변경 모듈이 새 외부함수(`api.searchBranches` 등)를 호출하면 그 모듈을 mock한 기존 테스트 팩토리가 신규함수 미정의로 무더기 FAIL(PR-S1 9건 — undefined 호출 TypeError). 반환shape도 값도 안 바뀌고 호출 edge만 추가돼 기존 2부류(가산/동작계약) grep엔 안 걸리는 별개 축. `playbook-tdd.md` 7c.2를 "두 부류 → 세 부류"로 확장(신규 의존 시 mock 팩토리 grep→stub 일괄 마이그레이션). 테스트 인벤토리 불완전 테마 4번째.

@@ -46,6 +46,17 @@
 - 영향 테스트는 tester-design이 **일괄 마이그레이션**(신계약 기대값, 검증의도·exact 보존). piecemeal(라운드마다 1건씩 발견) 금지. developer는 테스트 못 고침(hook) → 마이그레이션 주체 = tester-design(작성자≠구현자 유지).
 > 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경) 재발.
 
+## 7c.3 — 경계 반환 shape 계약 (mock이 양끝을 끊는 거짓 GREEN 차단)
+
+7c 합의에 **IPC/RPC/모듈 경계의 반환 shape를 신설·변경하는** 항목(예: Electron `ipc:*` 핸들러, preload 브리지, api 래퍼)이 있으면, 7.5 RED 작성 전에 **양끝 단언 일치**를 1회 강제한다. 7c.2가 보는 "stale 기존 테스트"·"mock 팩토리 함수목록 완전성"과 **다른 축**(이건 신규 계약의 producer↔consumer shape 일치).
+
+- 문제 메커니즘: IPC 반환 shape는 **핸들러 → preload → api 래퍼 → 소비부** 여러 홉이 일치해야 한다. 각 단위테스트가 자기 옆 경계를 mock으로 끊어(예: api를 `string[]`로 직접 mock) 검증 → producer가 `{ok:true, branches}` wrapper를 줘도 consumer가 raw array를 기대하는 **shape 불일치가 단위에 안 잡히고 GREEN 통과** → 리뷰/E2E·실배선에서야 적발(라운드 낭비).
+- 강제 체크 (둘 중 하나 이상):
+  - **양끝 동일 단언**: 신규/변경 경계의 반환 shape를, **producer 측(핸들러 반환)과 consumer 측(소비부 기대) 양쪽에서 동일 shape로 단언**하는 RED가 있는지 확인. consumer 테스트가 mock으로 producer와 **다른 shape**를 주입하면 그 mock이 실 핸들러 반환과 일치하는지 1줄 대조.
+  - **계약 테스트 1건**: 경계마다 mock이 아닌 **실 핸들러 반환값 1건을 고정**(contract test)해 wrapper vs raw를 못 갈리게 잠근다.
+- 산출: planner-*(IPC 계약 명세)가 신규/변경 채널의 반환 shape를 producer↔consumer 양끝 표기 → tester-design RED가 그 shape를 양끝 단언. (mock 우회로 한쪽만 통과시키는 거짓 GREEN을 TDD 단계서 차단.)
+> 근거: repostitch PR-S1(`ipc:searchBranches` wrapper vs raw array, mock 우회 GREEN→리뷰 적발), PR-D2/D4 payload 필드누락(mock 우회), 실버그 bc303a7(renderer→IPC `submodules` 필드 누락, mock 직접주입 통과→실배선만 적발). applied/20260622T063542Z(mock 팩토리 함수목록 완전성)와 다른 축.
+
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
 
 codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.

@@ -28,6 +28,7 @@ permissionMode: plan
 ## 핵심 규칙
 - Controller / Service / Repository 경계를 분리해서 계획
 - API 계약, DTO, 설정 영향만 명시
+- **신규/변경 IPC·RPC 핸들러는 반환 shape를 소비부 기대와 양끝 일치로 명시**(wrapper `{ok,...}` vs raw). producer 측 반환 shape가 7c.3 양끝 단언/계약테스트의 입력 — mock이 양끝을 끊어 통과시키는 거짓 GREEN 차단(`docs/playbook-tdd.md` 7c.3).
 - 프론트 구현 방식 추정 금지
 - 설계 변경 제안은 요구사항과 현재 코드 근거가 있을 때만 허용
 

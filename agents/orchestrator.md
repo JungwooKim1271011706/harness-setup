@@ -312,6 +312,7 @@ rule 경로: <0단계 확정 경로>를 Read하고 준수
 - tester FAIL + 에러 분류 DESIGN_MISMATCH(설계 결함) → 해당 planner 재호출 + 설계패널 재게이트 + 사용자 재승인 (단 **설계 승인된 스키마·동작계약 변경발 기존-테스트 깨짐은 DESIGN_MISMATCH 아님** → stale-test 마이그레이션(tester-design). FAIL 3분기 처리 표 참조)
 - tester FAIL + 환경 문제 → 사용자에게 환경 수정 가이드 전달 후 실패한 해당 tester(변경검증 또는 전체회귀) 재실행
 - tester FAIL + 원인 불명확 → /investigate → FAIL 3분기 재판단 → learning gate(test_fail) → developer 재수정
+- **렌더 영향 변경(차트/캔버스/신규 화면·컴포넌트/레이아웃)은 tester-frontend 정적 PASS(vue-tsc+유닛)만으로 종결 금지** → 실브라우저 렌더 실측(요소 painted/canvas client 크기 비-0) 확인 후 종결. tester가 인증/환경으로 실측 못 해 ESCALATION 주면 orchestrator가 쿠키 주입·dev server 기동으로 실측 위임(false PASS 종결 금지). 근거: bugfix-autopatch-dashboard 차트 미렌더 false PASS → 재보고 1라운드 낭비. 함정: `wiki` [[vue-immediate-watch-template-ref]](immediate watch mount전 bail)·[[vite-stale-served-source-windows]](디스크≠서빙).
 
 ## 최소 컨텍스트 전달 규칙
 각 agent에는 아래만 전달한다.

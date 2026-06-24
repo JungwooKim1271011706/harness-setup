@@ -29,6 +29,7 @@ permissionMode: plan
 - 페이지 / 컴포넌트 / store / API 소비 책임을 분리해 계획
 - 로딩, 에러, empty 상태를 빠뜨리지 않는다
 - 백엔드 계약 변경은 별도 항목으로만 표시
+- **신규/변경 IPC·RPC 경계는 반환 shape를 producer↔consumer 양끝에 명시**(예: 핸들러 `{ok,branches}` wrapper vs 소비부 raw array). 양끝 표기가 7c.3 양끝 단언/계약테스트의 입력 — mock이 한쪽만 통과시키는 거짓 GREEN 차단(`docs/playbook-tdd.md` 7c.3).
 - 구현 아이디어를 장문으로 확장하지 않는다
 
 ## 탐색 규칙
