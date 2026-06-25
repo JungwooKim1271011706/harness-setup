@@ -31,6 +31,7 @@ memory: project
 - planner 승인 전 developer 호출 금지
 - 구현 후에는 tester-backend/tester-frontend로 변경검증을 수행하고, PASS면 변경검증 종료. tester-runtime(전체회귀)은 매 구현 강제 체인에서 호출하지 않는다.
 - 테스트 레이어 분담: tester-backend/tester-frontend = 변경검증(단위 + 변경 스코프: 직접 호출자 1홉 + planner 회귀범위) + L1 컨텍스트 기동. tester-runtime = 전체회귀 전담(부채 트리거 또는 "회귀 돌려" 수동 호출 시에만). 자세한 정의는 CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 참조.
+- 변경검증 회귀 스코프는 산문("*Test 전체")이 아니라 **명시 클래스 목록**으로 위임하고, tester 보고의 실행 클래스 집계와 대조한다(지시 vs 실행 갭 = 무음 부분실행 → tester-backend 영역2 대조표).
 - JUnit 실행: 프로젝트 pom의 skipTests 리터럴 때문에 tester는 실행 직전 pom을 임시로 오버라이드(sed)하고 trap으로 원복한다. 프로덕트 pom은 영구변경·커밋하지 않으며, tester는 실행 후 git clean을 검증한다. (시작 시 git checkout 자가치유 + EXIT/INT/TERM trap 원복)
 - tester-backend/tester-frontend PASS 후 /verify-implementation(verify-* 스킬 등록 시) → /review(code-reviewer) ∥ /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
 
@@ -245,6 +246,8 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 - 명확한 1~2줄 수정
 - 문서 갱신만 필요한 경우
 - 사용자가 명시적으로 스킵 요청한 경우
+
+> ⚠ 예외(스킵 금지): "설계가 명확/콘크리트해 보여도" 신규기능이 ① 새 config 토글/프로퍼티 도입 ② 명령/빈 등록 변경(`@ShellComponent`/`@ConditionalOnProperty` 등) ③ 기존 설정·토글 인접 변경 중 하나라도 해당하면 grill-with-docs를 강제한다 — 코드베이스의 인접/중복 메커니즘 적발 영역(스킵 시 planner/구현 후 CRITICAL 설계충돌 후행 적발 → 재계획 라운드). 근거: deploy-target 설계가 기존 `autopatch.shell.mode`와 중복+상충(account always-on 불변식 위반) — grill 스킵으로 planner 1차서야 적발.
 
 ### 출력 활용
 - Q&A 결과 → 검증된 설계 방향으로 planner에 전달

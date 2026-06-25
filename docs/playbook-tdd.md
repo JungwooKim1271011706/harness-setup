@@ -46,19 +46,22 @@
 - **동작계약 변경**(severity/status 산출규칙·타임아웃 등 상수값·early-return/skip 조건): 그 **동작·값을 단언하는 기존 테스트**를 전수 grep. 예: 상수 `600`→`900`이면 `600`을 단언한 테스트, "error→warn" severity 격상이면 옛 severity를 단언한 테스트.
 - **신규 의존 edge**(변경 모듈이 **새로운 외부 함수/모듈을 호출**하게 됨): 그 변경 모듈을 로드하면서 해당 의존을 `vi.mock`/`vi.doMock`(또는 Mockito) 팩토리로 가짜화한 **모든 기존 테스트**를 grep → 팩토리에 신규 함수 stub(`vi.fn().mockResolvedValue(기본값)` 등) 추가를 일괄 마이그레이션. 안 하면 mock 팩토리가 신규 함수 미정의 → `undefined` 호출 TypeError로 무관 테스트가 무더기 FAIL. grep 예: 신규로 `api.X()` 호출 추가 시 → `grep -rln "vi\.\(do\)\?mock.*api" test/` + 그 파일이 변경 모듈을 로드하는지 확인. (반환 shape도 값도 안 바뀌고 **호출 edge만 추가**돼 위 두 부류 grep엔 안 걸리는 별개 축.)
 - **값-생성 픽스처/트리거**(enum·상태플래그 산출규칙이 바뀜 — ②생성측): 바뀐 값을 단언하진 않지만 그 값을 **유발하는 입력 픽스처/조건**을 써서 결과를 **간접 단언**(충돌 카운트·UI 존재·분기 동작 등)하는 테스트를 전수 grep. 위 부류들이 ①단언측(바뀐 값 문자열)을 잡는다면 이건 ②생성측이다 — 변경 분기를 트리거하는 **입력 필드값**으로 grep. 예: detect enum `BRANCH_EXISTS`→`FF_PENDING` 변경 시, `'BRANCH_EXISTS'` 단언 grep만으론 `branchExists: true` 픽스처로 충돌을 유발하고 `conflicts` 카운트/rename 입력만 단언한 테스트를 놓침 → 입력측 `grep -rn "branchExists:\s*true" test/`도 전수. (값 문자열이 단언에 안 보여 ①측 grep에 안 걸리는 별개 축.)
+- **시그니처/위임 전환**(호출처 + 사라지는 책임): ① **생성자/메서드 시그니처 변경**(필드·파라미터 추가/DI 변경) → 그 생성자·메서드를 호출하는 **모든 기존 테스트** grep(컴파일 깨짐·stale setup 사전식별). ② **기존 호출경로를 다른 컴포넌트로 위임/대체 전환** 시, 대체되는 메서드가 수행하던 **부가책임**(예: `resolveTargetFiles`의 JAR 다중배포 확장)을 신경로가 보존하는지 인벤토리 — 위임이 "주 동작"만 옮기고 부가책임을 빠뜨리는 회귀를 RED로 선잠금(안 하면 변경검증 GREEN 후 review서야 blocking 적발). 근거: AutoPatchCommands 생성자 2필드 추가 stale 마이그레이션 라운드 + resolveTargetFiles JAR확장 책임소실 codex review blocking(2차 수정).
 - 영향 테스트는 tester-design이 **일괄 마이그레이션**(신계약 기대값, 검증의도·exact 보존). piecemeal(라운드마다 1건씩 발견) 금지. developer는 테스트 못 고침(hook) → 마이그레이션 주체 = tester-design(작성자≠구현자 유지).
 > 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경)·PR-S1 mock 팩토리·PR-F1 branchExists 픽스처 3건 재발(stale-인벤토리 불완전 6회 — 단언측만 보고 생성측 누락이 공통 뿌리).
 
 ## 7c.3 — 경계 반환 shape 계약 (mock이 양끝을 끊는 거짓 GREEN 차단)
 
-7c 합의에 **IPC/RPC/모듈 경계의 반환 shape를 신설·변경하는** 항목(예: Electron `ipc:*` 핸들러, preload 브리지, api 래퍼)이 있으면, 7.5 RED 작성 전에 **양끝 단언 일치**를 1회 강제한다. 7c.2가 보는 "stale 기존 테스트"·"mock 팩토리 함수목록 완전성"과 **다른 축**(이건 신규 계약의 producer↔consumer shape 일치).
+7c 합의에 **IPC/RPC/모듈 경계의 반환 shape를 신설·변경하는** 항목(예: Electron `ipc:*` 핸들러, preload 브리지, api 래퍼), 또는 ① **백엔드 DTO→프론트 소비 필드 계약**(`toDto()`가 소비자 읽는 필드를 채우나) ② **신규 정책/설정 객체가 런타임 실행 경로에 실배선되나**(`empty()`/no-op 고정 아님) 항목이 있으면, 7.5 RED 작성 전에 **양끝 단언 일치**를 1회 강제한다. 7c.2가 보는 "stale 기존 테스트"·"mock 팩토리 함수목록 완전성"과 **다른 축**(이건 신규 계약의 producer↔consumer shape 일치).
 
 - 문제 메커니즘: IPC 반환 shape는 **핸들러 → preload → api 래퍼 → 소비부** 여러 홉이 일치해야 한다. 각 단위테스트가 자기 옆 경계를 mock으로 끊어(예: api를 `string[]`로 직접 mock) 검증 → producer가 `{ok:true, branches}` wrapper를 줘도 consumer가 raw array를 기대하는 **shape 불일치가 단위에 안 잡히고 GREEN 통과** → 리뷰/E2E·실배선에서야 적발(라운드 낭비).
 - 강제 체크 (둘 중 하나 이상):
   - **양끝 동일 단언**: 신규/변경 경계의 반환 shape를, **producer 측(핸들러 반환)과 consumer 측(소비부 기대) 양쪽에서 동일 shape로 단언**하는 RED가 있는지 확인. consumer 테스트가 mock으로 producer와 **다른 shape**를 주입하면 그 mock이 실 핸들러 반환과 일치하는지 1줄 대조.
   - **계약 테스트 1건**: 경계마다 mock이 아닌 **실 핸들러 반환값 1건을 고정**(contract test)해 wrapper vs raw를 못 갈리게 잠근다.
+  - **DTO→소비자 필드**: 백엔드 `toDto()`/응답 매핑이 **프론트가 소비하는 필드(목록 `.length`·렌더 키 등)를 non-null로 채우는지** 단언 1건. (`rules` 미설정 → DTO=null → 프론트 `.length` 크래시·항목 전멸이 단위 GREEN을 우회.)
+  - **정책/설정 런타임 배선**: 신규 정책/설정(예: IgnorePolicy)이 **실행 모듈에 실주입돼 동작에 반영되는지** 통합 케이스 1건. 모듈이 `Policy.empty()`/no-op 고정이면 등록 규칙이 무력화(단위는 정책 객체만 보고 GREEN). 혼합(백+프론트) 트랙서 특히 강제.
 - 산출: planner-*(IPC 계약 명세)가 신규/변경 채널의 반환 shape를 producer↔consumer 양끝 표기 → tester-design RED가 그 shape를 양끝 단언. (mock 우회로 한쪽만 통과시키는 거짓 GREEN을 TDD 단계서 차단.)
-> 근거: repostitch PR-S1(`ipc:searchBranches` wrapper vs raw array, mock 우회 GREEN→리뷰 적발), PR-D2/D4 payload 필드누락(mock 우회), 실버그 bc303a7(renderer→IPC `submodules` 필드 누락, mock 직접주입 통과→실배선만 적발). applied/20260622T063542Z(mock 팩토리 함수목록 완전성)와 다른 축.
+> 근거: repostitch PR-S1(`ipc:searchBranches` wrapper vs raw array, mock 우회 GREEN→리뷰 적발), PR-D2/D4 payload 필드누락(mock 우회), 실버그 bc303a7(renderer→IPC `submodules` 필드 누락, mock 직접주입 통과→실배선만 적발). DEVUNIT-authpatch F1(ExportModule `PatchIgnorePolicy.empty()` 고정→DB ignore 규칙 export 런타임 미적용)·F2(`toDto()` rules 미설정→DTO null→프론트 크래시) codex+code-reviewer 2소스 적발, 회귀잠금 EM-POLICY-01/02·TPL-DTO-RULES-01/02. applied/20260622T063542Z(mock 팩토리 함수목록 완전성)와 다른 축.
 
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
 

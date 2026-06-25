@@ -84,6 +84,7 @@ mvn test -DskipTests=false -Dsurefire.timeout=600 -Djunit.jupiter.execution.time
 변경 파일의 직접 단위 + 직접 호출자(direct caller) 범위만 검증한다. 통합·전체회귀는 tester-runtime이 담당한다.
 - 변경과 연관된 기존 API/서비스 side effect 없음 확인
 - DB 스키마/데이터 무결성 유지 확인
+- **지시 스코프 vs 실행 스코프 대조 (무음 부분실행 차단)**: orchestrator가 지시한 회귀 스코프 클래스 목록과 **surefire가 실제 실행한 클래스 목록**(`Tests run` 집계의 클래스별 출처)을 대조표로 보고한다. 지시됐으나 실행 로그에 없는 클래스가 있으면 **PASS 불가** — 그 클래스를 명시 포함(`-Dtest=A,B,C`)해 재실행하거나 "스코프 부분실행" 경고를 명시한다. (@Nested/IT 무음스킵과 같은 "지시했으나 안 돈" 갭 클래스. 근거: inclusive-from "61/0/0 PASS"인데 3클래스 미실행 → stale 8건 후행 발각.)
 
 ### 영역 3: 코드 품질 (Code Quality)
 아래 항목 기준으로 평가한다. (gstack testing specialist 기준)

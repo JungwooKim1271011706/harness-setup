@@ -3,6 +3,15 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.31.0 — 2026-06-25
+- **inbox 드레인 4파일 9후보 → 5 applied / 4 rejected·fold — MINOR, 거버넌스 무영향.** DEVUNIT-authpatch_draft 소비자 세션 4회고. TDD 케이스설계·변경검증·설계라우팅 게이트 보강. 새 wiki 페이지 없음(전부 기존 규칙 흡수·확장).
+  - **`tester-quality.md` 기준9① (#1)**: 형제 RED 케이스가 **같은 산출물(파일/리스트)에 존재 vs 부재를 상충 단언**하는 모순도 점검(둘 다 GREEN 불가→8 GREEN서 DESIGN_MISMATCH). 근거: IGN-INT-04 exists ↔ 06c doesNotExist.
+  - **`playbook-tdd.md` 7c.3 (#2)**: 트리거에 **백엔드 DTO→프론트 소비필드**·**정책/설정→런타임 실배선**(`empty()`/no-op 아님) 추가 + 강제체크 2 bullet. 단위 GREEN이 우회한 교차레이어 계약을 RED로 선잠금. 근거: F1 ExportModule empty 고정·F2 toDto rules null(review 적발 CRITICAL 2).
+  - **`playbook-tdd.md` 7c.2 (#7)**: 인벤토리에 **"시그니처/위임 전환"** 부류 신설 — 생성자/메서드 시그니처 변경 호출처 grep + 위임 전환 시 사라지는 부가책임 보존 인벤토리. 근거: 생성자 stale 마이그레이션 + resolveTargetFiles JAR확장 책임소실 blocking.
+  - **`tester-backend.md` 영역2 + `orchestrator.md` (#3)**: 변경검증 보고에 **지시 클래스 vs surefire 실행 클래스 대조표**(누락 시 PASS 불가) + orchestrator는 회귀 스코프를 명시 클래스 목록으로 위임. 근거: inclusive-from "61/0/0 PASS"인데 3클래스 미실행→stale 8건 후행.
+  - **`orchestrator.md` grill-with-docs (#5)**: 건너뛰는 조건에 ⚠예외 — config 토글/빈 등록/토글 인접 변경이면 "설계 명확"이어도 grill 강제(중복 메커니즘 적발). 근거: deploy-target ↔ 기존 `autopatch.shell.mode` 중복+상충 planner 1차 적발.
+  - **기각/통합**: #6(검증자 전체집합, receiving-code-review가 이미 잡음 YAGNI)·#4(크로스-repo, 다repo 한정 1회)·#8(#7에 fold)·D1(@Nested, SSOT 기적용).
+
 ## 3.30.2 — 2026-06-25
 - **inbox 드레인 2건 (wiki gotcha 짝 — DB 네이밍 drift) — PATCH, 거버넌스 무영향.** authpatch_draft DB 네이밍 drift 풀사이클(commit 42d77a7e)서 발견된 짝 gotcha. 상호 링크 + `spring-profile-bean-eval-timing` 연결.
   - **`wiki/hibernate-naming-strategy-explicit-name.md`**: Spring 기본 `SpringPhysicalNamingStrategy`는 **명시 `@Column/@Table(name=...)` 이름마저** camelCase→snake 변환(Hibernate 순정 `PhysicalNamingStrategyStandardImpl`은 통과시킴 — 설계패널도 혼동). 수동 DDL이 camelCase면 신규설치 `SQL 1364`. 회피=DDL을 snake 출력과 글자단위 일치 + strategy yml 박제 + 라이브는 information_schema 직접조회 확정.
