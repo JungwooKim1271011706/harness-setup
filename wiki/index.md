@@ -18,6 +18,8 @@
 - [[codex-model-stall-windows]] — codex smoke ping은 exit0 통과하나 실프롬프트가 모델 stall로 exit124 hang → probe false-positive로 20분 낭비. probe를 대표프롬프트+60s 타임아웃으로 강화, 타임아웃=불가
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
+- [[hibernate-naming-strategy-explicit-name]] — Spring 기본 naming strategy는 **명시 `@Column/@Table(name=...)` 이름도** camelCase→snake 변환(Hibernate 순정과 다름). 수동 DDL이 camelCase면 신규설치 1364. DDL을 snake 출력과 글자단위 일치
+- [[information-schema-table-name-ci-collation]] — `information_schema.*.TABLE_NAME`은 ci collation → `'Users'`가 snake `users`에 매칭(LCTN=0이어도). "메타조회 통과=스키마 사실" 추론 금지, 리터럴도 snake 일치 + 속성(NON_UNIQUE)까지 단언
 - [[vue-immediate-watch-template-ref]] — Vue `watch(...,{immediate:true})`가 mount 전 동기 실행→template ref null→차트 조용히 미렌더. flush:'post'로도 안 고쳐짐. 첫 렌더는 `onMounted(renderChart)`로
 - [[vite-stale-served-source-windows]] — Windows에서 Vite dev server 워처가 편집 miss→stale transform 서빙. 디스크≠서빙. `curl localhost:PORT/src/...`로 서빙 소스 확인 후 재시작
 

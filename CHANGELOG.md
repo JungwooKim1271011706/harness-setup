@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.30.2 — 2026-06-25
+- **inbox 드레인 2건 (wiki gotcha 짝 — DB 네이밍 drift) — PATCH, 거버넌스 무영향.** authpatch_draft DB 네이밍 drift 풀사이클(commit 42d77a7e)서 발견된 짝 gotcha. 상호 링크 + `spring-profile-bean-eval-timing` 연결.
+  - **`wiki/hibernate-naming-strategy-explicit-name.md`**: Spring 기본 `SpringPhysicalNamingStrategy`는 **명시 `@Column/@Table(name=...)` 이름마저** camelCase→snake 변환(Hibernate 순정 `PhysicalNamingStrategyStandardImpl`은 통과시킴 — 설계패널도 혼동). 수동 DDL이 camelCase면 신규설치 `SQL 1364`. 회피=DDL을 snake 출력과 글자단위 일치 + strategy yml 박제 + 라이브는 information_schema 직접조회 확정.
+  - **`wiki/information-schema-table-name-ci-collation.md`**: `information_schema.STATISTICS.TABLE_NAME`은 컬럼 collation(기본 `utf8_general_ci`)이 ci → `'Users'`가 snake `users`에 매칭(LCTN=0이어도). 양날: 오타 거짓통과 + "통과=Pascal 테이블" 잘못 추론(설계패널 거짓 critical). 회피=리터럴 snake 일치/`LOWER()` + 이름뿐 아닌 속성(`NON_UNIQUE=0`)까지 단언. index 등록.
+
 ## 3.30.1 — 2026-06-24
 - **inbox 드레인 1건 (wiki gotcha) — PATCH, 거버넌스 무영향.** `wiki/device-guard-blocks-jdk-javac.md` 신설: Windows Device Guard(WDAC)가 서명 안 된 OpenJDK javac.exe 실행을 차단 → maven fork 컴파일(`<fork>true</fork>` + `${jdk-1.8-home}/bin/javac`)이 `.java` 에러 본문 0줄로 무음 실패. fork stderr 삼킴으로 오인하기 쉬움(실제론 javac 起動 자체 실패). 진단: cmd서 `"<jdk>\bin\javac.exe" -version` 직접 실행(MSYS는 Permission denied로 오인). 회피: 통과 JDK로 `-Djdk-1.8-home` 오버라이드(영구=빌드코드 주입 91bacbd0). authpatch_draft 소비자 세션 발견. index 등록.
 
