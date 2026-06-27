@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.33.0 — 2026-06-27
+- **inbox 드레인 1파일 PR-F3 회고 → A 신규 + B/C/D 흡수 — MINOR, 거버넌스 무영향.** DEVUNIT-repostitch PR-F3 post-commit 자가회고. 직전 v3.32.0(PR-F2)과 같은 계열 → B/C/D는 기존 절 1줄 흡수(새 부류·페이지 X), A만 신규 영역.
+  - **`orchestrator.md` 위임 규칙 (A, 신규)**: **상호의존 작업 병렬위임 금지**. Agent 동시발사 전 "한쪽 산출이 다른쪽 입력 가정을 바꾸나?" 자가체크 — 바꾸면 순차. 구현 계약 변경 ↔ 픽스처/테스트 모사는 상호의존(구현 먼저 확정→접점 SSOT→픽스처 정합). 파일 비충돌 ≠ 의미 독립. 근거: developer(judgeFf `-C tmpDir`) ∥ tester-design(`-C` 없음) 동시발사 → 변경검증 8→57 FAIL 폭증.
+  - **`playbook-tdd.md` 7c.2 (B, 흡수)**: "신규 의존 edge" 부류에 — 신규 함수뿐 아니라 **기존 공유 mock(`makeRunner`)이 미stub한 새 서브명령/argv**(`merge-base`·`.code` 분기)도 같은 축. 공유 mock 쓰는 전 케이스 grep해 단일 passthrough 헬퍼로 일괄 보강. 근거: PR-F3 48 케이스 'diverged' 오판 한 라운드 통째 FAIL.
+  - **`playbook-tdd.md` 7c.3 (C, 흡수)**: "양끝 동일 단언"에 — 반환 shape뿐 아니라 **입력 형태도 production형 그대로** 주입(테스트 편의형 금지). producer 계약 테스트(`shortName` 생산)가 있으면 consumer도 같은 형태 e2e 1케이스. 근거: PR-F3 renderer `shortName` ↔ 테스트 전부 `fullRef` 주입 → 재조립 분기 미실행, branch선택 import 전멸 버그를 /review가 적발(TDD 미탐).
+  - **`tester-design.md` 핵심규칙 (D, 흡수)**: ① 대상 src 실제 argv를 **Read 후 모사**(추정 금지, 모호하면 미확정) ② **통과 주장 금지**(Bash 없음 — 패턴 정합 grep 자가증명만). 근거: PR-F3 tester-design 4회 추정오판 + Bash 없는데 "통과" 주장.
+
 ## 3.32.0 — 2026-06-27
 - **inbox 드레인 4파일 → 4 applied — MINOR, 거버넌스 무영향.** DEVUNIT-repostitch PR-S2/F2 소비자 세션 4회고. 전부 누적 재발(YAGNI 아님). A/C/D = recurring-test-lessons #2/#3 "mock이 실 계약 우회"의 세 단면.
   - **`playbook-tdd.md` 7c.2 (A)**: stale 인벤토리가 격상(v3.21/3.30) 후에도 재재발(누적 9~10회). ① **matcher 시맨틱 박스** — `toEqual`·`toContainEqual`·객체리터럴=exact key-count(가산필드 깸), `toMatchObject`·`objectContaining`=subset(안 깸). 기존 글이 `toMatchObject`를 exact로 오기재했던 것 수정(planner 6회 오판 뿌리). ② **"교차파일+multi-entry" 부류 신설** — 변경 테스트 파일 밖 전 트리 grep + 여러 항목 중 일부만 거동변경 트리거하는 케이스(multi-sub). 근거: PR-S2 cross-file `toContainEqual`·PR-F2 D3-19.
