@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.32.0 — 2026-06-27
+- **inbox 드레인 4파일 → 4 applied — MINOR, 거버넌스 무영향.** DEVUNIT-repostitch PR-S2/F2 소비자 세션 4회고. 전부 누적 재발(YAGNI 아님). A/C/D = recurring-test-lessons #2/#3 "mock이 실 계약 우회"의 세 단면.
+  - **`playbook-tdd.md` 7c.2 (A)**: stale 인벤토리가 격상(v3.21/3.30) 후에도 재재발(누적 9~10회). ① **matcher 시맨틱 박스** — `toEqual`·`toContainEqual`·객체리터럴=exact key-count(가산필드 깸), `toMatchObject`·`objectContaining`=subset(안 깸). 기존 글이 `toMatchObject`를 exact로 오기재했던 것 수정(planner 6회 오판 뿌리). ② **"교차파일+multi-entry" 부류 신설** — 변경 테스트 파일 밖 전 트리 grep + 여러 항목 중 일부만 거동변경 트리거하는 케이스(multi-sub). 근거: PR-S2 cross-file `toContainEqual`·PR-F2 D3-19.
+  - **`playbook-tdd.md` 7c.4 신설 + `tester-design.md` + `developer-backend.md` (C)**: **plan 신규/변경 헬퍼 시그니처 = 픽스처 단언 SSOT**. 메서드 종류(`run`=PAT 인증 vs `runPlain`=비인증)·인자순서·플래그·URL·반환shape를 plan에 정확히 잠근다. 픽스처가 plan과 갈리면 plan이 이긴다(developer가 틀린 픽스처에 수렴 방지). 보안·런타임 임팩트 메서드 선택 특히 고정. 근거: PR-F2 fetch를 `runPlain`서 캡처→PAT 미주입 기존 branch 서브모듈 거짓거부 잠재버그(9-FAIL+2소스+receiving-code-review 3중 적발).
+  - **`tester-design.md` + `orchestrator.md` (D)**: **claimed-but-not-applied(디스크 미반영) 차단** — tester-design 산출 말미에 변경 핵심 1~2개 `grep -n` 자가증명 의무 + orchestrator는 테스트파일 편집 위임 후 다음 단계 진입 전 Grep로 디스크 확인. 근거: PR-F2 픽스처 미반영·PR-C2 파일부재 2회(3+회 재발). grep 1회 << 변경검증 1라운드.
+  - **`wiki/jsdom-missing-browser-apis.md` 신규 (B)**: renderer가 jsdom 미구현 브라우저 전역(`CSS.escape`·`matchMedia` 등)→프로덕션 OK·단위테스트 TypeError 전수 폭발(PR-S2 63 FAIL). 환경 가드 헬퍼 회피책 + 일반화. index 등록.
+
 ## 3.31.0 — 2026-06-25
 - **inbox 드레인 4파일 9후보 → 5 applied / 4 rejected·fold — MINOR, 거버넌스 무영향.** DEVUNIT-authpatch_draft 소비자 세션 4회고. TDD 케이스설계·변경검증·설계라우팅 게이트 보강. 새 wiki 페이지 없음(전부 기존 규칙 흡수·확장).
   - **`tester-quality.md` 기준9① (#1)**: 형제 RED 케이스가 **같은 산출물(파일/리스트)에 존재 vs 부재를 상충 단언**하는 모순도 점검(둘 다 GREEN 불가→8 GREEN서 DESIGN_MISMATCH). 근거: IGN-INT-04 exists ↔ 06c doesNotExist.

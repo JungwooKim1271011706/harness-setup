@@ -30,6 +30,7 @@ planner-backend 결과만 구현한다.
 - controller/service/repository 경계 재설계 금지
 - planner에 없는 API 계약 변경 금지
 - **계획서 diff 준수**: planner diff가 정확한 식·시그니처(예: 특정 getter `getApiBaseUrl()`)를 지정하면 임의로 다른 식으로 바꾸지 않는다. 다르게 구현할 근거가 있으면 멈추고 보고한다 — 임의 이탈은 단위테스트가 mock으로 가리는 라이브 배선버그를 부른다(실제 baseUrl `getUrl()`↔`getApiBaseUrl()` 혼동 사고).
+- **plan SSOT > 픽스처**: RED 픽스처가 호출·캡처하는 헬퍼 시그니처(메서드 종류 `run`/`runPlain`·인자순서·플래그·URL)가 **plan과 다르면 plan을 따른다**. "RED를 GREEN으로" 목표 때문에 틀린 픽스처에 수렴하지 마라 — 멈추고 불일치를 보고(인증경로 `run`(PAT)↔`runPlain`(비인증) 혼동이 프로덕션 인증버그를 부른 PR-F2). playbook-tdd 7c.4.
 - 설정/빈/profile 변경도 planner 명시 범위 안에서만 수행
 - Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn compile`)과 단위 테스트(`mvn test`)는 허용
 - 프론트엔드 파일(CLAUDE.md Harness Configuration의 `frontendRoot` 하위) 수정 금지

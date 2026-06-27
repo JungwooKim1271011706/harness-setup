@@ -42,13 +42,14 @@
 > **이건 단순 grep이 아니라 "계약 파급 분석"이다.** stale 인벤토리 불완전이 6회 재발한 공통 뿌리 = **한 축(바뀐 값 문자열·단언)만 보고 계약 파급 전체를 안 봄**. 변경된 값은 **양면**으로 테스트에 박혀 있다 — ① 그 값을 **단언(assert)**하는 테스트 + ② 그 값을 **생성/유발하는 입력(픽스처·mock seam·호출 edge)**을 쓰는 테스트. 아래 부류는 그 양면의 구체 사례지 닫힌 목록이 아니다 — 새 계약변경마다 "이 값을 단언하는 곳은? 이 값을 만드는 입력을 쓰는 곳은?" 둘 다 grep한다.
 
 인벤토리 대상 네 부류 (변경이 기존 테스트를 깨뜨리는 축 — 양면: 단언측 + 생성/입력측):
-- **가산 변경**(반환에 필드 추가): 변경 함수 반환값을 `toEqual`(exact)/`toMatchObject`로 잠근 **모든 기존 테스트**를 grep 전수(예: `grep -rn "toEqual" test/` + 변경 함수 호출처).
+- **가산 변경**(반환에 필드 추가): 변경 함수 반환값을 **exact matcher**로 잠근 **모든 기존 테스트**를 grep 전수. ⚠ **matcher 시맨틱 정확 인지**(planner/tester-design이 "subset이라 안 깸"으로 6회 오판한 뿌리): `toEqual`·`toContainEqual`·객체리터럴 직접대조 = **exact key-count**(가산필드 시 전부 깸), `toMatchObject`·`objectContaining` = **subset**(가산 안 깸). 특히 `toContainEqual({...})`는 배열요소 **exact deep equality**라 가산필드에 깨진다(`toContain`과 다름). 예: `grep -rn "toEqual\|toContainEqual" test/` + 변경 함수 호출처.
 - **동작계약 변경**(severity/status 산출규칙·타임아웃 등 상수값·early-return/skip 조건): 그 **동작·값을 단언하는 기존 테스트**를 전수 grep. 예: 상수 `600`→`900`이면 `600`을 단언한 테스트, "error→warn" severity 격상이면 옛 severity를 단언한 테스트.
 - **신규 의존 edge**(변경 모듈이 **새로운 외부 함수/모듈을 호출**하게 됨): 그 변경 모듈을 로드하면서 해당 의존을 `vi.mock`/`vi.doMock`(또는 Mockito) 팩토리로 가짜화한 **모든 기존 테스트**를 grep → 팩토리에 신규 함수 stub(`vi.fn().mockResolvedValue(기본값)` 등) 추가를 일괄 마이그레이션. 안 하면 mock 팩토리가 신규 함수 미정의 → `undefined` 호출 TypeError로 무관 테스트가 무더기 FAIL. grep 예: 신규로 `api.X()` 호출 추가 시 → `grep -rln "vi\.\(do\)\?mock.*api" test/` + 그 파일이 변경 모듈을 로드하는지 확인. (반환 shape도 값도 안 바뀌고 **호출 edge만 추가**돼 위 두 부류 grep엔 안 걸리는 별개 축.)
 - **값-생성 픽스처/트리거**(enum·상태플래그 산출규칙이 바뀜 — ②생성측): 바뀐 값을 단언하진 않지만 그 값을 **유발하는 입력 픽스처/조건**을 써서 결과를 **간접 단언**(충돌 카운트·UI 존재·분기 동작 등)하는 테스트를 전수 grep. 위 부류들이 ①단언측(바뀐 값 문자열)을 잡는다면 이건 ②생성측이다 — 변경 분기를 트리거하는 **입력 필드값**으로 grep. 예: detect enum `BRANCH_EXISTS`→`FF_PENDING` 변경 시, `'BRANCH_EXISTS'` 단언 grep만으론 `branchExists: true` 픽스처로 충돌을 유발하고 `conflicts` 카운트/rename 입력만 단언한 테스트를 놓침 → 입력측 `grep -rn "branchExists:\s*true" test/`도 전수. (값 문자열이 단언에 안 보여 ①측 grep에 안 걸리는 별개 축.)
 - **시그니처/위임 전환**(호출처 + 사라지는 책임): ① **생성자/메서드 시그니처 변경**(필드·파라미터 추가/DI 변경) → 그 생성자·메서드를 호출하는 **모든 기존 테스트** grep(컴파일 깨짐·stale setup 사전식별). ② **기존 호출경로를 다른 컴포넌트로 위임/대체 전환** 시, 대체되는 메서드가 수행하던 **부가책임**(예: `resolveTargetFiles`의 JAR 다중배포 확장)을 신경로가 보존하는지 인벤토리 — 위임이 "주 동작"만 옮기고 부가책임을 빠뜨리는 회귀를 RED로 선잠금(안 하면 변경검증 GREEN 후 review서야 blocking 적발). 근거: AutoPatchCommands 생성자 2필드 추가 stale 마이그레이션 라운드 + resolveTargetFiles JAR확장 책임소실 codex review blocking(2차 수정).
+- **교차파일 + multi-entry**(grep 스코프 함정 — 격상 후 재재발 축): ① **변경 테스트 파일에 국한 금지** — 같은 계약(반환 shape/store path/mappings)을 단언하는 테스트는 **다른 spec 파일**에 산다. grep 스코프는 항상 `test/`·`unit/` **전체 트리**(변경한 그 테스트 파일 내부만 보면 놓침). 예: `import-mapping.js` 계약변경이 `import-mapping.test.js` **밖** 다른 spec의 `toEqual(mappings)` 5필드 고정을 깸(PR-S2). ② **multi-entry 케이스**: 거동변경이 **여러 항목 중 일부만** 트리거하는 테스트(예: multi-sub — subA는 `BRANCH_EXISTS→DIVERGED` 거부, subB는 ff push)는 단일 케이스 grep에 안 보인다 — 한 테스트가 여러 입력을 루프할 때 그중 변경분기를 타는 항목을 본다(PR-F2 D3-19, 7c.2 격상 후 누락 재발).
 - 영향 테스트는 tester-design이 **일괄 마이그레이션**(신계약 기대값, 검증의도·exact 보존). piecemeal(라운드마다 1건씩 발견) 금지. developer는 테스트 못 고침(hook) → 마이그레이션 주체 = tester-design(작성자≠구현자 유지).
-> 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경)·PR-S1 mock 팩토리·PR-F1 branchExists 픽스처 3건 재발(stale-인벤토리 불완전 6회 — 단언측만 보고 생성측 누락이 공통 뿌리).
+> 근거: exact-match 단언은 가산 스키마에, 값/규칙 단언은 동작계약 변경에 깨진다. 사전 인벤토리 없이 구현하면 라운드마다 stale 발견돼 루프 낭비. failure_2026-06-15·PR-D1 stale 14건·2026-06-21 E7-04(severity 격상)·git-runner 600s(상수변경)·PR-S1 mock 팩토리·PR-F1 branchExists 픽스처 3건·PR-S2 cross-file `toContainEqual`·PR-F2 D3-19 multi-sub 재발(stale-인벤토리 불완전 9~10회 — 단언측만·변경파일 내부만·matcher 시맨틱 오판이 공통 뿌리).
 
 ## 7c.3 — 경계 반환 shape 계약 (mock이 양끝을 끊는 거짓 GREEN 차단)
 
@@ -62,6 +63,17 @@
   - **정책/설정 런타임 배선**: 신규 정책/설정(예: IgnorePolicy)이 **실행 모듈에 실주입돼 동작에 반영되는지** 통합 케이스 1건. 모듈이 `Policy.empty()`/no-op 고정이면 등록 규칙이 무력화(단위는 정책 객체만 보고 GREEN). 혼합(백+프론트) 트랙서 특히 강제.
 - 산출: planner-*(IPC 계약 명세)가 신규/변경 채널의 반환 shape를 producer↔consumer 양끝 표기 → tester-design RED가 그 shape를 양끝 단언. (mock 우회로 한쪽만 통과시키는 거짓 GREEN을 TDD 단계서 차단.)
 > 근거: repostitch PR-S1(`ipc:searchBranches` wrapper vs raw array, mock 우회 GREEN→리뷰 적발), PR-D2/D4 payload 필드누락(mock 우회), 실버그 bc303a7(renderer→IPC `submodules` 필드 누락, mock 직접주입 통과→실배선만 적발). DEVUNIT-authpatch F1(ExportModule `PatchIgnorePolicy.empty()` 고정→DB ignore 규칙 export 런타임 미적용)·F2(`toDto()` rules 미설정→DTO null→프론트 크래시) codex+code-reviewer 2소스 적발, 회귀잠금 EM-POLICY-01/02·TPL-DTO-RULES-01/02. applied/20260622T063542Z(mock 팩토리 함수목록 완전성)와 다른 축.
+
+## 7c.4 — plan 신규/변경 헬퍼 시그니처 = 픽스처 단언 SSOT (mock seam이 plan 계약과 갈리는 거짓 수렴 차단)
+
+7c 합의/plan에 **신규·변경 헬퍼·함수 시그니처**가 있으면(예: 신규 `judgeFf` 도입, 기존 호출의 인증경로 전환), 그 **정확 계약을 픽스처가 SSOT로 잠근다**. 계약 = ① **어느 메서드로 호출**되나(예: `runner.run`=PAT 인증 vs `runner.runPlain`=비인증) ② **인자 순서·필수 플래그**(`-C dir`·subcommand 순서) ③ **인자 값 출처**(remoteUrl=`repo.httpUrl` vs `sub.oldUrl`) ④ **반환 shape**. 7c.2(stale 단언)·7c.3(producer↔consumer shape)과 **다른 축**: 이건 **tester-design이 고를 mock 캡처 seam(어느 메서드를 가로챌지)이 plan 계약과 일치하는가**.
+
+- 문제 메커니즘: tester-design이 mock 캡처 경로를 **자기 멘탈모델로** 선택(fetch를 `runPlain`서 캡처) → plan 계약(`run`=PAT)과 갈림. developer 목표는 "RED 픽스처를 GREEN으로" → plan 아닌 **틀린 픽스처에 수렴** → 프로덕션서 PAT 미주입 등 **런타임 버그**. 작성자(tester)≠구현자(developer) 분리는 지켜도 **둘 다 plan을 SSOT로 안 보면** 같은 오류로 수렴 가능.
+- 강제 규칙:
+  - **plan이 SSOT**: 픽스처 mock seam·인자·반환이 plan 시그니처와 다르면 **plan이 이긴다**(픽스처를 plan에 맞춰 재작업, 추측 금지). orchestrator가 7.5 위임 시 plan의 신규/변경 시그니처(메서드 종류·인자순서·플래그·URL·반환shape)를 **명시 주입**한다.
+  - **보안·런타임 임팩트 메서드 선택 특히 고정**: 인증 경로(`run`=PAT vs `runPlain`=비인증)·권한·트랜잭션 경계처럼 메서드 선택이 프로덕션 거동을 가르는 경우, 픽스처가 plan이 지정한 정확한 메서드를 캡처하는지 1줄 대조(틀린 seam = 프로덕션 인증/권한 버그).
+  - 게이트 연결: 7.6 RED sanity / 7.7 품질게이트서 "픽스처가 호출·캡처하는 헬퍼 시그니처가 plan과 일치하나" 1줄 확인. 불일치면 작성자(tester-design)에게 반환.
+> 근거: repostitch PR-F2(`judgeFf` fetch를 plan은 `run`(PAT)·`-C dir`·`repo.httpUrl`로 명시했으나 픽스처가 `runPlain`(비인증)·`sub.oldUrl`로 캡처→기존 branch 서브모듈 전부 거짓거부 잠재버그. 변경검증 9-FAIL + 2소스 리뷰 + orchestrator src diff Read(receiving-code-review) 3중 적발). recurring-test-lessons #2(mock/real divergence), PR-S1 IPC shape 불일치와 같은 뿌리(mock이 실 계약 우회).
 
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
 
