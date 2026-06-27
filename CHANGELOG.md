@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.34.0 — 2026-06-27
+- **inbox 드레인 1파일 deploy-web-singleserve 회고 → 2 applied — MINOR, 거버넌스 무영향.** authpatch_draft 소비자 세션. tester pom 처리 데이터 소실 버그 + 빌드계약 디스크검증.
+  - **`tester-backend.md` + `tester-runtime.md` + `orchestrator.md` (후보1, HIGH — 데이터 소실)**: tester 시작 자가치유 **`git checkout -- pom.xml` 무차별 원복 금지** — developer 미커밋 정당 변경(assembly 2분리)을 HEAD로 되돌려 소실 → 삭제된 distribution.xml 참조 → **거짓 BUILD FAILURE 2회**. 실행블록을 if/else로: harnessbak 있으면 복원, 없으면 skipTests 줄만 sed 원복. 불변식 "tester는 미커밋 product 변경(pom 포함) 절대 소실 안 함" 명시. trap의 harnessbak 원복은 그대로(안전).
+  - **`orchestrator.md` + `developer-backend.md` (후보2, MED)**: claimed-but-not-applied 디스크검증을 **빌드계약(pom/assembly/descriptor)으로 확장**(v3.32.0 test파일 대상 → build파일 동급). developer는 `mvn package` 금지라 compile 자가확인이 assembly 영향을 못 잡음 → GREEN 보고에 "package/assembly 미검증" 플래그 의무 + 변경검증서 실 package 1회. 근거: pom assembly 거짓보고를 /review 디스크검증이 적발(1라운드).
+
 ## 3.33.0 — 2026-06-27
 - **inbox 드레인 1파일 PR-F3 회고 → A 신규 + B/C/D 흡수 — MINOR, 거버넌스 무영향.** DEVUNIT-repostitch PR-F3 post-commit 자가회고. 직전 v3.32.0(PR-F2)과 같은 계열 → B/C/D는 기존 절 1줄 흡수(새 부류·페이지 X), A만 신규 영역.
   - **`orchestrator.md` 위임 규칙 (A, 신규)**: **상호의존 작업 병렬위임 금지**. Agent 동시발사 전 "한쪽 산출이 다른쪽 입력 가정을 바꾸나?" 자가체크 — 바꾸면 순차. 구현 계약 변경 ↔ 픽스처/테스트 모사는 상호의존(구현 먼저 확정→접점 SSOT→픽스처 정합). 파일 비충돌 ≠ 의미 독립. 근거: developer(judgeFf `-C tmpDir`) ∥ tester-design(`-C` 없음) 동시발사 → 변경검증 8→57 FAIL 폭증.

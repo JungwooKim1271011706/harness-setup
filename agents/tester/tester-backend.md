@@ -44,9 +44,13 @@ memory: project
 ```bash
 cd <대상 모듈 디렉터리>        # 예: tocServer (오케스트레이터가 준 현재 모듈)
 POM=pom.xml
-# 자가치유: 이전 크래시(SIGKILL 등)로 남은 잔재·더러운 pom을 먼저 정리
-[ -f "$POM.harnessbak" ] && mv -f "$POM.harnessbak" "$POM"
-git checkout -- "$POM" 2>/dev/null || true
+# 자가치유: 이전 크래시(SIGKILL 등) 잔재 정리. ⚠ 불변식: tester는 미커밋 product 변경(pom 포함)을 절대 소실시키지 않는다.
+if [ -f "$POM.harnessbak" ]; then
+  mv -f "$POM.harnessbak" "$POM"   # 잔재 백업 = sed 전 원본(developer 정당 변경 포함) 복원
+else
+  # ⚠ git checkout -- pom.xml 무차별 원복 금지: developer의 미커밋 pom/assembly 변경을 HEAD로 되돌려 소실시킨다(삭제된 descriptor 참조 → 거짓 BUILD FAILURE). harnessbak이 없는데 이전 크래시로 skipTests만 false로 더럽혀졌으면 그 줄만 원복(정당 변경 보존):
+  sed -i 's#<skipTests>false</skipTests>#<skipTests>true</skipTests>#g' "$POM"
+fi
 # 백업 + 신호 전부 잡아 원복 (EXIT/INT/TERM; SIGKILL만 OS레벨이라 불가)
 cp "$POM" "$POM.harnessbak"
 trap 'mv -f "$POM.harnessbak" "$POM" 2>/dev/null' EXIT INT TERM
@@ -55,7 +59,7 @@ mvn test -DskipTests=false -Dsurefire.timeout=600 -Djunit.jupiter.execution.time
 ```
 
 - `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당. **변경 스코프에 `@Nested`가 있으면 `-Dtest='클래스명$Nested클래스명'`로 명시 포함**한다(Surefire 2.22.2 무음 스킵 — 격리 PASS가 거짓 GREEN을 만든다. `.claude/wiki/surefire-nested-skip.md`).
-- 시작 시 자가치유(git checkout)로 이전 크래시 잔재를 정리한다. SIGKILL을 제외한 모든 종료(EXIT/INT/TERM)는 trap이 원복한다. SIGKILL 시에도 git checkout으로 복구 가능(원본 손실 없음).
+- 시작 시 자가치유는 **harnessbak 복원**(있으면) 또는 **skipTests 줄만 sed 원복**(harnessbak 없을 때 백스톱)으로 한다. **`git checkout pom.xml` 무차별 원복은 금지** — developer의 미커밋 product 변경(pom/assembly)을 HEAD로 되돌려 소실시킨다(삭제된 descriptor 참조 → 거짓 BUILD FAILURE 2회 재발). SIGKILL을 제외한 모든 종료(EXIT/INT/TERM)는 trap이 원복(harnessbak = developer 변경 포함 백업)한다.
 - pom이 이미 `<skipTests>${skipTests}</skipTests>` 변수형이면 sed는 no-op, `-DskipTests=false`로 충분 (포터블).
 - 실행 종료 후 `git status --porcelain pom.xml`이 비었는지 확인. 안 비었으면 원복 실패 → 수동 원복(`mv pom.xml.harnessbak pom.xml`) 후 FAIL 보고.
 - 테스트 클래스가 없으면 "단위테스트 없음" 명시하고 기존 시나리오/스모크 검증으로 보완.

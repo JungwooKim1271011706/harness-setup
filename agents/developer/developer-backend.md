@@ -33,6 +33,7 @@ planner-backend 결과만 구현한다.
 - **plan SSOT > 픽스처**: RED 픽스처가 호출·캡처하는 헬퍼 시그니처(메서드 종류 `run`/`runPlain`·인자순서·플래그·URL)가 **plan과 다르면 plan을 따른다**. "RED를 GREEN으로" 목표 때문에 틀린 픽스처에 수렴하지 마라 — 멈추고 불일치를 보고(인증경로 `run`(PAT)↔`runPlain`(비인증) 혼동이 프로덕션 인증버그를 부른 PR-F2). playbook-tdd 7c.4.
 - 설정/빈/profile 변경도 planner 명시 범위 안에서만 수행
 - Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn compile`)과 단위 테스트(`mvn test`)는 허용
+- **빌드계약 변경(pom/assembly/descriptor)은 compile 자가확인으로 불충분 — GREEN 보고에 명시 플래그**: `mvn compile`은 package 단계(assembly descriptor 조립·appendAssemblyId 등)를 안 돈다. assembly·distribution descriptor·pom 빌드설정을 바꿨으면 "compile만 자가확인, package/assembly 영향 미검증 — 변경검증서 `mvn package` 1회 필요" 플래그를 GREEN 보고에 넣는다(developer는 package 금지라 직접 검증 불가 → 고지가 의무). 근거: pom assembly 2분리 변경이 compile만 통과해 잠복, /review 디스크검증이 적발(1라운드).
 - 프론트엔드 파일(CLAUDE.md Harness Configuration의 `frontendRoot` 하위) 수정 금지
 
 ## 탐색 규칙
