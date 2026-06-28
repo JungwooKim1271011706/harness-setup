@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.35.0 — 2026-06-28
+- **사람 E2E 런북 강제 출력 (사용자 직접 요청) — MINOR, 거버넌스 무영향. ⚠ 훅 신규 배선 → 세션 재시작 필요.** "다른 세션에서도 E2E 점검 리스트가 안 떨어진다"는 실측 진단: finalizer.md 「사람 E2E 점검」은 v3.7.0부터 있으나 ① 출력 검증 훅 부재(SubagentStop은 planner-*만) ② "비차단"이 "생략 가능"으로 오독 → 구조적 누락. "신설"이 아니라 **기존 강화 + 실행 강제**로 해결.
+  - **`finalizer.md` (A, 프롬프트 강화)**: 불변식에 "**출력은 필수 — 비차단은 멈춤만 면제, 생략 ≠ 비차단**" 명시. 절차4 런북 강화 — ⏱소요·🧰필요환경 머리표기 + [준비]/[빌드·실행 명령(CLAUDE.md Build&Run 인용)]/[화면확인] + 스텝별 ✅성공신호·**✗실패힌트**. 절차4.5 **feature 문서 `## 수동 E2E 검증` append**(콘솔+파일 이원). 출력 블록 형식 갱신.
+  - **`hooks/check-finalizer-output.sh` 신규 + `settings.json` (B, 기계강제 경고)**: SubagentStop에 `finalizer` matcher 추가 — 커밋 직후 HEAD가 건드린 feature 문서에 `## 수동 E2E 검증` 없으면 경고 주입. **planner 훅(check-planner-output) 동형 경고모드**(`decision:block` 아님 — false-positive 신중, 안정화 후 차단 승격 검토). feature 문서 미변경(단순수정·하네스 자기수정)은 면제.
+  - 후보1·2(tester pom clobber·빌드계약 디스크검증)는 v3.34.0서 기적용 — 이 재드롭 회고의 신규분은 후보3뿐.
+
 ## 3.34.0 — 2026-06-27
 - **inbox 드레인 1파일 deploy-web-singleserve 회고 → 2 applied — MINOR, 거버넌스 무영향.** authpatch_draft 소비자 세션. tester pom 처리 데이터 소실 버그 + 빌드계약 디스크검증.
   - **`tester-backend.md` + `tester-runtime.md` + `orchestrator.md` (후보1, HIGH — 데이터 소실)**: tester 시작 자가치유 **`git checkout -- pom.xml` 무차별 원복 금지** — developer 미커밋 정당 변경(assembly 2분리)을 HEAD로 되돌려 소실 → 삭제된 distribution.xml 참조 → **거짓 BUILD FAILURE 2회**. 실행블록을 if/else로: harnessbak 있으면 복원, 없으면 skipTests 줄만 sed 원복. 불변식 "tester는 미커밋 product 변경(pom 포함) 절대 소실 안 함" 명시. trap의 harnessbak 원복은 그대로(안전).

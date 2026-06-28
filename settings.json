@@ -59,6 +59,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "finalizer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-finalizer-output.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
