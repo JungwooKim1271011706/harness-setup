@@ -22,12 +22,13 @@ fi
 [ -n "$agent_id" ] && exit 0
 
 # 메인 orchestrator: commit/push/build/test/배포 명령 차단
-# 경계: 명령 시작 또는 ;|&/공백 뒤에 오는 토큰만 매치 (git status 등 오탐 방지)
-# 인용부 안 텍스트(codex/echo 프롬프트 본문 등)는 실행 토큰이 아님 → 매치 전 제거.
-#   따옴표로 감싼 "mvn package"는 셸이 실행명령으로 안 봄(파일명 취급) → 제거해도 실 빌드 누락 위험 0.
-#   (예: codex exec "...mvn package..." -s read-only 의 프롬프트 내 mvn 오탐 차단 제거)
-scan=$(printf '%s' "$command" | sed -E "s/'[^']*'//g; s/\"[^\"]*\"//g")
-if printf '%s' "$scan" | grep -qiE '(^|[;&|[:space:]])(git[[:space:]]+(commit|push)|mvn|mvnw|\./mvnw|gradle|gradlew|\./gradlew)([[:space:]]|$|;|&)'; then
+# 경계1 — 인용부호 '문자'만 제거(내용 보존): 셸과 동일하게 정규화해 따옴표 우회를 잡는다.
+#   "git" commit / m"v"n package 는 셸에선 정상 실행 → 문자만 떼면 git commit / mvn 으로 복원돼 차단.
+#   ⚠ 인용 '내용'을 통째 지우면 "git" commit → " commit" 으로 denylist 우회가 생김 → 내용은 안 지운다.
+# 경계2 — '명령 위치'에서만 매치: 문자열 시작 또는 제어연산자(; & | 괄호) 직후만 실행 명령으로 본다.
+#   일반 공백(인자 구분)은 명령 위치 아님 → codex exec ... mvn package ... 의 프롬프트 인자 내부 mvn은 오탐 안 함.
+scan=$(printf '%s' "$command" | tr -d "\"'")
+if printf '%s' "$scan" | grep -qiE '(^|[;&|(])[[:space:]]*(git[[:space:]]+(commit|push)|mvn|mvnw|\./mvnw|gradle|gradlew|\./gradlew)([[:space:]]|$|[;&|])'; then
   echo "[hook] 오케스트레이터 직접 실행 금지 — git commit/push는 finalizer, mvn/gradle 빌드·테스트는 tester에 위임하라. (차단 command: ${command})" >&2
   exit 2
 fi
