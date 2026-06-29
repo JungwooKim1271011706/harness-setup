@@ -19,6 +19,8 @@
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
 - [[springshell-noninteractive-runner-order]] — spring-shell 비대화형 배치(TTY 없음)서 셸 러너가 leftover 인자를 명령으로 해석→CommandNotFound. 커스텀 ApplicationRunner에 @Order(HIGHEST_PRECEDENCE) 줘야 먼저 실행. CLI 플래그로는 못 고침
+- [[spring-componentscan-basepackages-root-omission]] — 명시 @ComponentScan(basePackages)는 기본 스캔을 **대체**(보강 아님) → 루트 패키지 빠지면 @Component 빈 조용히 미등록·run() 미호출(예외도 없음). 리플렉션 단위테스트는 등록 검증 못함→ApplicationContext 통합테스트로
+- [[powershell-set-content-utf8-bom]] — PowerShell 5.1 Set-Content -Encoding UTF8이 BOM(EF BB BF) 붙임 → SnakeYAML 등 첫 키 깨짐→바인딩 null→엉뚱 분기. WriteAllText(UTF8Encoding($false)) 또는 -Encoding ascii. Format-Hex로 앞 3바이트 확인
 - [[hibernate-naming-strategy-explicit-name]] — Spring 기본 naming strategy는 **명시 `@Column/@Table(name=...)` 이름도** camelCase→snake 변환(Hibernate 순정과 다름). 수동 DDL이 camelCase면 신규설치 1364. DDL을 snake 출력과 글자단위 일치
 - [[information-schema-table-name-ci-collation]] — `information_schema.*.TABLE_NAME`은 ci collation → `'Users'`가 snake `users`에 매칭(LCTN=0이어도). "메타조회 통과=스키마 사실" 추론 금지, 리터럴도 snake 일치 + 속성(NON_UNIQUE)까지 단언
 - [[vue-immediate-watch-template-ref]] — Vue `watch(...,{immediate:true})`가 mount 전 동기 실행→template ref null→차트 조용히 미렌더. flush:'post'로도 안 고쳐짐. 첫 렌더는 `onMounted(renderChart)`로

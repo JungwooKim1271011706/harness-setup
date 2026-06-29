@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.38.0 — 2026-06-29
+- **Approach D 디버그 일지 분해 → wiki 2종 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** autopatch 비대화형 CI export 복구 종합 stub(함정 6개 체인)을 통째 wiki化하면 앱 특정 내용이 오염 → 휴대 가능 2개만 추출.
+  - **`wiki/spring-componentscan-basepackages-root-omission.md` 신규**: 명시 `@ComponentScan(basePackages)`는 `@SpringBootApplication` 기본 스캔을 **대체**(보강 아님) → 루트 패키지 누락 시 @Component 빈 조용히 미등록·`run()` 미호출(예외도 없음). 검증=ApplicationContext 통합테스트(리플렉션 단위테스트는 빈 등록 검증 못함). spring-profile·springshell과 상호링크(결함클래스 구분: 등록시점/실행순서/스캔범위).
+  - **`wiki/powershell-set-content-utf8-bom.md` 신규**: PowerShell 5.1 `Set-Content -Encoding UTF8`이 BOM(`EF BB BF`) 붙임 → SnakeYAML 등 첫 키 못읽어 바인딩 null→엉뚱 분기. `WriteAllText(UTF8Encoding($false))`/`-Encoding ascii` 회피, `Format-Hex` 검증. jq-korean-encoding과 인코딩 함정 계열 링크.
+  - **reject**: 함정4(키 분리)·5(config import 우선순위)=autopatch 특정 config 구조, 함정6(403 OAuth 비대화형)=미해결 설계과제 → 휴대 불가/하네스 무관. 원 stub이 sources로 보존돼 손실 없음.
+
 ## 3.37.0 — 2026-06-29
 - **의사결정 위임 시나리오 형식 enforcement 강화 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** `## 사용자 의사결정 요청 형식` 규칙은 완비인데 설계패널 major 위임 시 우회됨: ① 적용지점에 패널 critical만 있고 major 누락 ② 패널 severity/recommendation을 그대로 옵션표로 옮기는 anti-pattern 미명시 → redirect-uri fail-open major가 추상 A/B표로 나가 사용자 2회 "문맥 없어 결정 못함".
   - **`agents/orchestrator.md`**: 규칙 블록에 "패널/리뷰 findings severity·recommendation을 그대로 옵션표로 옮기지 말 것 → '어디서 깨지나+선택 후 흐름' 시나리오로 번역, 미번역 옵션표 제시 금지" 추가. 적용지점에 "설계패널 majors·design-reviewer findings 사용자 위임" 추가(critical 아닌 major도 형식 필수).

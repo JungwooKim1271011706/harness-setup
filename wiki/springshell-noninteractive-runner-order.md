@@ -24,5 +24,5 @@ Spring Boot CLI 앱을 비대화형 배치로 실행(`java -jar ... --patchMode=
 
 ## 하네스 적용 (테스트: GitLab/PAT 없이 결정적)
 - tester-design/developer-backend: `OrderUtils.getOrder(runnerClass)`가 non-null이고 `DefaultShellApplicationRunner` order(`Integer.MAX_VALUE - 10`)보다 작은지 단언. 라이브 export E2E(PAT 필요)와 분리.
-- 같은 Spring 함정이지만 [[spring-profile-bean-eval-timing]]과 결함 클래스 다름(저쪽=빈 등록 시점, 이쪽=러너 시작 순서).
+- 같은 Spring 함정이지만 [[spring-profile-bean-eval-timing]]과 결함 클래스 다름(저쪽=빈 등록 시점, 이쪽=러너 시작 순서). 빈 자체가 스캔 누락으로 미등록인 경우는 [[spring-componentscan-basepackages-root-omission]](@Order 가설 전에 빈 등록부터 확인).
 - 근원: autopatch_draft 회고(2026-06-29).
