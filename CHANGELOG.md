@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.37.0 — 2026-06-29
+- **의사결정 위임 시나리오 형식 enforcement 강화 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** `## 사용자 의사결정 요청 형식` 규칙은 완비인데 설계패널 major 위임 시 우회됨: ① 적용지점에 패널 critical만 있고 major 누락 ② 패널 severity/recommendation을 그대로 옵션표로 옮기는 anti-pattern 미명시 → redirect-uri fail-open major가 추상 A/B표로 나가 사용자 2회 "문맥 없어 결정 못함".
+  - **`agents/orchestrator.md`**: 규칙 블록에 "패널/리뷰 findings severity·recommendation을 그대로 옵션표로 옮기지 말 것 → '어디서 깨지나+선택 후 흐름' 시나리오로 번역, 미번역 옵션표 제시 금지" 추가. 적용지점에 "설계패널 majors·design-reviewer findings 사용자 위임" 추가(critical 아닌 major도 형식 필수).
+  - 후보1 enforcement 제안 중 **Stop/소프트 훅은 reject** — 의사결정 메시지는 콘솔 출력·파일 앵커 부재라 훅이 검증 불가(v3.35.0 finalizer E2E와 동일 한계, 거긴 feature 문서 파일로 우회). 프롬프트 강화로 해결.
+
 ## 3.36.0 — 2026-06-29
 - **inbox 드레인 (authpatch 후보2 + springshell gotcha) — MINOR, 거버넌스 무영향. ⚠ 훅 로직 변경 → 세션 재시작 권장.**
   - **`hooks/block-orchestrator-exec.sh` (오탐 제거 + 우회 차단)**: command 전체 substring 매치라 `codex exec "...mvn package..."` 프롬프트 본문의 `mvn` 토큰까지 차단(인자≠실행 구분 못함). ① 인용부호 **문자만** 제거(`tr -d`, 내용 보존 — 셸과 동일 정규화) ② 매치를 **명령 위치**(문자열 시작 / 제어연산자 `; & | (` 직후)로 한정. 일반 공백(인자 구분)은 명령 위치 아님 → 프롬프트 인자 내부 `mvn` 오탐 제거. **차단 불변식 강화**: 무따옴표 `mvn`·`&& mvn`·`git commit`뿐 아니라 따옴표 우회(`"git" commit`·`m"v"n package`)도 차단(13케이스 검증). ⚠ 초안의 인용 '내용' 통째 strip은 `"git" commit→" commit"` denylist 우회 구멍 → 보안리뷰 지적 반영해 '문자만 제거 + 명령위치'로 교체. 근거: authpatch_draft 회고 후보2.
