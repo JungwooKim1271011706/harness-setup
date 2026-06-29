@@ -24,4 +24,5 @@ new ApplicationContextRunner()
 
 ## 하네스 적용
 - 백엔드 Spring 컨텍스트 테스트 작성 시(tester-design/developer-backend). `*IT` 명명으로 통합테스트화하면 기본 스캔 누락 함정([[surefire-it-naming-skip]]) — *Test 명명 유지.
+- 다른 Spring 시작 함정: 비대화형 CLI 러너 순서는 [[springshell-noninteractive-runner-order]].
 - 근원: feature-12 회고(2026-06-19). withInitializer로 false-fail/vacuous 발생.

@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.36.0 — 2026-06-29
+- **inbox 드레인 (authpatch 후보2 + springshell gotcha) — MINOR, 거버넌스 무영향. ⚠ 훅 로직 변경 → 세션 재시작 권장.**
+  - **`hooks/block-orchestrator-exec.sh` (오탐 제거)**: command 전체 substring 매치라 `codex exec "...mvn package..."` 프롬프트 본문의 `mvn` 토큰까지 차단(인자≠실행 구분 못함). 매치 전 인용부 안 텍스트(`'...'`·`"..."`)를 sed로 제거 후 grep → 따옴표 감싼 토큰은 셸이 실행명령으로 안 보므로 제거해도 실빌드 누락 위험 0. **차단 불변식 유지**(무따옴표 `mvn`·`&& mvn`·`git commit` 전부 계속 차단, 5케이스 검증). 근거: authpatch_draft 회고 후보2.
+  - **`wiki/springshell-noninteractive-runner-order.md` 신규 + index + 역링크**: spring-shell 2.1.14 비대화형 배치(TTY 없음)서 셸 러너가 leftover 인자를 명령 해석→CommandNotFound. 커스텀 ApplicationRunner `@Order(HIGHEST_PRECEDENCE)`로 먼저 실행 보장(CLI 플래그 우회 불가). 결정적 테스트=`OrderUtils.getOrder` 단언. `spring-profile-bean-eval-timing`과 결함클래스 달라 별도. 근거: 커밋 b3626f8.
+  - 후보1(tester pom clobber)은 v3.34.0서 기적용 → reject(소비자 구버전 vendored 재발, git pull 필요).
+
 ## 3.35.0 — 2026-06-28
 - **사람 E2E 런북 강제 출력 (사용자 직접 요청) — MINOR, 거버넌스 무영향. ⚠ 훅 신규 배선 → 세션 재시작 필요.** "다른 세션에서도 E2E 점검 리스트가 안 떨어진다"는 실측 진단: finalizer.md 「사람 E2E 점검」은 v3.7.0부터 있으나 ① 출력 검증 훅 부재(SubagentStop은 planner-*만) ② "비차단"이 "생략 가능"으로 오독 → 구조적 누락. "신설"이 아니라 **기존 강화 + 실행 강제**로 해결.
   - **`finalizer.md` (A, 프롬프트 강화)**: 불변식에 "**출력은 필수 — 비차단은 멈춤만 면제, 생략 ≠ 비차단**" 명시. 절차4 런북 강화 — ⏱소요·🧰필요환경 머리표기 + [준비]/[빌드·실행 명령(CLAUDE.md Build&Run 인용)]/[화면확인] + 스텝별 ✅성공신호·**✗실패힌트**. 절차4.5 **feature 문서 `## 수동 E2E 검증` append**(콘솔+파일 이원). 출력 블록 형식 갱신.
