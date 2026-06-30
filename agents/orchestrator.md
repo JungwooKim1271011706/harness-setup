@@ -752,7 +752,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 >
 > **▸ /review 실행주체 (SSOT)**: `/review`(claude 소스)는 **code-reviewer 서브에이전트에 위임**한다(`agents/reviewer/code-reviewer.md`). orchestrator가 직접 `/code-review`를 인라인 실행하지 않는다 — orchestrator는 개발 전 과정을 본 컨텍스트라 자기검토가 되어 `/codex review`와의 **독립 2소스가 깨진다**. code-reviewer는 개발을 안 본 fresh 컨텍스트에서 기존 `/code-review` 스킬을 실행(0에서 루브릭 신설 안 함) → codex(타모델)와 상관없는 둘째 의견 확보. 병렬 = `Agent(code-reviewer)` ∥ codex(Bash). codex 미가용 폴백은 아래 `## codex 호출 가드` 참조(단일소스 태그).
 >
-> **findings 타당성 1차 게이트 (항상, 경량 — receiving-code-review)**: developer 위임 전, 각 blocking finding을 코드베이스 현실과 대조한다. ① 전제가 실재하나(인용 라인 확인) ② 기존 코드/룰/프레임워크가 이미 막고 있지 않나 ③ YAGNI(grep해서 미사용이면 "구현" 요구는 기각). 명백히 틀렸거나 YAGNI면 기각하고 근거를 기록한다(맹종 금지). 외부 리뷰는 명령이 아니라 검증 대상 제안이다. 불확실하면 기각 말고 developer에 "검증 필요" 플래그와 함께 전달.
+> **findings 타당성 1차 게이트 (항상, 경량 — receiving-code-review)**: developer 위임 전, 각 blocking finding을 코드베이스 현실과 대조한다. ① 전제가 실재하나(인용 라인 확인) ② 기존 코드/룰/프레임워크가 이미 막고 있지 않나 ③ YAGNI(grep해서 미사용이면 "구현" 요구는 기각) ④ **이 finding을 적용하면 승인된 RED 테스트·7c 합의·설계패널 승인 major와 충돌하나** — 충돌하면 기각한다(외부 리뷰는 승인 계약보다 **하위 권위**: developer가 테스트 못 고치는 hook 불변식과 같은 정신). 단 테스트가 진짜 틀렸다고 판단되면 자의로 적용 말고 **DESIGN_MISMATCH로 사용자 재승인** 경유. 명백히 틀렸거나 YAGNI면 기각하고 근거를 기록한다(맹종 금지). 외부 리뷰는 명령이 아니라 검증 대상 제안이다. 불확실하면 기각 말고 developer에 "검증 필요" 플래그와 함께 전달.
 >
 > **tester 감점에도 동일 적용**: 이 타당성 게이트는 리뷰/패널 findings뿐 아니라 **tester 감점 항목에도 적용한다**. tester critical/high 감점이 YAGNI(미사용 경계값)·과방어면 orchestrator가 기각할 수 있다(근거 기록). tester 지적 ≠ 무조건 수정. (tester는 1차로 minor/low를 점수 차감 없이 권고 섹션에 분리하지만, critical/high로 올라온 항목도 이 게이트로 한 번 더 거른다.)
 >

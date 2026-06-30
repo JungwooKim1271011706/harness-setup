@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.39.0 — 2026-06-30
+- **receiving-code-review 게이트에 승인 계약 충돌 체크 + codex 주석오인 경고 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** repostitch 위자드 UI 세션 회고 2건.
+  - **`agents/orchestrator.md` (후보1, HIGH)**: findings 타당성 1차 게이트(①전제실재 ②이미막힘 ③YAGNI)에 **④ "승인된 RED 테스트·7c 합의·설계패널 승인 major와 충돌하면 기각"** 추가. 외부 리뷰 finding은 승인 계약보다 **하위 권위**(developer가 테스트 못 고치는 hook 불변식 정신). 충돌인데 테스트가 진짜 틀렸으면 DESIGN_MISMATCH로 사용자 재승인. 근거: 외부 aria-expanded "stale" finding이 승인 RED B-4와 충돌→적용→FAIL→환원 1라운드(커밋 7df3c98). ※ feature-scan #1(생산자 self-challenge)과 상보(주는쪽 자기반박 vs 받는쪽 계약대조).
+  - **`docs/playbook-tdd.md` 7.7 (후보2, MEDIUM)**: codex 교차판정(claude 폴백) 호출 컨텍스트에 "trailing `// 설명` 주석과 주석처리된 실행라인 혼동 금지 — '주석처리됨' 주장 시 라인 인용 + `//` 시작 확인" 경고 주입. codex가 `// RED:` 설명주석 많은 파일서 live 단언을 'commented out' 오인→거짓 critical 양산(코드대조로 전부 기각됐으나 호출·검증 비용). 게이트(코드대조) 안전망 유지.
+  - 관찰만(reject): developer-frontend API 끊김·code-reviewer 토큰사망 = 외부 1회성, 재투입 복구 + 부분완료 이어받기 정상 → YAGNI.
+
 ## 3.38.0 — 2026-06-29
 - **Approach D 디버그 일지 분해 → wiki 2종 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** autopatch 비대화형 CI export 복구 종합 stub(함정 6개 체인)을 통째 wiki化하면 앱 특정 내용이 오염 → 휴대 가능 2개만 추출.
   - **`wiki/spring-componentscan-basepackages-root-omission.md` 신규**: 명시 `@ComponentScan(basePackages)`는 `@SpringBootApplication` 기본 스캔을 **대체**(보강 아님) → 루트 패키지 누락 시 @Component 빈 조용히 미등록·`run()` 미호출(예외도 없음). 검증=ApplicationContext 통합테스트(리플렉션 단위테스트는 빈 등록 검증 못함). spring-profile·springshell과 상호링크(결함클래스 구분: 등록시점/실행순서/스캔범위).
