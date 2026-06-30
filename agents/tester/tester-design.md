@@ -47,6 +47,8 @@ memory: project
 - **외부 API 응답 매핑 DTO는 실제 JSON 문자열 ↔ DTO round-trip(`ObjectMapper.readValue`) 단위테스트 1건 필수.** 목킹 `RestTemplate`은 DTO 객체를 직접 반환해 `@JsonProperty`(snake_case) 매핑·헤더 형식을 안 탄다 → 런타임 100% 실패할 필드매핑 통합버그가 단위테스트를 통과하는 구멍을 막는다.
 - **(R7) 메시지 단언은 프로덕션 소스에서 verbatim 복사** — `hasMessageContaining` 등 기대 substring은 실제 프로덕션 메시지 문자열에서 그대로 복사한다. 추측 금지(특히 한국어/현지화 메시지 — 괄호·조사 때문에 영어 추측이 빗나간다). 복사 출처 라인(file:line)을 보고에 남긴다.
 - **(R8) 기존 테스트 파일 보존** — 대상 테스트 파일이 이미 있으면 통째 replace 금지. 기존 케이스를 보존하며 신규 케이스를 append하고, 변경 후 `git diff`로 삭제된 기존 케이스가 없는지 점검한다. 의도적 삭제는 사유를 명시.
+- **(R9) 격리/거부(negative) 케이스는 substring 부재가 아니라 count-lock 쌍으로 잠근다** — `.forEach(l -> assertThat(l).doesNotContain("X"))` 같은 부재 단언은 공허다(깨진 구현이 *다른* 활성 산출물을 emit하면 통과). **금지 산출물 count==0 + 허용 산출물 positive 단언**(예: 활성 명령 count==0 + `# [경고]` 라인 존재)을 쌍으로 단언한다. R2(absence는 positive 경로단언과 쌍)의 격리/필터 케이스 구체화. 근거: WorkPlanRendererTest WPR-15/17/18 7.7 critical 6건 전부 이 클래스.
+- **(R10) 제어문자·개행 fixture는 Java 이스케이프 시퀀스로 작성**(`\0`·`\r\n` 등) — raw 바이트(실제 0x00 등) 삽입 금지. raw NUL은 grep이 binary로 인식하고 javac가 fragile. 작성 후 `tr -d` 류로 raw 제어문자 부재 검증. 근거: WorkPlanRendererTest raw NUL 디스크검증 적발(2026-06-30).
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일

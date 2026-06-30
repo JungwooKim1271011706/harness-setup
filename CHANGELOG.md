@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.40.0 — 2026-06-30
+- **테스트 작성/sanity 커버리지 4종 보강 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** export zip 아티팩트 세션: prod 무결, 발견 FAIL/critical 전부 테스트측 결함 → "작성 품질 게이트가 늦게/부분만 걸린다".
+  - **C1 `tester-design.md` R9**: 격리/거부(negative) 케이스는 substring 부재(`forEach doesNotContain`, 공허)가 아니라 **금지산출물 count==0 + 허용산출물 positive** 쌍으로 잠금. R2의 격리/필터 구체화. 근거: WPR-15/17/18 7.7 critical 6건.
+  - **C2 `playbook-tdd.md` 7.6 + `tester-frontend.md`**: 프론트 vitest RED sanity를 backend(`mvn test-compile`+RED) **대칭 게이트 단계로 격상**(tester-frontend 실행) — 7.7 직행 금지. + 모달/오버레이 spec 선점검 체크리스트(Teleport stub / 자식 onMounted api mock). 근거: teleport·ignoreApi 변경검증 2라운드.
+  - **C3 `playbook-tdd.md` 7c.2**: 인벤토리에 **출력 위치/경로 이동의 read-side 소비자** 부류 추가 — 산출 파일을 읽는 테스트 헬퍼(파일 경로 read, 값 단언 아님 = 별개 seam) 전수 grep. 근거: flow2 리포트 경로이동→read 헬퍼 stale→변경검증 14 FAIL.
+  - **C4 `tester-design.md` R10 (PATCH)**: 제어문자·개행 fixture는 Java 이스케이프(`\0`·`\r\n`), raw 바이트 금지(grep binary·javac fragile) + `tr -d` 검증. 근거: WPR raw NUL 적발 1회.
+  - 관찰만(reject): 8a GREEN agent 세션한도 사망 = 외부 토큰요인, 디스크 산출 보존 재구성 성공 → YAGNI.
+
 ## 3.39.0 — 2026-06-30
 - **receiving-code-review 게이트에 승인 계약 충돌 체크 + codex 주석오인 경고 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** repostitch 위자드 UI 세션 회고 2건.
   - **`agents/orchestrator.md` (후보1, HIGH)**: findings 타당성 1차 게이트(①전제실재 ②이미막힘 ③YAGNI)에 **④ "승인된 RED 테스트·7c 합의·설계패널 승인 major와 충돌하면 기각"** 추가. 외부 리뷰 finding은 승인 계약보다 **하위 권위**(developer가 테스트 못 고치는 hook 불변식 정신). 충돌인데 테스트가 진짜 틀렸으면 DESIGN_MISMATCH로 사용자 재승인. 근거: 외부 aria-expanded "stale" finding이 승인 RED B-4와 충돌→적용→FAIL→환원 1라운드(커밋 7df3c98). ※ feature-scan #1(생산자 self-challenge)과 상보(주는쪽 자기반박 vs 받는쪽 계약대조).
