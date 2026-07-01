@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.43.0 — 2026-07-01
+- **보안 SSOT 현지화 단계 + finalizer E2E 콘솔 원자커플링 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **후보1 `skills/harness-setup/SKILL.md`**: `claude-security-guidance.md`는 프로젝트별 보안룰(설계패널 `CSO_LENS`·`/cso`·`/review` 3곳이 SSOT로 Read)인데 harness-setup 재사용 시 원본(scourt 등) 그대로 딸려옴 → 현지화 안 하면 보안비평이 틀린 baseline 참조. Step5 다음단계 + 주의사항에 **보안 SSOT 현지화 체크** 추가(헤더 프로젝트명 불일치=미현지화 신호, 자동탐지 불가라 사람 수행).
+  - **후보2 `agents/finalizer.md` 불변식**: 사람 E2E 콘솔 실행형 출력은 v3.35.0서 규칙화됐으나 **훅(check-finalizer-output)이 콘솔을 못 봄**(파일 앵커 부재) → "feature 문서만 append해 훅 통과 + 콘솔 실행형 스킵"이 훅 사각의 사일런트 위반으로 재발. 불변식에 **"콘솔↔문서 append는 원자적, 하나만 하고 스킵 금지, 훅은 문서만 검증(콘솔 사각)"** 명시.
+  - reject(기적용): 후보2 ①콘솔필수(v3.35.0)·②복붙명령·③기대결과·④자동커버 라벨(line202) 전부 이미 존재 → 소비자 구버전 vendored 재발(git pull). 진짜 신규는 원자커플링 명시뿐.
+
 ## 3.42.0 — 2026-07-01
 - **codex Bash 직접호출 timeout 규칙 + 설계패널 재게이트 초점 강화 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **#1 `agents/orchestrator.md` codex 호출 가드**: v3.41.0서 wiki화(참조)한 codex-bash-timeout을 **행동 규칙으로 강제**. Bash 직접호출(probe·설계패널 형제·7b·review) 시 Bash `timeout` param을 codex 내부 이상(review ≥360000, consult/write ≥620000ms) 명시 — 미설정 시 기본 120s가 `exit 143` SIGTERM으로 run 낭비. probe만 짧게. 근거: 7.5 codex write 2분 조기사망 후 재실행.
