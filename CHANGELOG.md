@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.42.0 — 2026-07-01
+- **codex Bash 직접호출 timeout 규칙 + 설계패널 재게이트 초점 강화 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **#1 `agents/orchestrator.md` codex 호출 가드**: v3.41.0서 wiki화(참조)한 codex-bash-timeout을 **행동 규칙으로 강제**. Bash 직접호출(probe·설계패널 형제·7b·review) 시 Bash `timeout` param을 codex 내부 이상(review ≥360000, consult/write ≥620000ms) 명시 — 미설정 시 기본 120s가 `exit 143` SIGTERM으로 run 낭비. probe만 짧게. 근거: 7.5 codex write 2분 조기사망 후 재실행.
+  - **#2(c) `agents/orchestrator.md` 패널 재작업 루프**: 재게이트(LOOP≥1) workflow 입력에 **직전 critical + rework diff 명시** → 페르소나가 "해소됐나 + 새 결함 유발했나"에 집중. **재실행 범위·페르소나는 cold 전체 유지**(게이트 완결성 — 1회차 수정의 무관섹션 부작용 방지). 초점만 강화, 커버리지 불변. 근거: JAR관리 고복잡 LOOP2 신규 critical 2건이 1회차 수정 유발분.
+  - **보류(적용 안 함)**: #2(a) 재게이트 스코프 축소·(b) eng 라운드 축소 = 게이트 커버리지 축소 → 수정 부작용 놓칠 회귀 위험(게이트 완결성 거버넌스 근접). backlog 기재.
+
 ## 3.41.0 — 2026-07-01
 - **wiki gotcha 2종 (inbox 드레인, repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **`wiki/claude-rules-gitignore-local-only.md` 신규**: `.claude/rules/`는 양쪽 git서 gitignore(제품 repo `.claude/` + harness-setup `rules/`, 실측 `.gitignore:2`) → rule 파일 편집이 어느 git 이력에도 안 남음(로컬 전용). "편집=커밋" 착각 금지, `git check-ignore -v`가 SSOT. 공유할 규칙은 `CONTEXT.md`/`docs/`로. 하네스 구조 자체 함정 = 전 프로젝트 공통.

@@ -400,6 +400,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
    - critical이 많아 직접 판정이 부담이면, 인용 라인 Read를 **강제**한 단일 서브에이전트에 위임 가능(단 "코드 안 읽으면 uncertain, refute-default 금지" 명시).
 3. **생존 critical > 0** → 게이트 차단, planner 재작업 [LOOP n/3].
    **생존 critical == 0** → 사용자 승인 단계로. `majors` 승인화면 노출, `minors` 기록.
+   - **재게이트(LOOP≥1) 입력 명시**: 재실행 workflow 프롬프트에 **직전 critical 목록 + 이번 rework diff**를 넣어 각 페르소나가 "① 직전 critical이 실제 해소됐나 ② 이 수정이 새 결함을 유발했나(downstream 부작용)"에 집중하게 한다. 재실행 **범위·페르소나는 그대로**(cold 전체재실행 — 게이트 완결성 유지: 1회차 수정이 무관 섹션에 부작용 낼 수 있어 스코프 축소 금지). 초점만 강화, 커버리지 불변. 근거: JAR관리 고복잡 패널 LOOP2 신규 critical 2건이 1회차 수정 유발분(finally 스코프·좌표 정규식).
 - 워크플로 산출은 **보조 입력**이다. dedup·코드대조·차단 판정은 orchestrator가 내린다.
 - 워크플로 **전부 실패**/도구 미가용 시 폴백: 기존 수동 페르소나 합성(fire-and-forget 금지, orchestrator 검토). **부분 실패는 위 0번 자동 재런치로 처리**(수동 합성 전 재런치 우선).
 
@@ -604,6 +605,8 @@ codex 진입점 6곳: TDD 7b·7.5·7.7 폴백, **설계패널 형제(consult)**,
 ### 기계강제는 codex 스킬이 담당 (재지시 금지)
 
 `/codex` 스킬이 하드 타임아웃(review 330s / challenge·consult 600s)·stdin deadlock 회피·파일 Read 위임 차단·불량버전(0.120.0/.1/.2) 차단을 이미 기계강제한다. orchestrator는 타임아웃 값·전달 방식을 재지시하지 않는다. ⚠ **GNU `timeout` + 최신 스킬** 전제 — 깨지면 타임아웃 없이 실행(행 재발) → 아래 백스톱이 받는다.
+
+⚠ **Bash로 codex를 직접 호출**(가용성 probe·설계패널 codex 형제·7b 케이스산출·/codex review)할 땐 `/codex` 스킬을 안 거치므로 **Bash 도구 `timeout` param을 codex 내부 타임아웃 이상으로 명시**한다 — 미설정 시 Bash 기본 120s(2분)가 codex를 조기 SIGTERM(exit 143)으로 죽여 run 전체 낭비(codex는 정상, 추론 중이었음). 값: **review ≥360000ms, consult/write/challenge ≥620000ms**(내부 `timeout 330`/`600`보다 크게). probe만 짧게(`timeout 60` + Bash param 짧게 — stall 조기발각). 상세 [[codex-bash-direct-timeout]].
 
 ### 가용성 확정 — orchestrator SSOT (서브에이전트 자기보고 비신뢰)
 
