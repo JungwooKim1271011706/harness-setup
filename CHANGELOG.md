@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.41.0 — 2026-07-01
+- **wiki gotcha 2종 (inbox 드레인, repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **`wiki/claude-rules-gitignore-local-only.md` 신규**: `.claude/rules/`는 양쪽 git서 gitignore(제품 repo `.claude/` + harness-setup `rules/`, 실측 `.gitignore:2`) → rule 파일 편집이 어느 git 이력에도 안 남음(로컬 전용). "편집=커밋" 착각 금지, `git check-ignore -v`가 SSOT. 공유할 규칙은 `CONTEXT.md`/`docs/`로. 하네스 구조 자체 함정 = 전 프로젝트 공통.
+  - **`wiki/codex-bash-direct-timeout.md` 신규**: codex를 Bash 도구로 직접 호출(probe·설계패널 형제·7b·review) 시 Bash 기본 timeout 2분 < codex 실호출 2~9분 → `exit 143` SIGTERM. 내부 GNU `timeout`과 별개 레이어(짧은 쪽 승) → Bash `timeout` param ≥585000ms 명시. `/codex` 스킬 경유는 무관(스킬이 강제). codex-model-stall·python-shim과 링크.
+
 ## 3.40.0 — 2026-06-30
 - **테스트 작성/sanity 커버리지 4종 보강 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.** export zip 아티팩트 세션: prod 무결, 발견 FAIL/critical 전부 테스트측 결함 → "작성 품질 게이트가 늦게/부분만 걸린다".
   - **C1 `tester-design.md` R9**: 격리/거부(negative) 케이스는 substring 부재(`forEach doesNotContain`, 공허)가 아니라 **금지산출물 count==0 + 허용산출물 positive** 쌍으로 잠금. R2의 격리/필터 구체화. 근거: WPR-15/17/18 7.7 critical 6건.

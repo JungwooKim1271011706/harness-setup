@@ -16,6 +16,8 @@
 - [[codex-tmp-windows-path]] — codex 호출 시 gstack-paths TMP_ROOT가 `C:Users`(슬래시 누락) → mktemp 실패 → /tmp 폴백 1회 재시도 지연
 - [[codex-python-shim-windows]] — codex --json 파서가 Windows Store python shim을 골라 broken pipe(exit 101) → PYTHON_CMD로 실제 인터프리터 명시. 차단훅 mvn 오탐 회피 노트 포함
 - [[codex-model-stall-windows]] — codex smoke ping은 exit0 통과하나 실프롬프트가 모델 stall로 exit124 hang → probe false-positive로 20분 낭비. probe를 대표프롬프트+60s 타임아웃으로 강화, 타임아웃=불가
+- [[codex-bash-direct-timeout]] — codex를 Bash 도구로 직접 호출 시 Bash 기본 timeout 2분이 codex 실호출(2~9분)보다 짧아 exit143 SIGTERM. 내부 GNU timeout과 별개 레이어(짧은 쪽 승). Bash timeout param ≥585000ms 명시. /codex 스킬 경유는 무관
+- [[claude-rules-gitignore-local-only]] — .claude/rules/ 는 양쪽 git서 gitignore(제품 repo .claude/ + harness-setup rules/) → rule 편집이 커밋 안 됨(로컬 전용). 편집=커밋 착각 금지, git check-ignore -v가 SSOT. 공유할 규칙은 CONTEXT/docs로
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
 - [[springshell-noninteractive-runner-order]] — spring-shell 비대화형 배치(TTY 없음)서 셸 러너가 leftover 인자를 명령으로 해석→CommandNotFound. 커스텀 ApplicationRunner에 @Order(HIGHEST_PRECEDENCE) 줘야 먼저 실행. CLI 플래그로는 못 고침
