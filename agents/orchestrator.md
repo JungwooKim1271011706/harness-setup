@@ -582,13 +582,23 @@ wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다:
 | 시점 | 호출 위치 |
 |------|---------|
 | planner 결과 출력 후 → 사용자 승인 요청 전 | 설계패널게이트 완료 후, 승인 게이트 직전 |
+| **TDD 합의 완료(7.7 PASS) → developer(8) 진입 전** | 합의된 RED 스위트+7c 합의가 최고가 미보존 산출물 — GREEN 중 세션死 시 재개 근거(현재 승인 前 ↔ tester FAIL 사이 공백 메움) |
 | tester FAIL `[LOOP n/3]` 발생 시 | tester FAIL 판정 후, /investigate 호출 직후 |
 
 ### 자동 save 시 컨텍스트
-- 현재 단계 (planner 출력 후·설계패널게이트 완료 후 / tester FAIL 시)
+- 현재 단계 (planner 출력 후·설계패널게이트 완료 후 / TDD 합의 완료 / tester FAIL 시)
 - 보관 중인 스킬 출력 (/office-hours, /grill-with-docs, /co-plan)
 - 현재 루프 카운트 `[LOOP n/3]`
 - 직전 단계 산출물 요약
+- TDD 합의 완료 save 시: 7c 합의 diff 요약 + RED 스위트 파일목록 + 7.7 PASS 근거
+
+### 승인 결정 durable 기록 (세션시작 자동복원 — 수동 restore 불요)
+사용자가 설계를 승인하면(설계패널 게이트 통과 후) orchestrator가 승인 설계의 핵심 선택+근거를 `gstack-decision-log`로 durable decision에 남긴다:
+```
+~/.claude/skills/gstack/bin/gstack-decision-log '{"decision":"<승인 설계 1줄>","rationale":"<핵심 근거·트레이드오프>","scope":"<feature slug>","source":"user"}'
+```
+- 효과: 다음 세션 **시작 시** gstack Context Recovery(context-save SKILL)가 `decisions.active.json`을 자동 surface(welcome-back 요약) → 수동 `/context-restore` 없이 이전 결정 인지. checkpoint 파일(수동 restore 경로)과 **별개 자동 경로**.
+- 반전(설계 재게이트로 승인 뒤집힘)이면 `--supersede <id>`로 로그. 턴레벨·사소한 선택은 로그 금지(durable=아키텍처·스코프·도구선택·반전만). 미설치 시 스킵.
 
 ### restore 정책 (자동 로드 X)
 - session-check.sh 훅이 24시간 이내 저장된 컨텍스트 있으면 **안내만** 출력 ("이어가시려면 /context-restore")
@@ -751,7 +761,8 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 | 보안 민감한 변경 (인증, 권한, 암호화) | `/cso` | 필수 (보안룰 SSOT `.claude/claude-security-guidance.md` Read+준수 주입) |
 | 성능 측정이 필요한 변경 | `/benchmark` | 선택 |
 | tester 3회 루프 ESCALATION 발생 시 | 하네스 자가 점검 | 필수 |
-| 작업 컨텍스트 보존 (planner 결과 후, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
+| 작업 컨텍스트 보존 (planner 결과 후, TDD 합의 완료, tester FAIL 시) | `/context-save` | 필수 (자동 호출) |
+| 승인 설계 durable 기록 (설계 승인 직후) | `gstack-decision-log` | 필수 (세션시작 자동복원 경로) |
 | 세션 끊김 후 작업 이어가기 | `/context-restore` | 사용자 명시 호출 시 |
 
 [^regression]: 인식 변형 — 모두 동일하게 tester-runtime 단독 전체회귀로 매핑: `회귀 돌려`, `전체회귀`, `전체 회귀 돌려/해줘`, `전체 테스트(해줘)`, `통합 테스트(해줘)`, `통테`, `전체 검증`. 이 프로젝트는 통합≈전체회귀이므로 통합/통테도 전체회귀로 처리한다.

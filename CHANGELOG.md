@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.48.0 — 2026-07-03
+- **컨텍스트 보존 강화: 승인결정 durable 기록 + TDD 합의완료 save지점 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **P1 `agents/orchestrator.md` §작업 컨텍스트 보존**: 사용자 설계 승인 직후 `gstack-decision-log`로 승인 설계(핵심선택+근거)를 durable decision에 기록 → 다음 세션 **시작 시** gstack Context Recovery가 `decisions.active.json` 자동 surface(수동 `/context-restore` 불요). 하네스가 여태 안 쓰던 자동복원 경로 배선. `--supersede`로 반전 처리, durable(아키텍처·스코프·반전)만.
+  - **P2 `agents/orchestrator.md` §작업 컨텍스트 보존**: 자동 save 지점에 **TDD 합의 완료(7.7 PASS)→developer(8) 진입 전** 추가 — 승인 前 ↔ tester FAIL 사이 공백(합의된 RED 스위트+7c 합의가 최고가 미보존, GREEN 중 세션死 시 통째 재도출) 메움. save 컨텍스트에 7c 합의 diff+RED 파일목록+7.7 근거 포함.
+  - routing 표 정합(context-save 시점 3개·decision-log 행 추가). 보류: P3(백그라운드 workflow 직전 save) — 413 복구절차가 부분 커버, 재발 시 재검토.
+
 ## 3.47.0 — 2026-07-03
 - **캡처 단언 스코프 한정(R14) + 신규필드 전홉 운반 seam(7c.3) (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **후보1 `agents/tester/tester-design.md` R14**: mock.calls 캡처 단언을 대상 스코프로 한정 — ①`.find`/`.filter` 캡처는 대상 판별 스코프(argv 인자값·`refs/tags/` 접두·repo URL) 필수(공유 mock의 무관 호출 포획 → 구현 정확해도 wrong-reason FAIL) ②`.not.toHaveBeenCalled()` 무인자 지양→`.not.toHaveBeenCalledWith(특정)` ③배열 조회는 `.some()` undefined-safe(`.find().not.toHaveProperty` crash 방지). 근거: repostitch T7-CASE/D-GATE/T7-FALSE/D-FE-3 4회 협소화 루프.
