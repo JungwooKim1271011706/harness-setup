@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.46.0 — 2026-07-02
+- **RED anti-pattern 3종 + tester-design 편집주체 + rule실존/보안SSOT 런타임가드 (inbox 드레인 Req2) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **C1 `agents/tester/tester-design.md` R11~R13**: 7.5 RED 반복 anti-pattern 3종 잠금 — R11 미구현 스텁(UOE throw) 대상 값-단언도 UOE 가드(R1 값-케이스 확장), R12 SUT 생성 타입기반 reflection(생성자 하드코딩 금지, seam 도달 보장), R13 실 static/fs 분기는 @TempDir+픽스처 준비(Mystery Guest·mutation 무력 방지). 근거: Req2 7.6 D1~D3·7.7 critical#1 REPLAY ZipUtil.
+  - **C2 `agents/tester/tester-design.md` 편집주체 절 신설(PATCH)**: src/test/** 작성·수정 주체=tester-design(Edit/Write 보유, block-developer-test-edit 훅 대상 아님). 7.5/7.6/7.7/7c.2 마이그레이션 모두 실제 편집으로 수행 — "설계 전용이라 편집 거부" 라운드간 비일관 금지(재spawn 낭비 차단). 근거: Req2 7.7 LOOP2 편집거부 후 재지시.
+  - **C3 `agents/orchestrator.md` 0단계 ③(MINOR)**: rule 경로 주입 전 Glob 실존 검증 게이트 — `.claude/rules/` 부재 시 조용한 no-op 대신 "rule 미생성·rule-maker 권장" 경고 + 주입 생략(코딩규칙 대조 silent 실패 차단). 근거: Req2 code-reviewer가 rules/ 부재 발견.
+  - **C4 `agents/orchestrator.md` 보안 SSOT 주입부(MINOR)**: `.claude/claude-security-guidance.md` 주입 시(설계패널 CSO_LENS·/cso·code-reviewer 3소비지점) 문서 헤더 projectName ↔ 현 projectName 대조, 불일치면 제너릭 CWE 폴백+미현지화 경고. v3.43.0 setup-time 현지화의 런타임 백스톱(복사 후 재setup 안 한 케이스 자동포착). 근거: Req2 /cso·code-reviewer 둘 다 scourt 타스택 SSOT 지적.
+  - reject: **C5 surefire @Nested** = 이미 커버(tester-backend line 61 변경검증 @Nested 명시 규칙 = 회고 제안 (a) 동일; (b) surefire 3.x는 제품 pom 변경 하네스 밖). **C6 한글 메시지 관례** = 프로젝트별 언어관례, 휴대 하네스 부적합(타언어 프로젝트 오적용) → 소비자 CONTEXT.md 권장, R7이 "메시지 verbatim 복사·추측 금지"로 근본 커버. 관찰 C7(gstack-paths Windows tmp) 벤더·저레버리지 제외.
+
 ## 3.45.0 — 2026-07-02
 - **통합계약 갭 조기잠금 (7c.3 일반화 + tester-backend L1 조기) (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **A-1 `docs/playbook-tdd.md` 7c.3**: "정책/설정 런타임 배선" 불릿 일반화 → 변경 표면이 스프링 빈 배선(@Component/@Service)·설정 바인딩(@Value/@ConfigurationProperties)·auth 헤더·컨트롤러↔서비스 계약을 건드리면 ApplicationContext 로드+빈 등록/설정 non-null 주입/auth 전달을 **L1 통합 케이스 1건**으로 잠금. ⚠ config를 단위RED로 잠그는 7c.1 금지축과 구별(기동·실주입 자체를 통합레벨로 단언 = 별개 축).

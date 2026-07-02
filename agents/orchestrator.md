@@ -172,6 +172,8 @@ rule 경로 예시:
 gstack/codex 단계(co-plan, 설계패널, 7b, 7.5, review, codex review)에는 호출 시 컨텍스트에 "아래 rule 경로를 Read하고 준수하라"를 명시 주입한다.
 planner/developer/tester agent md는 기존 자동 Read 로직으로 처리하므로 별도 주입 불필요.
 
+- ⚠ **주입 전 실존 검증**: 확정 rule 경로를 Glob으로 1회 확인한다. `.claude/rules/`가 부재하면(rule-maker 미실행·gitignore 로컬전용 `wiki/claude-rules-gitignore-local-only.md`) 조용한 no-op 대신 "rule 미생성 — rule-maker 실행 권장" 경고 후 주입 생략한다(코딩규칙 대조가 세션 내내 안 되는 silent 실패 차단). 근거: DEVUNIT-authpatch Req2 code-reviewer가 rules/ 부재 Glob 발견.
+
 ---
 
 ## 3트랙 라우팅
@@ -366,6 +368,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 - 고복잡도도 동일 규칙(별도 ≥4 강제 없음). 고복잡도의 깊이는 인원이 아니라 eng 다라운드(loop-until-dry)가 담당.
 패널은 **Workflow `design-panel`로 병렬 실행**한다 (아래 ### 패널 실행 참조).
 > cso 렌즈: plan-cso-review 스킬은 실존하지 않는다(gstack 제공 plan 리뷰는 eng/design/devex 사용 + ceo는 패널 미사용; 별도 코드감사용 `cso`). 계획단계 보안 렌즈 = design-panel.js `CSO_LENS`가 **보안룰 SSOT `.claude/claude-security-guidance.md`를 Read**(백로그 #7a). 별도 plan-cso 스킬 불필요 — 룰 문서가 계획·코드 단계 공통 보안기준. (구 TODO "plan-cso 스킬 신설" 해소)
+
+> ⚠ **보안 SSOT 프로젝트 정합 런타임 가드** (3 소비지점 공통 — 설계패널 CSO_LENS·/cso·code-reviewer): `.claude/claude-security-guidance.md`를 주입할 때 문서 상단 프로젝트명이 현 `projectName`과 일치하는지 1줄 확인한다. 불일치(타프로젝트 복사 후 미현지화)면 제너릭 CWE 기준으로 폴백 + "보안 SSOT 미현지화" 경고(엉뚱한 스택 기준 보안판정 차단). setup-time 현지화(harness-setup SKILL.md, v3.43.0)의 런타임 백스톱 — 복사 후 재setup 안 한 케이스를 자동 포착. 근거: DEVUNIT-authpatch Req2 /cso·code-reviewer 둘 다 scourt SSOT(타스택) 지적.
 
 > orchestrator는 사용자 승인 직전 planner 산출물 텍스트를 0단계 ②의 보안 키워드로 기계적으로 재스캔한다. 매치되는데 변경영역 태그에 `보안`이 없으면, 누락으로 간주하고 변경영역 태그에 `보안`을 추가한다. (이후 cso 포함은 기존 패널 구성 규칙이 처리)
 

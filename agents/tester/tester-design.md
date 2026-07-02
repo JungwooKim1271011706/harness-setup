@@ -34,6 +34,10 @@ memory: project
   - 예: `getList_callsManager` (X — 구현 결합)
 - 각 테스트는 리팩터링 후에도 통과해야 함 (구현이 바뀌어도 테스트는 살아남아야)
 
+## 편집 주체 = tester-design 본인 (라운드 간 일관)
+
+src/test/** 파일의 작성·수정 주체는 tester-design이다(Edit/Write 보유). block-developer-test-edit 훅은 developer-* 대상이며 tester-design은 통과한다. 7.5 RED 작성·7.6/7.7 결함 수정·7c.2 stale 마이그레이션 모두 tester-design이 **실제 파일 편집**으로 수행한다 — 설계 문서만 쓰고 편집을 developer/tester-backend로 미루지 않는다(tester-backend는 검증자, 작성 금지라 대체 불가). 라운드마다 "설계 전용이라 편집 거부" 해석 금지(재spawn 낭비).
+
 ## RED 보안/negative 테스트 규칙 (공허 단언·통합버그 방어, 필수)
 
 7.5 RED를 작성·설계할 때 아래를 강제한다. (근거: `failure_2026-06-17_tdd77-vacuous-assertions.md`)
@@ -49,6 +53,9 @@ memory: project
 - **(R8) 기존 테스트 파일 보존** — 대상 테스트 파일이 이미 있으면 통째 replace 금지. 기존 케이스를 보존하며 신규 케이스를 append하고, 변경 후 `git diff`로 삭제된 기존 케이스가 없는지 점검한다. 의도적 삭제는 사유를 명시.
 - **(R9) 격리/거부(negative) 케이스는 substring 부재가 아니라 count-lock 쌍으로 잠근다** — `.forEach(l -> assertThat(l).doesNotContain("X"))` 같은 부재 단언은 공허다(깨진 구현이 *다른* 활성 산출물을 emit하면 통과). **금지 산출물 count==0 + 허용 산출물 positive 단언**(예: 활성 명령 count==0 + `# [경고]` 라인 존재)을 쌍으로 단언한다. R2(absence는 positive 경로단언과 쌍)의 격리/필터 케이스 구체화. 근거: WorkPlanRendererTest WPR-15/17/18 7.7 critical 6건 전부 이 클래스.
 - **(R10) 제어문자·개행 fixture는 Java 이스케이프 시퀀스로 작성**(`\0`·`\r\n` 등) — raw 바이트(실제 0x00 등) 삽입 금지. raw NUL은 grep이 binary로 인식하고 javac가 fragile. 작성 후 `tr -d` 류로 raw 제어문자 부재 검증. 근거: WorkPlanRendererTest raw NUL 디스크검증 적발(2026-06-30).
+- **(R11) 미구현 스텁(신규 클래스가 UnsupportedOperationException throw) 대상 값-단언 케이스도 UOE 가드로 감싼다** — `isNotInstanceOf(UnsupportedOperationException.class)` 또는 UOE→AssertionError 변환 헬퍼. GREEN 후 값단언으로 자연전환(R1의 예외단언→값단언 확장). 안 하면 "미구현" 기술예외로 죽어 잘못된 이유 FAIL(7.6 불통과). 근거: Req2 7.6 D1 stub-UOE 7건.
+- **(R12) SUT 생성 = 생성자 인자 하드코딩 금지, 파라미터 타입기반 reflection 헬퍼로 생성** — 다인자 `new X(...)` 하드코딩은 GREEN서 생성자 필드 추가 시 stale·mock 미도달(seam 부재→공허 verify 또는 도달불가 FAIL). 타입기반 reflection 생성은 생성자 변경에 견고. 근거: Req2 D2/D3 ReflectionMockFactory 실증.
+- **(R13) 대상 분기가 실 static/파일시스템 의존(@Mock 못 하는 정적 유틸·fs IO)을 타면 @TempDir+픽스처 레이아웃을 준비해 실제 도달시킨다** — 미준비 시 엉뚱한 예외로 통과(Mystery Guest, mutation 무력). 근거: Req2 7.7 critical#1 REPLAY ZipUtil.extractIfNeeded.
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일
