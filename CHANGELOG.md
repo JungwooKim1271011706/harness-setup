@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.45.0 — 2026-07-02
+- **통합계약 갭 조기잠금 (7c.3 일반화 + tester-backend L1 조기) (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **A-1 `docs/playbook-tdd.md` 7c.3**: "정책/설정 런타임 배선" 불릿 일반화 → 변경 표면이 스프링 빈 배선(@Component/@Service)·설정 바인딩(@Value/@ConfigurationProperties)·auth 헤더·컨트롤러↔서비스 계약을 건드리면 ApplicationContext 로드+빈 등록/설정 non-null 주입/auth 전달을 **L1 통합 케이스 1건**으로 잠금. ⚠ config를 단위RED로 잠그는 7c.1 금지축과 구별(기동·실주입 자체를 통합레벨로 단언 = 별개 축).
+  - **A-2 `agents/tester/tester-backend.md` L1**: 변경 표면이 배선/설정/auth/컨트롤러 계약을 건드리면 L1 컨텍스트 기동을 **변경검증 초반에 실행**, context 로드 테스트 부재를 "L1 공백"으로 넘기지 말고 통합계약 갭 신호로 7c.3 락 요구.
+  - reject/reconcile: 원 회고 제안(A) "통합계약 락 최소 1건 RED 필수화"는 **7c.1과 정면 충돌**(config/배선 major를 단위RED로 잠그면 '미설정시 차단'만 검증돼 거짓GREEN — M7 allowedDeployRoot 근거). → 신규 규칙 대신 같은 결함클래스인 7c.3 정책/설정 배선 통합케이스를 일반화 + L1 조기화로 재조정. 관찰 2건(codex timeout124 기존커버·세션death 외부요인) YAGNI 제외.
+  - 근거: DEVUNIT-authpatch extdep-phase1 checkpoint(2026-07-02) — 단위RED 스켈레톤 GREEN 후 변경검증 통합서 @Component누락·settings빈값·auth·계약불일치 다수 → LOOP 다회전.
+
 ## 3.44.0 — 2026-07-02
 - **code-reviewer 사망 대칭 폴백 + codex heredoc 메타문자 gotcha (inbox 드레인 2파일) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **C2 `agents/orchestrator.md` codex 호출 가드 폴백 라우팅**: 기존 폴백은 codex사망→code-reviewer 단독 방향만 문서화 → 역방향(code-reviewer 세션한도 사망) 시 orchestrator가 즉흥 처리. **대칭 케이스 1줄 추가**: /review(code-reviewer) 산출 실패 → codex 단독 review + blocking findings 인용라인 orchestrator 직접 코드대조 1회 + 단일소스 태그(둘 다 불가면 orchestrator 직접 receiving-code-review). 근거: autopatch-cli-2 세션 실제 발생·즉흥.
