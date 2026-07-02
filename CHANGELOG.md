@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.44.0 — 2026-07-02
+- **code-reviewer 사망 대칭 폴백 + codex heredoc 메타문자 gotcha (inbox 드레인 2파일) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **C2 `agents/orchestrator.md` codex 호출 가드 폴백 라우팅**: 기존 폴백은 codex사망→code-reviewer 단독 방향만 문서화 → 역방향(code-reviewer 세션한도 사망) 시 orchestrator가 즉흥 처리. **대칭 케이스 1줄 추가**: /review(code-reviewer) 산출 실패 → codex 단독 review + blocking findings 인용라인 orchestrator 직접 코드대조 1회 + 단일소스 태그(둘 다 불가면 orchestrator 직접 receiving-code-review). 근거: autopatch-cli-2 세션 실제 발생·즉흥.
+  - **W1 `wiki/codex-bash-heredoc-metachar.md` 신규 + orchestrator §codex 호출 가드 1줄**: codex를 Bash 직접호출할 때 프롬프트에 셸 메타문자(백틱·`$`·`[]{}`) 있으면 double-quote 조기종료/명령치환으로 `EOF exit 2`(codex 호출조차 안 됨). single-quote heredoc 파일에 써서 `codex exec "$(cat "$PF")"`로 전달(리터럴 보존). [[codex-bash-direct-timeout]] 형제(별 축: 쿼팅 vs timeout). 근거: authpatch_draft TDD 7.7 1차 호출 EOF 에러.
+  - reject: **C1 memoryDir stale** = 오진(memoryDir=auto-memory와 `.claude/agent-memory/`는 의도된 별개 두 시스템, 실패패턴 기록은 auto-memory가 정상) + 소비자 머신이동 드리프트(`/harness-setup` 재실행으로 해소, dev SSOT 무대상).
+
 ## 3.43.0 — 2026-07-01
 - **보안 SSOT 현지화 단계 + finalizer E2E 콘솔 원자커플링 (inbox 드레인) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **후보1 `skills/harness-setup/SKILL.md`**: `claude-security-guidance.md`는 프로젝트별 보안룰(설계패널 `CSO_LENS`·`/cso`·`/review` 3곳이 SSOT로 Read)인데 harness-setup 재사용 시 원본(scourt 등) 그대로 딸려옴 → 현지화 안 하면 보안비평이 틀린 baseline 참조. Step5 다음단계 + 주의사항에 **보안 SSOT 현지화 체크** 추가(헤더 프로젝트명 불일치=미현지화 신호, 자동탐지 불가라 사람 수행).
