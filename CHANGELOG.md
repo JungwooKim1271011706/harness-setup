@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.47.0 — 2026-07-03
+- **캡처 단언 스코프 한정(R14) + 신규필드 전홉 운반 seam(7c.3) (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **후보1 `agents/tester/tester-design.md` R14**: mock.calls 캡처 단언을 대상 스코프로 한정 — ①`.find`/`.filter` 캡처는 대상 판별 스코프(argv 인자값·`refs/tags/` 접두·repo URL) 필수(공유 mock의 무관 호출 포획 → 구현 정확해도 wrong-reason FAIL) ②`.not.toHaveBeenCalled()` 무인자 지양→`.not.toHaveBeenCalledWith(특정)` ③배열 조회는 `.some()` undefined-safe(`.find().not.toHaveProperty` crash 방지). 근거: repostitch T7-CASE/D-GATE/T7-FALSE/D-FE-3 4회 협소화 루프.
+  - **후보2 `docs/playbook-tdd.md` 7c.3 sub-bullet**: 신규 필드/핸들러 추가 시 전 홉 운반 + deps 실주입 e2e 1케이스 — producer payload 화이트리스트·DTO 매핑이 신규필드 운반하나 + 신규 핸들러가 main.js registerHandlers deps에 실주입됐나. payload 우회·deps 직접 mock이 배선 seam 가려 dead-feature GREEN 통과→/review만 적발. config/배선 major는 7c.1 구현위치+grep 병행. 근거: repostitch WS1(payload 화이트리스트 gitlinkCarried/Sha drop)·WS2(main.js previewFf deps 미주입) 2 dead-feature.
+
 ## 3.46.0 — 2026-07-02
 - **RED anti-pattern 3종 + tester-design 편집주체 + rule실존/보안SSOT 런타임가드 (inbox 드레인 Req2) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **C1 `agents/tester/tester-design.md` R11~R13**: 7.5 RED 반복 anti-pattern 3종 잠금 — R11 미구현 스텁(UOE throw) 대상 값-단언도 UOE 가드(R1 값-케이스 확장), R12 SUT 생성 타입기반 reflection(생성자 하드코딩 금지, seam 도달 보장), R13 실 static/fs 분기는 @TempDir+픽스처 준비(Mystery Guest·mutation 무력 방지). 근거: Req2 7.6 D1~D3·7.7 critical#1 REPLAY ZipUtil.
