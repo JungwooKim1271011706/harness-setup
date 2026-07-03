@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.49.0 — 2026-07-03
+- **codex mojibake 라인병합 gotcha + 픽스처 배선/기본UI blind spot 2변종 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **C1 `wiki/codex-review-mojibake-line-merge.md` 신규 + index**: codex review(PowerShell Get-Content)가 한글/혼합인코딩 파일서 인접 라인 병합 렌더 → 정상 코드를 "주석처리"로 오독, 거짓 P1 blocking. 출력 mojibake(`3?몄옄??`)가 신호 → codex P1은 항상 디스크 직접 Read 인용라인 대조(receiving-code-review). python-shim(--json broken pipe)·tmp-path와 별개 렌더축. 근거: repostitch B1 normalizeGitlinkToBranchTip "주석처리" 거짓P1 3중 기각.
+  - **C2 `docs/playbook-tdd.md` 7c.3 2변종**: (가) 전 홉 운반 bullet에 store 변종 흡수 — 테스트가 `store.X` 직접 주입하면 그 필드 producer 배선 공백이 GREEN에 숨음, 필드 producer 배선 존재를 별도 케이스로 잠금(근거: CC-2 store.importCfg.targetMeta→_buildCfg 직독→메타타겟 UI 공백). (나) 신규 bullet — 기본 UI 상태(default all-checked)가 픽스처보다 넓은 입력(단일→다중) 만들면 그 조합 트리거 분기를 케이스열거서 명시 probe(근거: B1 CB-MULTI-BRANCH 사후 회귀잠금). mock-hides-wiring(recurring #15) 변종 2종.
+
 ## 3.48.0 — 2026-07-03
 - **컨텍스트 보존 강화: 승인결정 durable 기록 + TDD 합의완료 save지점 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **P1 `agents/orchestrator.md` §작업 컨텍스트 보존**: 사용자 설계 승인 직후 `gstack-decision-log`로 승인 설계(핵심선택+근거)를 durable decision에 기록 → 다음 세션 **시작 시** gstack Context Recovery가 `decisions.active.json` 자동 surface(수동 `/context-restore` 불요). 하네스가 여태 안 쓰던 자동복원 경로 배선. `--supersede`로 반전 처리, durable(아키텍처·스코프·반전)만.
