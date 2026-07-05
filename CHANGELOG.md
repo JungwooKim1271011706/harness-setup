@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.50.0 — 2026-07-05
+- **병렬 워크트리 기능 현황 표출: 세션시작 자동 surface + 교차 대시보드 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 훅 갱신).**
+  - **A `hooks/session-check.sh` #8**: 세션 시작 시 현재 워크트리의 활성 기능(`docs/features/` 중 `## 완료` 없는 in-progress 문서)을 1줄 surface — 기능명·단계(설계中/테스트설계됨/테스트中)·테스트케이스 수·미커밋 초안 여부. 완료본은 노이즈 배제로 침묵, dir 부재(dev clone) 시 무해 침묵. 데이터는 planner·tester-design이 이미 쌓은 feature 문서 재활용, 세션시작 자동표출만 신설.
+  - **B `scripts/worktree-status.sh` 신규(읽기전용) + README `scripts/` 등록**: `git worktree list` × 각 워크트리 `docs/features/` 매핑 대시보드 — 워크트리별 활성 기능·단계·테스트 수·미커밋·완료 카운트. 사용자 "워크트리 현황" 질의 시 orchestrator가 온디맨드 실행. `scripts/` 신규 디렉터리(사용자 온디맨드 유틸).
+  - **`agents/orchestrator.md` §작업 스코프 경계**: "병렬 워크트리 현황 파악" 절 추가 — A(세션시작 자동)·B(온디맨드 대시보드) 배선 문서화. 기존 데이터(feature 문서) 표출 강화지 신규 게이트 아님.
+  - 배경: 사용자 병렬 워크트리 개발 시 "이 워크트리=이 기능=이 테스트" 매번 재파악하던 것을 자동화. 컨텍스트 보존 v3.48.0(승인결정 durable·TDD save)과 같은 "자동 surface" 계열. bump MINOR(session-check는 기등록 훅 인라인 갱신 — settings.json 무변경, 게이트구조·불변식 무변경).
+
 ## 3.49.0 — 2026-07-03
 - **codex mojibake 라인병합 gotcha + 픽스처 배선/기본UI blind spot 2변종 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **C1 `wiki/codex-review-mojibake-line-merge.md` 신규 + index**: codex review(PowerShell Get-Content)가 한글/혼합인코딩 파일서 인접 라인 병합 렌더 → 정상 코드를 "주석처리"로 오독, 거짓 P1 blocking. 출력 mojibake(`3?몄옄??`)가 신호 → codex P1은 항상 디스크 직접 Read 인용라인 대조(receiving-code-review). python-shim(--json broken pipe)·tmp-path와 별개 렌더축. 근거: repostitch B1 normalizeGitlinkToBranchTip "주석처리" 거짓P1 3중 기각.

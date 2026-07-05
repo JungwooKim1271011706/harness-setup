@@ -148,6 +148,41 @@ if [ -d "$WIKI_DIR" ]; then
   fi
 fi
 
+# 8) 현재 워크트리 활성 기능 surface (병렬 워크트리 관리 — "이 워크트리=이 기능=이 테스트")
+#    docs/features/ 의 in-progress 문서(= '## 완료' 없음)만 표출 → 완료본 노이즈 배제, 무해 침묵.
+#    데이터는 planner(요구사항)·tester-design(테스트설계)이 이미 쌓음. 세션시작 자동표출만 신설.
+FEATURES_DIR="$PROJECT_DIR/docs/features"
+if [ -d "$FEATURES_DIR" ]; then
+  ACTIVE=""        # 최신 in-progress 문서
+  ACTIVE_N=0       # in-progress 총 건수
+  # 파일명 YYYYMMDD 프리픽스가 정렬순 → sort -r 로 최신 우선
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    grep -q '^## 완료' "$f" 2>/dev/null && continue   # 완료본 스킵
+    ACTIVE_N=$((ACTIVE_N + 1))
+    [ -z "$ACTIVE" ] && ACTIVE="$f"
+  done <<< "$(find "$FEATURES_DIR" -maxdepth 1 -name '*.md' -type f 2>/dev/null | sort -r)"
+
+  if [ -n "$ACTIVE" ]; then
+    FNAME=$(basename "$ACTIVE" .md | sed 's/^[0-9]\{8\}-//; s/^[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-//')
+    # 단계 판정 (섹션 존재 기반)
+    if grep -q '^## 테스트 결과' "$ACTIVE" 2>/dev/null; then STAGE="테스트中(변경검증)"
+    elif grep -q '^## 테스트 설계' "$ACTIVE" 2>/dev/null; then STAGE="테스트 설계됨"
+    else STAGE="설계中(테스트 미설계)"; fi
+    # 테스트 케이스 수 best-effort (필수 테스트 케이스 섹션 하위 항목)
+    TC=$(awk '/^### 필수 테스트 케이스/{f=1;next} /^#{2,3} /{if(f)exit} f&&/^([0-9]+\.|-|\*)/{c++} END{print c+0}' "$ACTIVE" 2>/dev/null)
+    [ -z "$TC" ] && TC=0
+    TC_TXT=""; [ "$TC" -gt 0 ] 2>/dev/null && TC_TXT=" / 테스트케이스 ${TC}건"
+    # 미커밋 초안 여부 (repo-root 상대 경로로 조회)
+    REL="docs/features/$(basename "$ACTIVE")"
+    DRAFT=""
+    if [ -n "$(git -C "$PROJECT_DIR" status --porcelain -- "$REL" 2>/dev/null)" ]; then DRAFT=" ⚠미커밋 초안"; fi
+    BR=$(git -C "$PROJECT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "?")
+    EXTRA=""; [ "$ACTIVE_N" -gt 1 ] && EXTRA=" (외 진행 ${ACTIVE_N}건 — 전체: worktree-status.sh)"
+    MESSAGES+=("🌿 이 워크트리[${BR}] 활성 기능: ${FNAME} — ${STAGE}${TC_TXT}${DRAFT}${EXTRA}")
+  fi
+fi
+
 # 회고 inbox pending 알림은 SessionStart가 아니라 UserPromptSubmit(매 프롬프트)로 처리한다.
 #   dev clone은 자체 .claude/가 없어 이 session-check(repo 훅)가 안 걸린다 → 글로벌 등록 필요.
 #   → hooks/harness-inbox-nudge.sh + 글로벌 ~/.claude/settings.json UserPromptSubmit (README §inbox 알림).
