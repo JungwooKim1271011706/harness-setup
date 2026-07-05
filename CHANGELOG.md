@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.52.0 — 2026-07-05
+- **codex workspace-write 오펀 복구 뉘앙스 (inbox 드레인, 기존 통합) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **`wiki/codex-bash-direct-timeout.md` 회피 절 + sources 병합**: kill 후 복구 bullet 추가 — exit143 후 `tasklist | grep codex.exe` 생존 확인, **workspace-write(파일 편집 中) 오펀은 kill 금지(mid-write 손상 위험)·bounded 폴링 완주 + git diff 재리뷰**, read-only/probe 오펀은 정리 후 재실행. 근거: 07-05 authpatch_draft 7.5 workspace-write.
+  - **`agents/orchestrator.md` §codex 호출 가드**: 방금 v3.51.0 C3 "오펀 정리(kill)"를 맥락 분기로 정교화 — read-only/probe=kill, workspace-write=kill 금지·폴링 완주·git diff. (v3.51.0 C3가 read-only 맥락만 상정했던 것 보정.)
+  - reject: 신규 wiki 페이지 `codex-direct-exec-bash-timeout.md` 제안 = `codex-bash-direct-timeout.md`(v3.41.0)+orchestrator 가드(v3.42.0)와 동일 gotcha(중복) → 신규 페이지 대신 기존 통합(harness-retro Step2 원칙).
+
 ## 3.51.0 — 2026-07-05
 - **재개 재작업 방지 게이트 + 프론트-백 REST 계약잠금 + codex 오펀 정리 (inbox 드레인 web-export) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **C2 `agents/orchestrator.md` §office-hours**: 선제 게이트 신설 — 새 기능·재개 시 office-hours 실행 전에 `docs/features/`에 관련 승인 feature 문서 있나 grep, 있으면 재office-hours 금지·그 SSOT부터 재개. session-check #8(v3.50.0)·decision-log(v3.48.0) 세션시작 surface의 하드 게이트 짝. 근거: web-export 07-05가 06-30 승인설계 모른 채 재office-hours→폐기.
