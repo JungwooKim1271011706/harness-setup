@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.51.0 — 2026-07-05
+- **재개 재작업 방지 게이트 + 프론트-백 REST 계약잠금 + codex 오펀 정리 (inbox 드레인 web-export) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **C2 `agents/orchestrator.md` §office-hours**: 선제 게이트 신설 — 새 기능·재개 시 office-hours 실행 전에 `docs/features/`에 관련 승인 feature 문서 있나 grep, 있으면 재office-hours 금지·그 SSOT부터 재개. session-check #8(v3.50.0)·decision-log(v3.48.0) 세션시작 surface의 하드 게이트 짝. 근거: web-export 07-05가 06-30 승인설계 모른 채 재office-hours→폐기.
+  - **C4 `docs/playbook-tdd.md` 7c.3 + 7.5**: (7c.3) 프론트-백 REST 계약 sub-bullet — 라우트 URL↔프론트 api URL 대조 + DTO 필드명/JSON key를 동결 feature 문서 단일출처에서 양쪽 동일 잠금(각자 mock한 단위 GREEN이 실 HTTP 계약 미검증). (7.5) 테스트 인프라 임의 신규도입 금지·기존 통과 테스트 부트스트랩 복제(H2 임의도입 7.6 LOOP 유발). 근거: web-export 백30/프론트90 단위 GREEN인데 리뷰 계약 blocking 3건.
+  - **C3 `agents/orchestrator.md` §codex 호출 가드**: Bash 직접호출 kill(exit 143) 시 detached codex 오펀 재실행 전 정리(taskkill/kill) 1줄. 기존 timeout 규칙(v3.42.0)에 오펀 정리만 보강.
+  - reject: **C1 보안 SSOT 오배치** = v3.46.0서 헤더 projectName 런타임 가드 3소비지점(CSO_LENS·/cso·code-reviewer) 이미 배선(제안 (b) 정확히 그것). 파일 교체(a)=소비자-로컬(autoPatch 스택), dev SSOT 무대상. 관찰 developer 강제종료(외부요인) 제외.
+
 ## 3.50.0 — 2026-07-05
 - **병렬 워크트리 기능 현황 표출: 세션시작 자동 surface + 교차 대시보드 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 훅 갱신).**
   - **A `hooks/session-check.sh` #8**: 세션 시작 시 현재 워크트리의 활성 기능(`docs/features/` 중 `## 완료` 없는 in-progress 문서)을 1줄 surface — 기능명·단계(설계中/테스트설계됨/테스트中)·테스트케이스 수·미커밋 초안 여부. 완료본은 노이즈 배제로 침묵, dir 부재(dev clone) 시 무해 침묵. 데이터는 planner·tester-design이 이미 쌓은 feature 문서 재활용, 세션시작 자동표출만 신설.

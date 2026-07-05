@@ -220,6 +220,9 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 
 사용자 요청 수신 후, planner 호출 전에 /office-hours로 요구사항을 상세화한다.
 
+### 선제 게이트 — 기존 승인 설계 확인 (재작업 방지, office-hours 실행 전 필수)
+새 기능 요청·세션 재개 시 office-hours 실행 **전에** `docs/features/`에 관련 승인 feature 문서가 있나 먼저 grep한다(기능 키워드). 있으면(설계패널 승인 완료분) **재office-hours 금지** — 그 feature 문서를 SSOT로 재개한다(session-check #8·decision-log가 세션시작 surface하는 것의 하드 게이트 짝). 정반대 설계 재산출→폐기 방지. 근거: web-export 07-05 세션이 06-30 승인설계 모른 채 재office-hours→폐기.
+
 ### 호출 조건 (Skill 도구 사용)
 아래 중 하나라도 해당하면 /office-hours 먼저 실행:
 - 새 기능 개발 요청
@@ -620,7 +623,7 @@ codex 진입점 6곳: TDD 7b·7.5·7.7 폴백, **설계패널 형제(consult)**,
 
 `/codex` 스킬이 하드 타임아웃(review 330s / challenge·consult 600s)·stdin deadlock 회피·파일 Read 위임 차단·불량버전(0.120.0/.1/.2) 차단을 이미 기계강제한다. orchestrator는 타임아웃 값·전달 방식을 재지시하지 않는다. ⚠ **GNU `timeout` + 최신 스킬** 전제 — 깨지면 타임아웃 없이 실행(행 재발) → 아래 백스톱이 받는다.
 
-⚠ **Bash로 codex를 직접 호출**(가용성 probe·설계패널 codex 형제·7b 케이스산출·/codex review)할 땐 `/codex` 스킬을 안 거치므로 **Bash 도구 `timeout` param을 codex 내부 타임아웃 이상으로 명시**한다 — 미설정 시 Bash 기본 120s(2분)가 codex를 조기 SIGTERM(exit 143)으로 죽여 run 전체 낭비(codex는 정상, 추론 중이었음). 값: **review ≥360000ms, consult/write/challenge ≥620000ms**(내부 `timeout 330`/`600`보다 크게). probe만 짧게(`timeout 60` + Bash param 짧게 — stall 조기발각). 상세 [[codex-bash-direct-timeout]]. 또한 프롬프트에 셸 메타문자(백틱·`$`·`[]{}`)가 있으면 double-quote 조기종료/명령치환으로 EOF(exit2) → heredoc 파일에 써서 `codex exec "$(cat "$PF")"`로 전달(리터럴 보존, [[codex-bash-heredoc-metachar]]).
+⚠ **Bash로 codex를 직접 호출**(가용성 probe·설계패널 codex 형제·7b 케이스산출·/codex review)할 땐 `/codex` 스킬을 안 거치므로 **Bash 도구 `timeout` param을 codex 내부 타임아웃 이상으로 명시**한다 — 미설정 시 Bash 기본 120s(2분)가 codex를 조기 SIGTERM(exit 143)으로 죽여 run 전체 낭비(codex는 정상, 추론 중이었음). 값: **review ≥360000ms, consult/write/challenge ≥620000ms**(내부 `timeout 330`/`600`보다 크게). probe만 짧게(`timeout 60` + Bash param 짧게 — stall 조기발각). 상세 [[codex-bash-direct-timeout]]. 또한 프롬프트에 셸 메타문자(백틱·`$`·`[]{}`)가 있으면 double-quote 조기종료/명령치환으로 EOF(exit2) → heredoc 파일에 써서 `codex exec "$(cat "$PF")"`로 전달(리터럴 보존, [[codex-bash-heredoc-metachar]]). kill(exit 143) 시 detached codex 오펀이 잔존할 수 있으니 재실행 전 정리(taskkill/kill)한다.
 
 ### 가용성 확정 — orchestrator SSOT (서브에이전트 자기보고 비신뢰)
 
