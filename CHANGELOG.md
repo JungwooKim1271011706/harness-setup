@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.53.0 — 2026-07-06
+- **데이터 전제 검증 게이트 신설 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **C1 `agents/orchestrator.md` 0단계 ④ 신설**: 픽스·구현 correctness가 외부·런타임 데이터(매니페스트 필드·repo config·API 응답·파일 내용·서버/브랜치 default)에 의존하면 planner·패널·TDD 진입 **전에** orchestrator가 실 샘플 ≥1개 직접 inspect(Read/git/grep)해 전제 확정. 확보 불가 시 `⚠ 미검증 전제` 명시. 직전 세션/investigate baked 전제도 무비판 계승 금지. 게이트(패널·TDD·리뷰)는 내부 정합성만 봐 외부 데이터 전제는 아무도 안 봄 → 전제 틀리면 전 게이트 통과 오진 shipped·라이브서 발각(1사이클 낭비). playbook-design-mode 0단계 요약 동기화. 근거: bb1f564(오진)→7ef9cb9(정식), 실 kit `defaultBranch=amd-test`(전제는 main).
+  - reject: **C2 codex Bash timeout 재발** = orchestrator §codex 가드(v3.42.0)에 이미 명문화(`review ≥360000ms`). 회고는 여유 없이 `330000ms`(=내부 정확값)로 써서 밟음 — 규칙대로 360000이었으면 안 밟음. 규칙 갭 아님(소비자 stale 하네스 or 미준수). enforcement(훅)는 timeout param intent 검사 불가라 저효율. 관찰 7c.2 stale(자인 저레버리지, 게이트 정상작동) 제외.
+
 ## 3.52.0 — 2026-07-05
 - **codex workspace-write 오펀 복구 뉘앙스 (inbox 드레인, 기존 통합) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **`wiki/codex-bash-direct-timeout.md` 회피 절 + sources 병합**: kill 후 복구 bullet 추가 — exit143 후 `tasklist | grep codex.exe` 생존 확인, **workspace-write(파일 편집 中) 오펀은 kill 금지(mid-write 손상 위험)·bounded 폴링 완주 + git diff 재리뷰**, read-only/probe 오펀은 정리 후 재실행. 근거: 07-05 authpatch_draft 7.5 workspace-write.
