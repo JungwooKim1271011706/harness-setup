@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.54.0 — 2026-07-08
+- **신규 리셋/게이트 헬퍼 ↔ 인접 부수효과 인벤토리 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **`docs/playbook-tdd.md` 7c.2 7번째 부류**: 신규 리셋/클리어/상태-게이트 헬퍼 도입 시, 건드리는 모든 상태 키·DOM 셀렉터에 이미 작용하는 인접 조건부 코드(prefill·소유권 clear·다른 게이트)를 grep 열거해 게이팅 일관성(순서·조건) 확인. 3결함 클래스 차단: (a) 순서 의존(리셋이 prefill wipe), (b) 이중 효과(무조건 clear ↔ 소유권 조건 블록 겹침), (c) partial no-op(일부 필드만 게이트 안). 기존 6부류(값/shape 변경축)와 별개 side-effect 상호작용 축. 근거: repostitch STEP3 mode-reset 한 세션 3회.
+  - **`agents/tester/tester-design.md` R15**: 리셋/게이트 테스트 시 "같은 그룹/모드 재선택 시 모든 목적지 필드 일관 보존/리셋" 완전성 케이스 필수(일부 필드만 검증=partial no-op GREEN 우회). 7c.2 신규 부류의 RED측 짝. 근거: cbTargetMeta partial no-op tester-GREEN 후 codex review critical.
+  - 관찰(제외): 세션 토큰한도 tester-design 중도사망 = 외부요인, disk 검증+재위임으로 정상 복구(YAGNI).
+
 ## 3.53.2 — 2026-07-07
 - **README 상단 포트폴리오용 리라이트 — PATCH, 동작 불변.** 면접 공유 자료 목적. 내부자용 첫 문장 위에 평문 요약(무엇을·왜) + 게이트 4종(설계패널·TDD 작성자≠구현자·FAIL 3분기·자기개선 루프) + 주요 목적 4줄 추가. 기존 `## 워크플로 흐름`+mermaid는 유지(파고들 독자용). 비전문 면접관 10초 파악 + 엔지니어링 신호 보존 둘 다. 본문 내 현재버전 표기 동기화.
 
