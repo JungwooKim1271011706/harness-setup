@@ -3,6 +3,10 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.53.1 — 2026-07-07
+- **흐름도(routing-map.md) 현행화 — 누락 게이트 2건 반영. PATCH, 동작 불변.**
+  - `docs/routing-map.md` 다이어그램에 **0단계 ④ 데이터 전제 검증**(v3.53.0)·**office-hours 선제 게이트**(v3.51.0 C2) 반영. finalizer 1.5 정합점검이 grep 검색어 한계로 다이어그램 텍스트(`① 복잡도`)를 못 잡아 두 게이트가 흐름도에만 누락됐던 것 캐치업. orchestrator.md 본문·CHANGELOG엔 이미 반영돼 있었음(흐름도만 stale).
+
 ## 3.53.0 — 2026-07-06
 - **데이터 전제 검증 게이트 신설 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **C1 `agents/orchestrator.md` 0단계 ④ 신설**: 픽스·구현 correctness가 외부·런타임 데이터(매니페스트 필드·repo config·API 응답·파일 내용·서버/브랜치 default)에 의존하면 planner·패널·TDD 진입 **전에** orchestrator가 실 샘플 ≥1개 직접 inspect(Read/git/grep)해 전제 확정. 확보 불가 시 `⚠ 미검증 전제` 명시. 직전 세션/investigate baked 전제도 무비판 계승 금지. 게이트(패널·TDD·리뷰)는 내부 정합성만 봐 외부 데이터 전제는 아무도 안 봄 → 전제 틀리면 전 게이트 통과 오진 shipped·라이브서 발각(1사이클 낭비). playbook-design-mode 0단계 요약 동기화. 근거: bb1f564(오진)→7ef9cb9(정식), 실 kit `defaultBranch=amd-test`(전제는 main).
