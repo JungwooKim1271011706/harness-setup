@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.54.1 — 2026-07-08
+- **codex exit143 vs exit124 판별 1줄 (inbox 드레인, 기존 통합) — PATCH, 동작 불변.**
+  - **`wiki/codex-bash-direct-timeout.md` 진짜 원인 절 + sources**: exit 코드 판별 명문화 — `exit 143`+`timed out after 2m` = Bash 도구 timeout(codex 정상, param 올려 재시도) / `exit 124` = GNU timeout 만료 = 진짜 codex stall(폴백). 분산돼(wiki 증상·orchestrator 640/648) 있던 걸 한 곳 대조로. 혼동 시 정상 codex를 stall 오인→불필요 단일소스 격하 차단.
+  - reject: wiki 신규 페이지·orchestrator "Bash param 명시" 1줄 제안 = 이미 `codex-bash-direct-timeout.md`(v3.41.0)+orchestrator §codex 가드(v3.42.0, `review ≥360000ms`) 존재(중복). 판별 대조만 유일 미세 갭이라 그것만 반영.
+
 ## 3.54.0 — 2026-07-08
 - **신규 리셋/게이트 헬퍼 ↔ 인접 부수효과 인벤토리 (inbox 드레인 repostitch) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **`docs/playbook-tdd.md` 7c.2 7번째 부류**: 신규 리셋/클리어/상태-게이트 헬퍼 도입 시, 건드리는 모든 상태 키·DOM 셀렉터에 이미 작용하는 인접 조건부 코드(prefill·소유권 clear·다른 게이트)를 grep 열거해 게이팅 일관성(순서·조건) 확인. 3결함 클래스 차단: (a) 순서 의존(리셋이 prefill wipe), (b) 이중 효과(무조건 clear ↔ 소유권 조건 블록 겹침), (c) partial no-op(일부 필드만 게이트 안). 기존 6부류(값/shape 변경축)와 별개 side-effect 상호작용 축. 근거: repostitch STEP3 mode-reset 한 세션 3회.
