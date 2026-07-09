@@ -183,6 +183,29 @@ if [ -d "$FEATURES_DIR" ]; then
   fi
 fi
 
+# 9) 하네스 재사용 drift 조기경고 (복제 재사용 시 프로젝트별 값 미갱신 — 세션시작 백스톱)
+#    setup-time 가드(harness-setup SKILL §310/312)·런타임 가드(orchestrator 보안SSOT)의 세션시작 짝.
+#    CLAUDE.md Harness Config 없는 dev clone은 자동 침묵. 경로 파싱 best-effort(못 잡으면 침묵 — false-positive 안 냄).
+CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
+if [ -f "$CLAUDE_MD" ]; then
+  # 9a) memoryDir 실재 — CLAUDE.md 값이 가리키는 경로가 없으면 실패패턴 저장 불가
+  MEMDIR=$(grep -iE 'memoryDir' "$CLAUDE_MD" 2>/dev/null | grep -oE '[A-Za-z]:\\[^ |`]+|/[^ |`]+/memory/?' | head -1)
+  if [ -n "$MEMDIR" ]; then
+    MEMDIR_UNIX=$(printf '%s' "$MEMDIR" | sed 's#\\#/#g; s#^\([A-Za-z]\):#/\L\1#')
+    if [ ! -d "$MEMDIR_UNIX" ]; then
+      MESSAGES+=("⚠ 하네스 drift: CLAUDE.md memoryDir 경로 부재(${MEMDIR}) — 복제 재사용 후 미갱신 의심. 실패패턴·학습 저장 불가. /harness-setup 재실행 또는 경로 수정 권장")
+    fi
+  fi
+  # 9b) 보안 SSOT 프로젝트명 일치 — claude-security-guidance.md 상단 vs projectName
+  SEC_MD="$PROJECT_DIR/.claude/claude-security-guidance.md"
+  PROJNAME=$(grep -iE 'projectName' "$CLAUDE_MD" 2>/dev/null | grep -oE '`[^`]+`' | tail -1 | tr -d '`')
+  if [ -f "$SEC_MD" ] && [ -n "$PROJNAME" ]; then
+    if ! head -3 "$SEC_MD" 2>/dev/null | grep -q "$PROJNAME"; then
+      MESSAGES+=("⚠ 하네스 drift: 보안 SSOT(claude-security-guidance.md)가 현 프로젝트(${PROJNAME}) 명시 안 함 — 타 프로젝트 스택 기준일 수 있음. /cso 심사 전 현지화 확인")
+    fi
+  fi
+fi
+
 # 회고 inbox pending 알림은 SessionStart가 아니라 UserPromptSubmit(매 프롬프트)로 처리한다.
 #   dev clone은 자체 .claude/가 없어 이 session-check(repo 훅)가 안 걸린다 → 글로벌 등록 필요.
 #   → hooks/harness-inbox-nudge.sh + 글로벌 ~/.claude/settings.json UserPromptSubmit (README §inbox 알림).

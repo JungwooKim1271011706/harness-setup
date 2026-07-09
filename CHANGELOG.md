@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.55.0 — 2026-07-09
+- **하네스 재사용 drift 세션시작 조기경고 (inbox 드레인 authpatch) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 갱신).**
+  - **`hooks/session-check.sh` #9**: 하네스 복제 재사용 시 프로젝트별 값 미갱신 drift를 세션시작에 조기경고 — (9a) CLAUDE.md `memoryDir` 경로 실재 확인, 부재 시 "복제 후 미갱신·실패패턴 저장 불가" 경고 (9b) `claude-security-guidance.md` 상단이 현 `projectName` 명시 안 하면 "타 프로젝트 스택 기준 가능" 경고. setup-time 가드(harness-setup SKILL §310/312)·런타임 가드(orchestrator 보안SSOT v3.46.0)의 **세션시작 백스톱**(3번째 레이어). 경로 파싱 best-effort(못 잡으면 침묵, false-positive 0). CLAUDE.md Harness Config 없는 dev clone은 자동 침묵. 합성 CLAUDE.md로 실동작 검증(경고 2건 발화 + 정상 케이스 침묵).
+  - reject: 후보1/2 즉효(memoryDir 파일 교체·SSOT 재작성)=소비자-로컬(autoPatch 스택), dev SSOT 무대상. 후보1/2 규칙화=harness-setup SKILL §310/312에 setup-time 이미 존재 → 세션시작 백스톱만 신규. 표준 고통신호 0건(회고 자인).
+  - 배경: memoryDir·보안SSOT drift가 authpatch 회고에 반복 등장(절대경로 하드코딩·타프로젝트 복사). setup-time 가드는 재setup 안 하면 무력 → 세션시작 조기경고로 drift 조기 발각.
+
 ## 3.54.1 — 2026-07-08
 - **codex exit143 vs exit124 판별 1줄 (inbox 드레인, 기존 통합) — PATCH, 동작 불변.**
   - **`wiki/codex-bash-direct-timeout.md` 진짜 원인 절 + sources**: exit 코드 판별 명문화 — `exit 143`+`timed out after 2m` = Bash 도구 timeout(codex 정상, param 올려 재시도) / `exit 124` = GNU timeout 만료 = 진짜 codex stall(폴백). 분산돼(wiki 증상·orchestrator 640/648) 있던 걸 한 곳 대조로. 혼동 시 정상 codex를 stall 오인→불필요 단일소스 격하 차단.

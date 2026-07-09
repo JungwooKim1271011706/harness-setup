@@ -6,7 +6,7 @@
 > 3. **gstack 스킬** — repo에 미러하지 **않는다**. 글로벌 `~/.claude/skills/gstack/`에 의존. 미설치/staleness 시 `session-check.sh`가 안내(advisory). 갱신은 `gstack-upgrade`.
 >
 > **동기화 방법(외부 스킬)**: `bash .claude/skills/sync-skills.sh`
-> **마지막 동기화**: 2026-07-08
+> **마지막 동기화**: 2026-07-09
 
 ## 외부 제3자 스킬 (sync 대상 — repo vendoring track)
 
