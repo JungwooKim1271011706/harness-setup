@@ -50,7 +50,7 @@ flowchart TD
   DR --> VER["/verify-implementation 등록시"]
   VER --> REV["/review(code-reviewer) ∥ /codex review<br/>스냅샷=변경검증 PASS시점 합집합 N1"]
   REV --> CSO["/cso 인증·권한·암호화시"] --> FIN["finalizer 승인후 커밋 명시경로<br/>커밋직전 전체회귀 부채 비차단 안내(📊/⚠)+state갱신"]
-  FIN --> LG["learning-gate post_commit"] --> DONE["완료 보고 / push=승인시"]
+  FIN --> CAP["wiki capture 자가점검<br/>(post_commit learning-gate는 기본 비활성)"] --> DONE["완료 보고 / push=승인시"]
 
   PF -->|FAIL| FB{FAIL 3분기}
   FB -->|구현결함| DEV["developer 재수정 루프n/3<br/>루프카운트=체크포인트 권위 C6"] --> POST

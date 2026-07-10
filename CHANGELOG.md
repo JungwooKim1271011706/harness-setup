@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.58.0 — 2026-07-10
+- **post_commit 학습 게이트 기본 비활성화 (사용자 요청) — MINOR, 거버넌스 무영향.**
+  - **`agents/orchestrator.md` §학습 게이트**: `post_commit` learning-gate를 기본 **비활성**(skip)으로 전환. 매 커밋마다 강제 학습 추출이 과부하라 기본 skip — 커밋 후 지식 축적은 wiki capture(post_commit 자가점검, advisory·비강제)가 담당해 중복·과부하 없음. `test_fail` 게이트는 불변(FAIL→developer 루프 학습 유지). post_commit learning 재필요 시 사용자 명시 요청.
+  - **`README.md` mermaid**: `FIN → learning-gate post_commit` 노드를 wiki capture 자가점검(post_commit LG 기본 비활성 주기)으로 갱신. routing-map.md:86 learning-gate는 FAIL분기 `test_fail`이라 유지(대상 아님).
+
 ## 3.57.0 — 2026-07-10
 - **워크트리 .claude 자동 연결 스크립트 (사용자 요청) — MINOR, 거버넌스 무영향. 전역 훅 등록은 별도(머신로컬).**
   - **`scripts/link-worktree-claude.sh` 신규**: 하네스 `.claude`가 프로젝트 repo서 gitignore(별도 클론)라 `git worktree add`·vibe-kanban 등이 만든 워크트리엔 안 딸려오는 문제 해결. 세션 시작 시(생성자 무관) 현재 워크트리에 `.claude` 없으면 main 워크트리의 `.claude`로 junction(Win, 관리자 불요)/symlink(Unix) 연결. 멱등·main/기존링크 no-op. 전역 `~/.claude/settings.json` SessionStart 훅에서 호출(프로젝트 `.claude` 없어도 전역 훅은 발화하므로 부트스트랩 가능 — 프로젝트 훅으로는 불가). Windows mklink `/J`가 MSYS 경로변환에 먹히는 것 `MSYS_NO_PATHCONV=1`로 차단. 합성 repo + 실 vk 워크트리로 검증(junction 생성·하네스 접근·멱등·main no-op).
