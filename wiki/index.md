@@ -30,6 +30,8 @@
 - [[vue-immediate-watch-template-ref]] — Vue `watch(...,{immediate:true})`가 mount 전 동기 실행→template ref null→차트 조용히 미렌더. flush:'post'로도 안 고쳐짐. 첫 렌더는 `onMounted(renderChart)`로
 - [[vite-stale-served-source-windows]] — Windows에서 Vite dev server 워처가 편집 miss→stale transform 서빙. 디스크≠서빙. `curl localhost:PORT/src/...`로 서빙 소스 확인 후 재시작
 - [[jsdom-missing-browser-apis]] — renderer가 jsdom 미구현 브라우저 전역(CSS.escape·matchMedia 등) 쓰면 프로덕션 OK·단위테스트 TypeError 전수 폭발. 환경 가드 헬퍼로 회피
+- [[electron-before-quit-window-close-order]] — Electron 창 X경로 순서(close→파괴→window-all-closed→before-quit)라 before-quit 단일게이트 종료확인은 창 파괴 후라 취소 불성립. window `close` preventDefault에서 dialog, before-quit는 app/ipc quit 전용
+- [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)
 - 설계·ADR: `../docs/` (예: `../docs/harness-versioning.md` — 하네스 버전관리 설계 전문)

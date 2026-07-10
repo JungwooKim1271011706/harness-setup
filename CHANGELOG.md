@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.56.0 — 2026-07-09
+- **subagent 날조 외부검증 기각 + async flush 규칙 + Electron/vitest gotcha 2종 (inbox 드레인 repostitch quit-abort) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **후보1 `agents/orchestrator.md` §codex 호출 가드 (무결성)**: subagent(planner·tester·developer)가 자기 도구셋 밖 외부검증(codex/review/cso) "결과"를 산출에 포함하면 hallucinated validation으로 간주·기각, 교차검증은 orchestrator 직접 실행분만 인정(자기지시 rework도 무효). tester self-probe 제거와 동류. 근거: planner-backend가 "codex 재검+rework" 날조 → orchestrator 코드로 기각.
+  - **후보2 `agents/tester/tester-design.md` R16**: async 핸들러 flush는 고정 틱(`await Promise.resolve()`×N) 금지 → flush-until-condition 상한 루프. 고정 틱은 mocked 게이트(vi.fn ~3틱) 재개 못 기다려 7.7 정적통과·GREEN서 undefined TypeError. 근거: repostitch IH-1.
+  - **wiki `electron-before-quit-window-close-order.md` 신규**: 창 X경로 순서(close→파괴→window-all-closed→before-quit)라 before-quit 단일게이트 종료확인은 창 파괴 후라 취소 불성립 → window `close` preventDefault에서 dialog. 설계패널이 1차계획 critical 적발.
+  - **wiki `vitest-mockresolvedvalue-microtask-flush.md` 신규**: vi.fn().mockResolvedValue await는 스파이 래핑 ~3 microtask tick, 고정 ×2 flush 취약 → flush-until-condition. R16의 상세 짝. index 2줄 등록.
+  - 메타(제외): 설계 3라운드 loop-until-dry·codex 4회 폴백0 = 정상작동.
+
 ## 3.55.0 — 2026-07-09
 - **하네스 재사용 drift 세션시작 조기경고 (inbox 드레인 authpatch) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 갱신).**
   - **`hooks/session-check.sh` #9**: 하네스 복제 재사용 시 프로젝트별 값 미갱신 drift를 세션시작에 조기경고 — (9a) CLAUDE.md `memoryDir` 경로 실재 확인, 부재 시 "복제 후 미갱신·실패패턴 저장 불가" 경고 (9b) `claude-security-guidance.md` 상단이 현 `projectName` 명시 안 하면 "타 프로젝트 스택 기준 가능" 경고. setup-time 가드(harness-setup SKILL §310/312)·런타임 가드(orchestrator 보안SSOT v3.46.0)의 **세션시작 백스톱**(3번째 레이어). 경로 파싱 best-effort(못 잡으면 침묵, false-positive 0). CLAUDE.md Harness Config 없는 dev clone은 자동 침묵. 합성 CLAUDE.md로 실동작 검증(경고 2건 발화 + 정상 케이스 침묵).
