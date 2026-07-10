@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.57.0 — 2026-07-10
+- **워크트리 .claude 자동 연결 스크립트 (사용자 요청) — MINOR, 거버넌스 무영향. 전역 훅 등록은 별도(머신로컬).**
+  - **`scripts/link-worktree-claude.sh` 신규**: 하네스 `.claude`가 프로젝트 repo서 gitignore(별도 클론)라 `git worktree add`·vibe-kanban 등이 만든 워크트리엔 안 딸려오는 문제 해결. 세션 시작 시(생성자 무관) 현재 워크트리에 `.claude` 없으면 main 워크트리의 `.claude`로 junction(Win, 관리자 불요)/symlink(Unix) 연결. 멱등·main/기존링크 no-op. 전역 `~/.claude/settings.json` SessionStart 훅에서 호출(프로젝트 `.claude` 없어도 전역 훅은 발화하므로 부트스트랩 가능 — 프로젝트 훅으로는 불가). Windows mklink `/J`가 MSYS 경로변환에 먹히는 것 `MSYS_NO_PATHCONV=1`로 차단. 합성 repo + 실 vk 워크트리로 검증(junction 생성·하네스 접근·멱등·main no-op).
+  - 메커니즘: WorktreeCreate 훅(Claude native 전용)은 vibe-kanban 외부생성 워크트리 미포착 → SessionStart 전역이 유일 catch-all(생성자 무관 발화). README `scripts/` 갱신. 전역 settings.json 훅 등록은 머신로컬이라 별도 승인 후.
+
 ## 3.56.0 — 2026-07-09
 - **subagent 날조 외부검증 기각 + async flush 규칙 + Electron/vitest gotcha 2종 (inbox 드레인 repostitch quit-abort) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **후보1 `agents/orchestrator.md` §codex 호출 가드 (무결성)**: subagent(planner·tester·developer)가 자기 도구셋 밖 외부검증(codex/review/cso) "결과"를 산출에 포함하면 hallucinated validation으로 간주·기각, 교차검증은 orchestrator 직접 실행분만 인정(자기지시 rework도 무효). tester self-probe 제거와 동류. 근거: planner-backend가 "codex 재검+rework" 날조 → orchestrator 코드로 기각.

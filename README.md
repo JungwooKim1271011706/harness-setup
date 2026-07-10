@@ -180,7 +180,7 @@ git -C .claude pull origin main
 | `agents/` | 오케스트레이터·planner·developer·tester·reviewer(code-reviewer)·finalizer | track |
 | `skills/` | 자체 스킬 + sync 스크립트 (gstack 스킬은 미러 안 함 — 글로벌 의존, §셋업 4) | track |
 | `hooks/` | 세션 점검 훅 | track |
-| `scripts/` | 사용자 온디맨드 유틸 (읽기전용 — 예: `worktree-status.sh` 병렬 워크트리×기능 대시보드) | track |
+| `scripts/` | 유틸 스크립트 — `worktree-status.sh`(온디맨드 워크트리×기능 대시보드, 읽기전용), `link-worktree-claude.sh`(전역 SessionStart 훅용 — 워크트리에 `.claude` 자동 junction) | track |
 | `settings.json` | 공유 설정 | track |
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |
 | `docs/` | 설계 문서(ADR·하네스 버전관리 등) + **orchestrator 분리 동작문서**(`playbook-harness-ops/design-mode/tdd.md`·`routing-map.md` — v3.2.0, on-demand Read) | track |
