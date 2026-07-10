@@ -8,3 +8,4 @@ slack-webhook
 **/slack-webhook
 .obsidian/
 **/.obsidian/
+claude-security-guidance.md

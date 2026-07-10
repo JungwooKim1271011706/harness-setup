@@ -185,6 +185,8 @@ git -C .claude pull origin main
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |
 | `docs/` | 설계 문서(ADR·하네스 버전관리 등) + **orchestrator 분리 동작문서**(`playbook-harness-ops/design-mode/tdd.md`·`routing-map.md` — v3.2.0, on-demand Read) | track |
 | `wiki/` | 하네스 운영 지식·gotcha (엔티티 페이지+`[[링크]]`, 카파시 LLM wiki 패턴). 작성/라우팅 규칙은 `wiki/_schema.md` | track |
+| `claude-security-guidance.md` | 프로젝트별 보안 SSOT (`.template`에서 생성·현지화 — 설계패널 CSO_LENS·/cso·/review Read) | ignore |
+| `claude-security-guidance.md.template` | 보안 SSOT 제너릭 OWASP 골격 (재사용 시 실파일로 복사·현지화) | track |
 | `rules/` | 프로젝트별 코딩 규칙 (rule-maker 생성) | ignore |
 | `agent-memory/` | 프로젝트별 메모리 (auto-memory, 머신로컬·휴대 안 됨) | ignore |
 | `settings.local.json` | 로컬 권한/secret | ignore |

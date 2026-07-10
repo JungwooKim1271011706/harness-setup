@@ -196,10 +196,14 @@ if [ -f "$CLAUDE_MD" ]; then
       MESSAGES+=("⚠ 하네스 drift: CLAUDE.md memoryDir 경로 부재(${MEMDIR}) — 복제 재사용 후 미갱신 의심. 실패패턴·학습 저장 불가. /harness-setup 재실행 또는 경로 수정 권장")
     fi
   fi
-  # 9b) 보안 SSOT 프로젝트명 일치 — claude-security-guidance.md 상단 vs projectName
+  # 9b) 보안 SSOT — 실파일은 gitignore(프로젝트별 산출물). template만 커밋되므로 clone 직후엔 실파일 부재.
+  #      부재: template 복사·현지화 안내. 존재+프로젝트명 불일치: 타 프로젝트 잔재 경고.
   SEC_MD="$PROJECT_DIR/.claude/claude-security-guidance.md"
+  SEC_TMPL="$PROJECT_DIR/.claude/claude-security-guidance.md.template"
   PROJNAME=$(grep -iE 'projectName' "$CLAUDE_MD" 2>/dev/null | grep -oE '`[^`]+`' | tail -1 | tr -d '`')
-  if [ -f "$SEC_MD" ] && [ -n "$PROJNAME" ]; then
+  if [ ! -f "$SEC_MD" ] && [ -f "$SEC_TMPL" ]; then
+    MESSAGES+=("⚠ 보안 SSOT 미생성: claude-security-guidance.md 없음(gitignore·프로젝트별) — template 복사 후 현지화 권장(/harness-setup 또는 수동). 미생성 시 /cso는 제너릭 OWASP 폴백")
+  elif [ -f "$SEC_MD" ] && [ -n "$PROJNAME" ]; then
     if ! head -3 "$SEC_MD" 2>/dev/null | grep -q "$PROJNAME"; then
       MESSAGES+=("⚠ 하네스 drift: 보안 SSOT(claude-security-guidance.md)가 현 프로젝트(${PROJNAME}) 명시 안 함 — 타 프로젝트 스택 기준일 수 있음. /cso 심사 전 현지화 확인")
     fi

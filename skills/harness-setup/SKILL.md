@@ -309,7 +309,7 @@ CLAUDE.md 설정 완료.
 다음 단계:
 1. memoryDir 값이 실제 Claude Code 프로젝트 경로와 일치하는지 확인
 2. /rule-maker 실행 → 프로젝트 전용 backend.md / frontend.md 자동 생성
-3. 보안 SSOT 현지화 → .claude/claude-security-guidance.md 재작성 (아래 ⚠)
+3. 보안 SSOT 생성·현지화 → `.claude/claude-security-guidance.md.template`을 `.claude/claude-security-guidance.md`로 복사 후 프로젝트 스택으로 현지화 (아래 ⚠)
 4. .claude/는 harness-setup repo를 통째로 clone한 것이므로 agents/skills/hooks는 이미 포함됨. 루트 .gitignore에 /.claude/ 추가해 상위 repo가 중복 추적하지 않게 한다.
 ```
 
@@ -319,7 +319,7 @@ CLAUDE.md 설정 완료.
 
 - CLAUDE.md를 직접 열어서 읽은 후 수정한다 (덮어쓰기 금지)
 - 기존 섹션이 있으면 내용을 병합하고 다른 섹션은 건드리지 않는다
-- **⚠ 보안 SSOT 현지화 (재사용 시 필수)**: `.claude/claude-security-guidance.md`는 **프로젝트별 보안룰**이고 3곳(설계패널 `CSO_LENS`·`/cso`·`/review`)이 보안기준 SSOT로 Read한다. harness-setup을 다른 프로젝트에서 clone하면 이 파일이 **원본 프로젝트(scourt 등) 그대로** 딸려온다 → 현 프로젝트로 재작성하지 않으면 계획·코드 양 스테이지 보안비평이 **틀린 baseline** 참조(은닉 위험). 재작성 = 이 프로젝트 스택·보안표면 카테고리로 교체(예: 셸 명령 인젝션·경로조작·VCS 자격증명·빌드 실행표면 등 실제 표면). **미현지화 신호**: 파일 헤더의 프로젝트명이 현 프로젝트와 다르면 = 아직 원본 잔재. (파일 존재만으론 자동탐지 불가 → 이 체크를 사람이 수행.)
+- **⚠ 보안 SSOT 생성·현지화 (재사용 시 필수)**: `.claude/claude-security-guidance.md`는 **프로젝트별 보안룰**이고 3곳(설계패널 `CSO_LENS`·`/cso`·`/review`)이 보안기준 SSOT로 Read한다. 이 실파일은 **gitignore(프로젝트별 산출물, 머신로컬)** — harness-setup엔 `claude-security-guidance.md.template`(제너릭 OWASP 골격)만 커밋된다. 따라서 clone 직후엔 실파일이 **없다**(과거처럼 원본 프로젝트 scourt 잔재가 딸려오지 않음 = drift 원천 차단). ① template을 실파일로 복사 → ② 각 카테고리 `> 프로젝트 특화:` 플레이스홀더를 현 스택(프레임워크·인증·ORM·뷰레이어)으로 채운다(예: 셸 명령 인젝션·경로조작·VCS 자격증명·빌드 실행표면 등 실제 표면). 미생성/미현지화 시: session-check #9b가 세션시작 경고, CSO_LENS는 제너릭 OWASP 폴백(design-panel.js)으로 견고하게 진행(틀린 baseline 참조는 사라짐). **미현지화 신호**: 파일 헤더 프로젝트명이 현 프로젝트와 다르거나 `> 프로젝트 특화:` 플레이스홀더가 안 채워짐.
 - **프로젝트 개요는 확인된 정보만** — 없는 내용 추측 금지
 - memoryDir은 OS에 따라 경로 구분자가 다르므로 반드시 사용자 확인
 - modules, backendExamples, frontendExamples는 "예시" 값이므로 완벽할 필요 없음 — 사용자가 나중에 수정 가능

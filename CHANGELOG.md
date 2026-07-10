@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.59.0 — 2026-07-10
+- **보안 SSOT를 프로젝트 산출물로 분리(gitignore + 템플릿) — drift 원천 차단 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 갱신).**
+  - **문제**: `claude-security-guidance.md`가 프로젝트별 보안룰(scourt_spambreaker 스택 종속)인데 harness-setup에 **tracked** → 재사용 시 원본 잔재가 딸려가 반복 drift(v3.46.0 런타임가드·v3.55.0 세션시작경고가 "증상"만 잡던 근본원인). `rules/`·`agent-memory/`와 같은 프로젝트 산출물인데 이것만 예외로 추적됐음.
+  - **해결(원천 차단)**: 실파일 `.gitignore` + `git rm --cached`(로컬 유지, 추적 해제). 제너릭 OWASP 골격 `claude-security-guidance.md.template`만 커밋 — 재사용 시 복사·현지화(`> 프로젝트 특화:` 플레이스홀더). 이제 clone 직후 scourt 잔재가 애초에 안 딸려옴.
+  - **`workflows/design-panel.js` CSO_LENS 폴백 제너릭화**: 파일부재 폴백 체크리스트가 scourt 종속(UserLevel·LoginCheckInterceptor·MyBatis·@Audit)이던 것을 제너릭 OWASP(인증경계·파라미터 바인딩·출력 이스케이프·IDOR)로 교체. 파일부재 시 견고 폴백 유지(배선 안 깨짐).
+  - **`hooks/session-check.sh` #9b 보강**: 실파일 부재 시 "template 복사·현지화 권장"(gitignore라 clone 직후 부재가 정상) + 존재+프로젝트명 불일치 시 기존 drift 경고. 3케이스(부재/불일치/일치) 실동작 검증.
+  - **`skills/harness-setup/SKILL.md`**: §312·주의사항을 "template→실파일 생성·현지화"로 갱신(과거 "원본 그대로 딸려온다"→이제 "template만, 실파일 생성 필요"). README 파일레이아웃 표에 실파일(ignore)·template(track) 등록.
+
 ## 3.58.0 — 2026-07-10
 - **post_commit 학습 게이트 기본 비활성화 (사용자 요청) — MINOR, 거버넌스 무영향.**
   - **`agents/orchestrator.md` §학습 게이트**: `post_commit` learning-gate를 기본 **비활성**(skip)으로 전환. 매 커밋마다 강제 학습 추출이 과부하라 기본 skip — 커밋 후 지식 축적은 wiki capture(post_commit 자가점검, advisory·비강제)가 담당해 중복·과부하 없음. `test_fail` 게이트는 불변(FAIL→developer 루프 학습 유지). post_commit learning 재필요 시 사용자 명시 요청.

@@ -57,11 +57,11 @@ const FINDINGS_SCHEMA = {
 // 파일 부재 시 인라인 폴백 체크리스트 사용(견고성).
 const CSO_LENS = `[보안 계획 리뷰 렌즈 — 계획 텍스트를 비평한다. 코드 스캔 아님(코드는 아직 없음).]
 먼저 \`.claude/claude-security-guidance.md\`(프로젝트 보안 SSOT)를 Read하라. 그 1~9 카테고리 + 심각도 기준을 이 계획서 비평의 렌즈로 사용한다.
-파일을 못 읽으면 폴백 체크리스트로 진행:
-- 인증/인가: 권한 체크 위치 명시? UserLevel/세션·LoginCheckInterceptor 우회?
-- 입력 검증/SQL injection(MyBatis #{} vs \${})/XSS/경로조작 표면?
-- 역직렬화: URL/외부소스 readValue 위험? 세션/비밀 평문?
-- 신뢰 경계 재검증 + 감사로깅(@Audit) + STRIDE/OWASP 매핑.
+파일을 못 읽으면(미현지화·부재) 제너릭 OWASP 폴백 체크리스트로 진행:
+- 인증/인가: 권한 체크 위치 명시? 인증경계(인터셉터·미들웨어·필터) 우회? 권한상승·IDOR(수평권한)?
+- 입력 검증 / Injection(파라미터 바인딩 vs 문자열 조립) / XSS(출력 이스케이프·raw DOM 주입) / 경로조작 표면?
+- 역직렬화: URL/외부소스 직접 역직렬화 위험? 세션/비밀 평문 노출?
+- 신뢰 경계 재검증 + 감사로깅 + STRIDE/OWASP 매핑.
 설계결함 수준 보안 누락 = critical. 강화 권고 = major.`
 
 // ── 페르소나 리뷰 프롬프트 (D1: 스킬 있으면 C[Read], cso는 임베드 A) ──
