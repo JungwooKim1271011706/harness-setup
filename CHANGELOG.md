@@ -3,6 +3,10 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.61.0 — 2026-07-11
+- **co-plan Step1 유저 시나리오 ASCII 흐름도 병기 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **`skills/co-plan/SKILL.md`**: Step1(유저 시나리오) 초안 시 ASCII 흐름도(박스+화살표)를 콘솔에 도식화한 뒤 단계별 번호 목록을 병기. 유저가 대화 중 시각적으로 바로 이해하게. 분기(성공/실패)는 화살표로 표현. 터미널 즉시 렌더 위해 **ASCII만**(mermaid·excalidraw·파일 생성 금지) — 단순 선형이면 생략 가능, "목록만" 요청 시 텍스트만. 출력 형식에 Step1 도식 슬롯 + 예시 추가.
+
 ## 3.60.0 — 2026-07-11
 - **inbox 드레인 — block-exec heredoc 본문 오탐 제거 + Write/tmp gotcha wiki화 — MINOR, 거버넌스 무영향(차단훅 정밀화, 불변식 보존). 재시작 권장.**
   - **`hooks/block-orchestrator-exec.sh` 경계3 추가(PATCH급 정밀화)**: 6/29 경계1(따옴표)·경계2(명령위치) 이후에도 재발한 오탐 제거. 원인 = `grep` 줄단위 처리라 `^` 앵커가 **heredoc 본문 줄머리 mvn/gradle**(체크포인트 heredoc·JSON payload)을 명령으로 오탐 → 풀사이클서 3회 차단(context-save×2·learnings-log×1). 수정: 스캔 전 awk로 heredoc 본문+종료구분자 라인 제거. heredoc **밖** 진짜 명령(`; mvn`·줄머리 mvn·`git commit`)은 남아 차단 유지 = 오케스트레이터 직접실행 금지 불변식 보존, 데이터 오탐만 축소. 6케이스 실측 통과(본문통과/진짜차단×3/subagent/payload).
