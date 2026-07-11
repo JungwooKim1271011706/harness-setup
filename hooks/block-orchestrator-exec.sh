@@ -28,6 +28,18 @@ fi
 # 경계2 — '명령 위치'에서만 매치: 문자열 시작 또는 제어연산자(; & | 괄호) 직후만 실행 명령으로 본다.
 #   일반 공백(인자 구분)은 명령 위치 아님 → codex exec ... mvn package ... 의 프롬프트 인자 내부 mvn은 오탐 안 함.
 scan=$(printf '%s' "$command" | tr -d "\"'")
+# 경계3 — heredoc 본문 제외: `cat > f <<'EOF' … EOF` 본문 줄이 줄머리 mvn/gradle이면
+#   grep ^ 앵커가 데이터를 명령으로 오탐(체크포인트 heredoc·JSON payload 3회 실측). 본문 +
+#   종료구분자 라인을 스캔에서 제거한다. heredoc '밖' 진짜 명령(; mvn / 줄머리 mvn)은 남아
+#   차단 유지 → 오케스트레이터 직접실행 금지 불변식 보존, 데이터 오탐만 축소.
+#   (따옴표는 위 tr서 이미 제거 → <<'EOF' == <<EOF, 구분자 매칭 단순화)
+scan=$(printf '%s' "$scan" | awk '
+  d=="" && match($0, /<<-?[ \t]*[A-Za-z_][A-Za-z0-9_]*/) {
+    t=substr($0,RSTART,RLENGTH); sub(/^<<-?[ \t]*/,"",t); d=t; print; next
+  }
+  d!="" { l=$0; sub(/^[ \t]+/,"",l); if (l==d) d=""; next }
+  { print }
+')
 if printf '%s' "$scan" | grep -qiE '(^|[;&|(])[[:space:]]*(git[[:space:]]+(commit|push)|mvn|mvnw|\./mvnw|gradle|gradlew|\./gradlew)([[:space:]]|$|[;&|])'; then
   echo "[hook] 오케스트레이터 직접 실행 금지 — git commit/push는 finalizer, mvn/gradle 빌드·테스트는 tester에 위임하라. (차단 command: ${command})" >&2
   exit 2

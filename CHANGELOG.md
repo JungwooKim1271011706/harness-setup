@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.60.0 — 2026-07-11
+- **inbox 드레인 — block-exec heredoc 본문 오탐 제거 + Write/tmp gotcha wiki화 — MINOR, 거버넌스 무영향(차단훅 정밀화, 불변식 보존). 재시작 권장.**
+  - **`hooks/block-orchestrator-exec.sh` 경계3 추가(PATCH급 정밀화)**: 6/29 경계1(따옴표)·경계2(명령위치) 이후에도 재발한 오탐 제거. 원인 = `grep` 줄단위 처리라 `^` 앵커가 **heredoc 본문 줄머리 mvn/gradle**(체크포인트 heredoc·JSON payload)을 명령으로 오탐 → 풀사이클서 3회 차단(context-save×2·learnings-log×1). 수정: 스캔 전 awk로 heredoc 본문+종료구분자 라인 제거. heredoc **밖** 진짜 명령(`; mvn`·줄머리 mvn·`git commit`)은 남아 차단 유지 = 오케스트레이터 직접실행 금지 불변식 보존, 데이터 오탐만 축소. 6케이스 실측 통과(본문통과/진짜차단×3/subagent/payload).
+  - **`wiki/write-tool-tmp-vs-bash-tmp-windows.md`(신규)+index**: Write 도구 `/tmp` 해석 ≠ Git Bash(MSYS) `/tmp` 마운트 → Write 저장 후 bash `cat /tmp` 파이프가 빈 파일→codex exit0 무작동(조용한 실패로 오인). 회피 = `/c/` 절대경로로 통일(동일 실파일). `[[codex-bash-direct-timeout]]`·`[[codex-tmp-windows-path]]` 링크.
+  - **reject 2건**: #3 tester-design 편집거부 = 이미 `tester-design.md:39` 규칙 존재(stale vendored → git pull). 세션 토큰한도 사망 = 외부요인 YAGNI.
+
 ## 3.59.0 — 2026-07-10
 - **보안 SSOT를 프로젝트 산출물로 분리(gitignore + 템플릿) — drift 원천 차단 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장(session-check 갱신).**
   - **문제**: `claude-security-guidance.md`가 프로젝트별 보안룰(scourt_spambreaker 스택 종속)인데 harness-setup에 **tracked** → 재사용 시 원본 잔재가 딸려가 반복 drift(v3.46.0 런타임가드·v3.55.0 세션시작경고가 "증상"만 잡던 근본원인). `rules/`·`agent-memory/`와 같은 프로젝트 산출물인데 이것만 예외로 추적됐음.
