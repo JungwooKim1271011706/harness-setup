@@ -208,6 +208,19 @@ if [ -f "$CLAUDE_MD" ]; then
       MESSAGES+=("⚠ 하네스 drift: 보안 SSOT(claude-security-guidance.md)가 현 프로젝트(${PROJNAME}) 명시 안 함 — 타 프로젝트 스택 기준일 수 있음. /cso 심사 전 현지화 확인")
     fi
   fi
+  # 9c) 도메인 용어집 오염 감지 — 프로젝트 도메인 용어는 contextPath(product 추적)에 둬야 하고
+  #      .claude/CONTEXT.md(공유 하네스)에 두면 타 프로젝트로 오염된다. 실파일은 gitignore(template만 커밋).
+  CTX_TMPL="$PROJECT_DIR/.claude/CONTEXT.md.template"
+  CTX_IN_CLAUDE="$PROJECT_DIR/.claude/CONTEXT.md"
+  CTXPATH=$(grep -iE 'contextPath' "$CLAUDE_MD" 2>/dev/null | grep -oE '`[^`]+`' | tail -1 | tr -d '`')
+  if [ -f "$CTX_IN_CLAUDE" ] && grep -q "프로젝트 특화" "$CTX_TMPL" 2>/dev/null; then
+    # .claude/CONTEXT.md 실파일이 존재 = 공유 하네스에 용어집이 눌러앉음(오염 경로). template과 구분: 플레이스홀더 남았으면 미현지화, 없으면 도메인용어 유입 의심
+    if ! head -5 "$CTX_IN_CLAUDE" 2>/dev/null | grep -q "템플릿"; then
+      MESSAGES+=("⚠ 용어집 오염 위험: .claude/CONTEXT.md에 도메인 용어가 있음 — 공유 하네스(.claude/)라 타 프로젝트로 오염된다. contextPath(product 추적 경로)로 옮기고 .claude/ 사본은 제거 권장")
+    fi
+  elif [ -z "$CTXPATH" ] && [ -f "$CTX_TMPL" ]; then
+    MESSAGES+=("ℹ 용어집 미설정: CLAUDE.md에 contextPath 미선언 — CONTEXT.md.template을 product 추적 경로로 복사 후 Harness Configuration에 contextPath 선언 권장(grill/co-plan 용어 쓰기 대상)")
+  fi
 fi
 
 # 회고 inbox pending 알림은 SessionStart가 아니라 UserPromptSubmit(매 프롬프트)로 처리한다.

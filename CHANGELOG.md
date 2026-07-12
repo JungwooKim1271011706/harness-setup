@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.63.0 — 2026-07-12
+- **도메인 용어집 오염 원천차단 — 경로 하드코딩 제거(contextPath config) + CONTEXT.md gitignore/template 분리 (repostitch inbox 후보3) — MINOR, 거버넌스 무영향(기존 config 간접참조 패턴 정합, 게이트/불변식 불변). 재시작 권장.**
+  - **문제**: `orchestrator.md`가 grill-with-docs/co-plan 용어집 쓰기 경로를 `.claude/CONTEXT.md`로 **하드코딩** → 프로젝트 도메인 용어가 공유 하네스(nested harness-setup repo)로 흘러가 **타 프로젝트 오염**. + `CONTEXT.md`가 tracked라 clone 시 원본 프로젝트(사내 GitLab봇/tocServer 스택) 잔재가 딸려옴. v3.59.0 보안 SSOT와 **동일 클래스**(프로젝트 산출물이 harness에 tracked)인데 CONTEXT.md만 미분리였음.
+  - **(2) contextPath config화**: `agents/orchestrator.md` §설계검증 용어집 경로 하드코딩 → "CLAUDE.md Harness Configuration의 `contextPath` 참조"로 교체(projectName/memoryDir 등 기존 config 간접참조 패턴에 8번째 변수 추가). grill 주입 문구도 "`.claude/`에 도메인 용어 쓰지 마라(오염)"로 갱신. `skills/harness-setup/SKILL.md`에 `contextPath` 변수 감지·표·Step5·주의사항 추가. `README.md` 변수 목록 갱신.
+  - **(3) CONTEXT.md gitignore+template 분리 (v3.59.0 선례 재사용)**: 실파일 `.gitignore` + `git rm --cached`(로컬 유지, 추적 해제). `CONTEXT.md.template`만 커밋 — **(a) 하네스 메커니즘 골격**(진입모드/명세=oracle/통합검증단위/FAIL카운트/인간책임경계/변경검증·전체회귀·부채/반복≠신뢰 등) 유지 + **(b) 프로젝트 종속 구체**(GitLab·glab·봇 Phase·tocServer·MariaDB 등)는 `> 프로젝트 특화:` 플레이스홀더로 비움. WI/설계·리뷰모드는 하네스 진입모드=메커니즘으로 유지(결합 대상 GitLab만 플레이스홀더). README 파일레이아웃 표 등록.
+  - **`hooks/session-check.sh` #9c**: `.claude/CONTEXT.md`에 도메인 용어 존재 시 오염 경고 / contextPath 미선언 시 안내. 3케이스 실동작 검증(오염/미설정/정상).
+  - **product 세션 이월**: (1) 실제 도메인 용어(repostitch 16+2건)를 product 추적 경로로 병합 = 소비자 세션 몫((2)(3) 이후 순서).
+
 ## 3.62.0 — 2026-07-12
 - **inbox 드레인 — grill config-precedence 주입 + electron wiki 2종 (repostitch) — MINOR, 거버넌스 무영향(주입항목, 트리거·게이트구조 불변). 재시작 권장.**
   - **`agents/orchestrator.md` §설계검증 "출력 활용"**: `config 병합/우선순위 주입(필수)` 추가 — 신규 빌드/배포/실행 config 필드·파일 도입 설계면 grill-with-docs에 "기존 동종 config 파일(*.yml/*.json/*rc/package.json 키) 스캔 + precedence(병합 아닌 완전대체) 확인"을 주입. grill의 인접/중복 메커니즘 적발을 코드로직 중복→동종 config 파일 존재까지 확장(:266 ① config 트리거와 짝). 후보의 grill-스킬 수정 제안은 벤더 스킬(sync 덮어쓰기)이라 orchestrator 주입으로 라우팅 보정. 근거: package.json.build가 electron-builder.yml 완전무시→배포계약(portable→nsis·productName) 조용변경, 커밋 36ac6d1.

@@ -103,7 +103,7 @@ echo "/.claude/" >> .gitignore
 ```
 
 ### 3. 프로젝트 설정값 교체
-`CLAUDE.md`의 `Harness Configuration` 섹션 값(projectName, frontendRoot/backendRoot, modules, examples 등)을 새 프로젝트에 맞게 수정한다. `agents/`는 이 변수만 참조하므로 직접 수정하지 않는다.
+`CLAUDE.md`의 `Harness Configuration` 섹션 값(projectName, frontendRoot/backendRoot, modules, examples, contextPath 등)을 새 프로젝트에 맞게 수정한다. `agents/`는 이 변수만 참조하므로 직접 수정하지 않는다. `contextPath`(도메인 용어집)와 보안 SSOT는 프로젝트별 산출물이라 template만 커밋되며, product 추적 경로로 복사·현지화한다(`.claude/` 금지 — 공유 하네스 오염 방지).
 
 ### 4. gstack 설치 (글로벌 의존 — plan-*-review·계획리뷰·context-save 등)
 하네스는 gstack 스킬을 repo에 vendoring하지 않고 글로벌 설치에 의존한다. 미설치 시 설계패널 plan-*-review 렌즈·`/office-hours`·`/cso`·`/context-save` 등이 동작하지 않는다(세션 시작 시 `session-check.sh`가 안내).
@@ -187,6 +187,8 @@ git -C .claude pull origin main
 | `wiki/` | 하네스 운영 지식·gotcha (엔티티 페이지+`[[링크]]`, 카파시 LLM wiki 패턴). 작성/라우팅 규칙은 `wiki/_schema.md` | track |
 | `claude-security-guidance.md` | 프로젝트별 보안 SSOT (`.template`에서 생성·현지화 — 설계패널 CSO_LENS·/cso·/review Read) | ignore |
 | `claude-security-guidance.md.template` | 보안 SSOT 제너릭 OWASP 골격 (재사용 시 실파일로 복사·현지화) | track |
+| `CONTEXT.md` | 프로젝트 도메인 용어집 (`.template`에서 생성·현지화 — grill/co-plan 쓰기, `contextPath` 경유. product 추적 경로 권장) | ignore |
+| `CONTEXT.md.template` | 용어집 골격 (하네스 메커니즘 + `> 프로젝트 특화:` 플레이스홀더. 재사용 시 contextPath 위치로 복사·현지화) | track |
 | `rules/` | 프로젝트별 코딩 규칙 (rule-maker 생성) | ignore |
 | `agent-memory/` | 프로젝트별 메모리 (auto-memory, 머신로컬·휴대 안 됨) | ignore |
 | `settings.local.json` | 로컬 권한/secret | ignore |

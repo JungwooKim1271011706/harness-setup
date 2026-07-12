@@ -144,6 +144,16 @@ done
 
 사용자에게 도메인 표로 보여준 뒤 확인받고, 최종 flat list로 CLAUDE.md에 기록한다.
 
+#### contextPath
+도메인 용어집(CONTEXT.md) 경로. grill-with-docs/co-plan이 프로젝트 도메인 용어를 여기 쓴다.
+
+```bash
+# 기본 권장: 프로젝트 repo가 추적하는 경로(.claude/ 밖). 루트 CONTEXT.md 또는 docs/glossary.md
+[ -f CONTEXT.md ] && echo "CONTEXT.md" || echo "CONTEXT.md"  # 없으면 template에서 생성 권장
+```
+
+⚠ **`.claude/CONTEXT.md`로 두지 마라.** `.claude/`는 공유 하네스(harness-setup) nested repo라, 프로젝트 도메인 용어를 거기 쓰면 타 프로젝트로 오염되고 product repo는 gitignore(`.claude/`)라 추적도 못 한다. 반드시 **product repo 추적 경로**(루트/docs 하위)로 둔다. harness-setup엔 `CONTEXT.md.template`(하네스 메커니즘 골격 + `> 프로젝트 특화:` 플레이스홀더)만 커밋되고 실파일은 gitignore이므로, 재사용 시 template을 contextPath 위치로 복사·현지화한다.
+
 ---
 
 ### Step 2 — 프로젝트 개요 분석 (NEW)
@@ -291,6 +301,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `modules` | {modules} | 오케스트레이터 모듈 컨텍스트 예시 |
 | `backendExamples` | {backendExamples} | 백엔드 tester 회귀 검증 대표 클래스 예시 (도메인당 3개) |
 | `frontendExamples` | {frontendExamples} | 프론트엔드 tester 회귀 검증 대표 컴포넌트 예시 (도메인당 3개) |
+| `contextPath` | `{contextPath}` | 도메인 용어집 경로 (grill/co-plan 쓰기 대상). **product repo 추적 경로 — `.claude/` 금지**(오염) |
 
 > **주의:** 이 섹션의 변수가 잘못되면 모든 에이전트가 오동작한다. 새 프로젝트 셋업 후 반드시 값 검증 필요.
 ```
@@ -304,13 +315,14 @@ CLAUDE.md 설정 완료.
 
 생성된 섹션:
 - 프로젝트 개요 (기술 스택, 모듈 구조, 빌드 명령어, 아키텍처)
-- Harness Configuration (7개 변수)
+- Harness Configuration (8개 변수)
 
 다음 단계:
 1. memoryDir 값이 실제 Claude Code 프로젝트 경로와 일치하는지 확인
 2. /rule-maker 실행 → 프로젝트 전용 backend.md / frontend.md 자동 생성
 3. 보안 SSOT 생성·현지화 → `.claude/claude-security-guidance.md.template`을 `.claude/claude-security-guidance.md`로 복사 후 프로젝트 스택으로 현지화 (아래 ⚠)
-4. .claude/는 harness-setup repo를 통째로 clone한 것이므로 agents/skills/hooks는 이미 포함됨. 루트 .gitignore에 /.claude/ 추가해 상위 repo가 중복 추적하지 않게 한다.
+4. 도메인 용어집 생성·현지화 → `.claude/CONTEXT.md.template`을 `contextPath`가 가리키는 **product 추적 경로**(예: 루트 `CONTEXT.md`)로 복사 후 `> 프로젝트 특화:` 플레이스홀더를 채운다 (아래 ⚠). **`.claude/` 안에 두지 마라**(오염).
+5. .claude/는 harness-setup repo를 통째로 clone한 것이므로 agents/skills/hooks는 이미 포함됨. 루트 .gitignore에 /.claude/ 추가해 상위 repo가 중복 추적하지 않게 한다.
 ```
 
 ---
@@ -320,6 +332,8 @@ CLAUDE.md 설정 완료.
 - CLAUDE.md를 직접 열어서 읽은 후 수정한다 (덮어쓰기 금지)
 - 기존 섹션이 있으면 내용을 병합하고 다른 섹션은 건드리지 않는다
 - **⚠ 보안 SSOT 생성·현지화 (재사용 시 필수)**: `.claude/claude-security-guidance.md`는 **프로젝트별 보안룰**이고 3곳(설계패널 `CSO_LENS`·`/cso`·`/review`)이 보안기준 SSOT로 Read한다. 이 실파일은 **gitignore(프로젝트별 산출물, 머신로컬)** — harness-setup엔 `claude-security-guidance.md.template`(제너릭 OWASP 골격)만 커밋된다. 따라서 clone 직후엔 실파일이 **없다**(과거처럼 원본 프로젝트 scourt 잔재가 딸려오지 않음 = drift 원천 차단). ① template을 실파일로 복사 → ② 각 카테고리 `> 프로젝트 특화:` 플레이스홀더를 현 스택(프레임워크·인증·ORM·뷰레이어)으로 채운다(예: 셸 명령 인젝션·경로조작·VCS 자격증명·빌드 실행표면 등 실제 표면). 미생성/미현지화 시: session-check #9b가 세션시작 경고, CSO_LENS는 제너릭 OWASP 폴백(design-panel.js)으로 견고하게 진행(틀린 baseline 참조는 사라짐). **미현지화 신호**: 파일 헤더 프로젝트명이 현 프로젝트와 다르거나 `> 프로젝트 특화:` 플레이스홀더가 안 채워짐.
+- **⚠ 도메인 용어집 생성·현지화 (재사용 시 필수)**: 도메인 용어집(`CONTEXT.md`)은 **프로젝트별 산출물**이고 grill-with-docs/co-plan이 용어 확정 시 쓴다. 실파일은 **gitignore(프로젝트별, product repo가 추적)** — harness-setup엔 `CONTEXT.md.template`(하네스 메커니즘 골격 + `> 프로젝트 특화:` 플레이스홀더)만 커밋된다. ① template을 `contextPath` 위치로 복사(**product 추적 경로, `.claude/` 밖** — `.claude/`는 공유 하네스라 도메인 용어를 두면 타 프로젝트 오염 + product가 gitignore로 추적 못 함) → ② 하네스 메커니즘 절은 그대로 두고 `> 프로젝트 특화:` 플레이스홀더만 현 프로젝트 도메인·워크플로로 채우거나, 안 쓰는 절(설계/리뷰모드 등 외부협업 미사용 시)은 삭제 → ③ "## 프로젝트 도메인" 절에 실제 도메인 용어를 쌓는다. **미현지화 신호**: `> 프로젝트 특화:` 플레이스홀더가 안 채워짐. 근거: 경로 하드코딩(`orchestrator.md`)이 프로젝트 용어를 공유 `.claude/CONTEXT.md`로 흘려보내 오염(v3.63.0 원천차단).
 - **프로젝트 개요는 확인된 정보만** — 없는 내용 추측 금지
 - memoryDir은 OS에 따라 경로 구분자가 다르므로 반드시 사용자 확인
 - modules, backendExamples, frontendExamples는 "예시" 값이므로 완벽할 필요 없음 — 사용자가 나중에 수정 가능
+- contextPath는 반드시 product repo 추적 경로(루트/docs 하위) — `.claude/` 금지(오염 + gitignore로 추적 불가)

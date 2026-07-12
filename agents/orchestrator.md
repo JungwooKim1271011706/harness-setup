@@ -268,8 +268,8 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 ### 출력 활용
 - Q&A 결과 → 검증된 설계 방향으로 planner에 전달
 - /grill-with-docs 출력은 planner 호출 시까지 보관한다 (기능 문서 설계 결정 섹션에 사용)
-- 용어 확정 시 도메인 용어집 `CONTEXT.md`를 갱신한다. **이 프로젝트의 용어집 경로는 `.claude/CONTEXT.md`다 (repo 루트 아님).**
-- **경로 강제 (필수 주입)**: `/grill-with-docs` 호출 시 컨텍스트에 "도메인 용어집은 `.claude/CONTEXT.md`다. 이 파일을 Read해 기존 용어를 확인하고, 용어 갱신·추가는 이 파일에만 한다. repo 루트에 새 `CONTEXT.md`를 만들지 마라"를 반드시 주입한다. grill-with-docs는 기본적으로 repo 루트를 탐색하므로, 주입 없이는 루트에 중복 파일이 생겨 용어집이 파편화된다. (rule 경로 주입과 동일한 게이트키퍼 패턴)
+- 용어 확정 시 도메인 용어집을 갱신한다. **용어집 경로는 CLAUDE.md Harness Configuration의 `contextPath` 값이다** (하드코딩 금지 — 프로젝트마다 다름).
+- **경로 강제 (필수 주입)**: `/grill-with-docs` 호출 시 컨텍스트에 "도메인 용어집은 CLAUDE.md Harness Configuration의 `contextPath`가 가리키는 파일이다. 이 파일을 Read해 기존 용어를 확인하고, 프로젝트 도메인 용어의 갱신·추가는 이 파일에만 한다. `.claude/` 안(공유 하네스 repo)에는 프로젝트 도메인 용어를 쓰지 마라 — 타 프로젝트로 오염된다. `contextPath` 미선언이면 사용자에게 경로를 확인한다"를 반드시 주입한다. grill-with-docs는 기본적으로 repo 루트를 탐색하므로, 주입 없이는 엉뚱한 위치에 파일이 생겨 용어집이 파편화·오염된다. (rule 경로 주입과 동일한 게이트키퍼 패턴)
 - **config 병합/우선순위 주입 (필수)**: 신규 빌드/배포/실행 config 필드·파일 도입 설계면 `/grill-with-docs` 컨텍스트에 "기존 동종 config 파일(`*.yml`/`*.json`/`*rc`/`package.json` 키)을 코드베이스 스캔하고, 같은 설정이 여러 곳에 있으면 어느 게 이기는지(병합이 아니라 완전대체 여부)를 확인하라"를 주입한다. grill의 '인접/중복 메커니즘 적발'을 코드 로직 중복뿐 아니라 **동종 config 파일 존재+precedence**까지 확장(:266 ① config 도입 트리거와 짝). 근거: `package.json`의 `build` 키 추가가 `electron-builder.yml`을 완전무시(병합 아님) → 배포계약(target portable→nsis·productName) 조용변경, GREEN 후 변경검증서야 tester+codex 2소스로 적발. 상세 [[electron-builder-config-precedence]].
 - 되돌리기 어렵고 맥락 없이는 의아한 결정 → `docs/adr/` ADR 생성
 
