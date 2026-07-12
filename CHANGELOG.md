@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.62.0 — 2026-07-12
+- **inbox 드레인 — grill config-precedence 주입 + electron wiki 2종 (repostitch) — MINOR, 거버넌스 무영향(주입항목, 트리거·게이트구조 불변). 재시작 권장.**
+  - **`agents/orchestrator.md` §설계검증 "출력 활용"**: `config 병합/우선순위 주입(필수)` 추가 — 신규 빌드/배포/실행 config 필드·파일 도입 설계면 grill-with-docs에 "기존 동종 config 파일(*.yml/*.json/*rc/package.json 키) 스캔 + precedence(병합 아닌 완전대체) 확인"을 주입. grill의 인접/중복 메커니즘 적발을 코드로직 중복→동종 config 파일 존재까지 확장(:266 ① config 트리거와 짝). 후보의 grill-스킬 수정 제안은 벤더 스킬(sync 덮어쓰기)이라 orchestrator 주입으로 라우팅 보정. 근거: package.json.build가 electron-builder.yml 완전무시→배포계약(portable→nsis·productName) 조용변경, 커밋 36ac6d1.
+  - **`wiki/electron-builder-config-precedence.md`(신규)+index**: read-config-file loadConfig은 package.json `build` 키 존재 시 electron-builder.yml 완전무시(병합 아님). build 설정 한 곳에만, 신규필드 전 동종 config 스캔.
+  - **`wiki/electron-vitest-vimock-createrequire.md`(신규)+index**: `createRequire`는 vitest 러너 밖 네이티브 require 생성 → `vi.mock('electron')` 그래프 우회 → app undefined crash. mock 대신 인자화 seam(app override 파라미터)+resourcesPath 직접 스텁.
+  - **reject 2건**: 후보2 codex 7.5 stage 미정독(게이트 정상작동 + playbook-tdd:58 유사규칙 존재, 과적합) / tester-backend 토큰한도 사망(외부요인 YAGNI).
+
 ## 3.61.0 — 2026-07-11
 - **co-plan Step1 유저 시나리오 ASCII 흐름도 병기 (사용자 요청) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **`skills/co-plan/SKILL.md`**: Step1(유저 시나리오) 초안 시 ASCII 흐름도(박스+화살표)를 콘솔에 도식화한 뒤 단계별 번호 목록을 병기. 유저가 대화 중 시각적으로 바로 이해하게. 분기(성공/실패)는 화살표로 표현. 터미널 즉시 렌더 위해 **ASCII만**(mermaid·excalidraw·파일 생성 금지) — 단순 선형이면 생략 가능, "목록만" 요청 시 텍스트만. 출력 형식에 Step1 도식 슬롯 + 예시 추가.

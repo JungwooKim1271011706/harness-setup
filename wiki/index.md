@@ -31,6 +31,8 @@
 - [[vite-stale-served-source-windows]] — Windows에서 Vite dev server 워처가 편집 miss→stale transform 서빙. 디스크≠서빙. `curl localhost:PORT/src/...`로 서빙 소스 확인 후 재시작
 - [[jsdom-missing-browser-apis]] — renderer가 jsdom 미구현 브라우저 전역(CSS.escape·matchMedia 등) 쓰면 프로덕션 OK·단위테스트 TypeError 전수 폭발. 환경 가드 헬퍼로 회피
 - [[electron-before-quit-window-close-order]] — Electron 창 X경로 순서(close→파괴→window-all-closed→before-quit)라 before-quit 단일게이트 종료확인은 창 파괴 후라 취소 불성립. window `close` preventDefault에서 dialog, before-quit는 app/ipc quit 전용
+- [[electron-builder-config-precedence]] — electron-builder read-config-file은 package.json `build` 키 있으면 electron-builder.yml 완전무시(병합 아님) → 배포계약(target/productName) 조용변경. build 설정 한 곳에만, 신규 필드 전 동종 config 존재 스캔
+- [[electron-vitest-vimock-createrequire]] — vitest `vi.mock('electron')`이 `createRequire`(러너 밖 네이티브 require) 경로 못 가로챔 → app undefined crash. mock 대신 인자화 seam(app override 파라미터)+resourcesPath 직접 스텁
 - [[write-tool-tmp-vs-bash-tmp-windows]] — Write 도구 /tmp ≠ Git Bash /tmp(Windows). Write 저장 후 bash `cat /tmp` 파이프가 빈 파일→codex 무작동(exit0). /c/ 절대경로로 통일
 - [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)
 
