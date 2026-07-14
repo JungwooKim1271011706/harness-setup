@@ -8,7 +8,7 @@ AI가 세션마다 제멋대로 구현하지 않도록, 사람 팀의 개발 프
 - **설계 패널 게이트**: 승인 전, 다중 페르소나(eng·보안·설계) + 타모델(codex) 교차검증으로 계획을 비평
 - **TDD 합의**: 테스트 작성자 ≠ 구현자 ≠ 검증자 분리 — AI가 자기 테스트를 통과시키려 구현을 왜곡하는 것을 기계 차단
 - **FAIL 3분기**: 실패를 구현결함/설계결함/환경문제로 분류해 각각 다른 복구 경로
-- **자기개선 루프**: 운영 중 겪은 실패를 회고→규칙화해 하네스 자체를 버전업 (현재 v3.53.2)
+- **자기개선 루프**: 운영 중 겪은 실패를 회고→규칙화해 하네스 자체를 버전업 (현재 버전은 `VERSION` 파일 참조)
 
 ## 주요 목적
 - AI 개발 세션의 작업 규칙 표준화(세션 간 일관성)
@@ -179,6 +179,8 @@ git -C .claude pull origin main
 |------|------|------|
 | `agents/` | 오케스트레이터·planner·developer·tester·reviewer(code-reviewer)·finalizer | track |
 | `skills/` | 자체 스킬 + sync 스크립트 (gstack 스킬은 미러 안 함 — 글로벌 의존, §셋업 4) | track |
+| `workflows/` | 설계패널 게이트 엔진 `design-panel.js`(orchestrator 설계검증 전반 참조) + `harness-feature-scan.js`(자기개선 루프 ①발견) | track |
+| `review/` | 리뷰모드 사람 스크립트 템플릿 (`human-script.template.md`, `scenarios.local.md.example`) | track |
 | `hooks/` | 세션 점검 훅 | track |
 | `scripts/` | 유틸 스크립트 — `worktree-status.sh`(온디맨드 워크트리×기능 대시보드, 읽기전용), `link-worktree-claude.sh`(전역 SessionStart 훅용 — 워크트리에 `.claude` 자동 junction) | track |
 | `settings.json` | 공유 설정 | track |

@@ -11,7 +11,10 @@
 #   - 메인 orchestrator(agent_type 없음) → 이 훅은 통과(테스트편집 안 하나, 한다면
 #     block-orchestrator-edit.sh가 제품모듈로 이미 차단). 여기선 developer 한정.
 #   - 그 외 서브에이전트(finalizer 등) → 통과(테스트 편집할 일 정상 없음, 막지 않음)
-# 대상 경로: <module>/src/test/** (표준 Maven 테스트 레이아웃, 실측 확인).
+# 대상 경로: ① <module>/src/test/** (표준 Maven 백엔드 레이아웃)
+#            ② 프론트 vitest/jest: *.spec.* / *.test.* (ts/tsx/js/jsx/mts/cts/vue) + __tests__/ 디렉터리.
+#   백엔드만 막고 프론트(.spec.ts/.test.ts/__tests__)를 놓치면 developer-frontend가 프론트 테스트를
+#   약화해 GREEN 위장(정기점검 2026-07-12 C3). 확장자/디렉터리 경계 앵커라 프로덕션 파일 오탐 없음.
 # 차단 시 exit 2 + stderr → developer가 사유 받고 구현으로 복귀(테스트 약화 차단).
 #
 # 알려진 구멍(v1, #8과 동일 계열): Bash 내부쓰기(sed -i/tee/cp/> 리다이렉트/python·node
@@ -35,8 +38,8 @@ case "$agent_type" in
   *) exit 0 ;;
 esac
 
-# 테스트 경로면 차단: <module>/src/test/ (절대·상대 경로 모두, / 또는 \ 구분자)
-if printf '%s' "$file_path" | grep -qiE '[/\\]src[/\\]test[/\\]'; then
+# 테스트 경로면 차단: 백엔드 src/test/ + 프론트 *.spec.*/*.test.*/__tests__/ (절대·상대, /·\ 구분자)
+if printf '%s' "$file_path" | grep -qiE '[/\\]src[/\\]test[/\\]|[/\\]__tests__[/\\]|\.(spec|test)\.(ts|tsx|js|jsx|mts|cts|vue)$'; then
   echo "[hook] developer는 테스트 파일을 편집할 수 없다 — 테스트 작성·수정은 7.5/7.7 작성자(codex/tester) 몫이다. GREEN 단계에서 기존 테스트를 약화하면 reward-hacking이다. 테스트가 틀렸다고 판단되면 구현을 멈추고 설계결함(DESIGN_MISMATCH)으로 orchestrator에 보고하라. (차단 file_path: ${file_path})" >&2
   exit 2
 fi

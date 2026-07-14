@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.64.0 — 2026-07-14
+- **정기점검(구조 감사) 후속 수정 — 차단훅 프론트 커버리지 + contextPath 읽기 정합 + README drift (사용자 "홀 점검" 요청) — MINOR, 거버넌스 무영향(불변식 커버리지 확대·문서 정합). 재시작 권장.**
+  - **배경**: 5축 병렬 구조 감사(훅정합/참조무결성/문서drift/wiki/거버넌스)로 11홀 후보 탐지 → 백로그 `정기점검 2026-07-12` 기재. 검증 후 실수정분만 반영, 나머지는 오탐/wontfix/수용.
+  - **C3 (`hooks/block-developer-test-edit.sh`)**: 정규식이 Maven 백엔드 `src/test/`만 매치 → 프론트 vitest 테스트(`.spec.*`/`.test.*`/`__tests__/`) 미커버로 developer-frontend가 테스트 약화(reward-hack) 가능하던 홀 차단. `[/\\]__tests__[/\\]` + `\.(spec|test)\.(ts|tsx|js|jsx|mts|cts|vue)$` 추가. 확장자/디렉터리 경계 앵커라 프로덕션 오탐 없음. 10케이스 검증.
+  - **M1 (planner×3·developer×2·tester×2 = 7파일)**: 도메인 용어집 **읽기** 참조가 리터럴 `CONTEXT.md`로 하드코딩돼 v3.63.0의 쓰기(contextPath)와 갈리던 것 → "용어집(Harness Configuration `contextPath`)"로 통일. (orchestrator/finalizer의 "하네스 테스트 흐름/oracle/반복≠신뢰" 절 참조는 메커니즘 인용이라 리터럴 유지)
+  - **M2·M3 (`README.md`)**: 자기개선 루프 인라인 버전 "(현재 v3.53.2)"(10버전 stale) → VERSION 파일 참조로(재drift 근본 제거). 파일레이아웃 표에 `workflows/`(design-panel.js 설계패널 엔진 + harness-feature-scan.js)·`review/`(사람 스크립트 템플릿) 행 추가.
+  - **오탐/수용**: C1(신원게이트 필드 불일치=오탐, agent_id·agent_type 둘 다 채워짐 검증) / C2(빌드도구 차단 wontfix — 무거운 검증은 사람/부채트리거로 이미 설계) / H1·H2(dev clone은 `.claude/` 없어 repo 훅 미로드 → 하네스 자기수정 훅강제 구조적 불가, 실사고 근거 없어 프롬프트+승인게이트 수용) / L1·L2·L3(현실트리거 낮음·과투자·저가치 수용).
+
 ## 3.63.0 — 2026-07-12
 - **도메인 용어집 오염 원천차단 — 경로 하드코딩 제거(contextPath config) + CONTEXT.md gitignore/template 분리 (repostitch inbox 후보3) — MINOR, 거버넌스 무영향(기존 config 간접참조 패턴 정합, 게이트/불변식 불변). 재시작 권장.**
   - **문제**: `orchestrator.md`가 grill-with-docs/co-plan 용어집 쓰기 경로를 `.claude/CONTEXT.md`로 **하드코딩** → 프로젝트 도메인 용어가 공유 하네스(nested harness-setup repo)로 흘러가 **타 프로젝트 오염**. + `CONTEXT.md`가 tracked라 clone 시 원본 프로젝트(사내 GitLab봇/tocServer 스택) 잔재가 딸려옴. v3.59.0 보안 SSOT와 **동일 클래스**(프로젝트 산출물이 harness에 tracked)인데 CONTEXT.md만 미분리였음.

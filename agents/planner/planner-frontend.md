@@ -22,7 +22,7 @@ permissionMode: plan
    - 모듈 경로가 없으면: Glob으로 `.claude/rules/package/**/frontend.md` 탐색 후 전부 Read
    - 읽은 규칙을 계획서 diff/설계 방향에 반영한다 (태그라이브러리, JS 네이밍, i18n 패턴 등)
 
-2. **도메인 용어 확인**: CONTEXT.md를 Read로 읽어 도메인 용어를 확인한다.
+2. **도메인 용어 확인**: 용어집(CLAUDE.md Harness Configuration의 `contextPath`)을 Read로 읽어 도메인 용어를 확인한다.
    - 용어집의 정의를 기준으로 계획서의 용어를 통일한다.
 
 ## 핵심 규칙
@@ -48,7 +48,7 @@ permissionMode: plan
 모르는 영역에 진입할 때는 파일 직접 읽기 전에 먼저 전체 지도를 그린다:
 1. Glob으로 해당 패키지/디렉터리 구조 전체 파악
 2. 주요 진입점(Controller/MainFrame, 인터페이스) 식별 후 호출 관계 파악
-3. CONTEXT.md 도메인 용어집으로 각 모듈 역할 정리
+3. 도메인 용어집(`contextPath`)으로 각 모듈 역할 정리
 4. 지도가 완성된 후에 세부 파일 진입 (탐색 제한 규칙 준수)
 
 ## 출력 형식
