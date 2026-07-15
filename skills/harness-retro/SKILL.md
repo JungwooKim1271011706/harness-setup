@@ -18,7 +18,7 @@ argument-hint: "[회고 텍스트 또는 회고 파일 경로]"
 - 회고 텍스트(붙여넣기) 또는 회고 파일 경로. 보통 "🔴 우선순위 높음 / 🟡 중간" 형태의 제안 목록.
 - **inbox 모드(무인자 호출)**: 인자 없이 호출되면 머신글로벌 inbox `~/.claude/harness-retro-inbox/*.md`(pending — `applied/`·`rejected/` 하위 제외)를 전부 읽어 입력으로 삼는다. check가 딴 세션(worktree 등)서 드롭한 후보를 **복붙 없이** 드레인한다. 여러 파일이면 묶어서 한 번에 분류(같은 결함클래스는 통합).
 - 둘 다 없으면(inbox도 비었으면) 사용자에게 회고 텍스트/경로를 요청한다.
-- ⚠ **적용은 dev clone(origin=harness-setup SSOT)에서만**. 소비자 세션(worktree=gitlab 제품 vendoring)은 harness-setup remote가 없어 push 불가 — 거기선 check 드롭까지만, 적용은 dev clone에서.
+- ⚠ **적용은 dev clone에서만**. 소비자 세션(제품 repo에 vendoring된 중첩 `.claude`)은 거기서 커밋하면 제품 repo에 갇히거나 SSOT와 갈린다 — 거기선 check 드롭까지만, 적용은 dev clone에서. **판별식 = `wiki/_schema.md` "어디로 가나" SSOT**(`basename $(git rev-parse --show-toplevel)` = `.claude` → 소비자. origin 판별 금지 — 중첩 `.claude`도 origin=harness-setup이라 오판, 2026-07-15 실사고).
 
 ## Step 1 — 회고 항목 파싱
 각 제안을 개별 항목으로 분해한다. 항목마다 추출: `title`, 문제(증상), 제안 수정, 제안한 수정 위치(있으면), 근거(인용 failure 메모/사건).

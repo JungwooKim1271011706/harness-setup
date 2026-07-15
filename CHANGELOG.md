@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.65.0 — 2026-07-15
+- **inbox 드레인 — 세션 판별식 오판 수정(실사고) + finalizer 규칙 3건 + wiki 2종 — MINOR, 거버넌스 무영향(판별식 정정·규칙 추가). 재시작 권장.**
+  - **① 세션 판별식 오판 (핵심, 실사고 재발방지)**: `origin=harness-setup`=dev clone 판별이 **틀렸다** — 소비자 제품 repo의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같아 **dev clone으로 오판** → 2026-07-15 finalizer가 소비자 세션서 하네스 직접 커밋(295de16, `_schema` "어디로 가나" 위반) → 폐기·reset. 판별식을 **`basename $(git rev-parse --show-toplevel)` = `.claude` → 소비자**로 교체(dev clone은 repo 루트가 하네스 자체). `wiki/_schema.md`를 판별식 SSOT로 명시하고 산재 6곳(orchestrator:573·harness-check:49·harness-retro:21·README×2·`hooks/harness-inbox-nudge.sh`)이 SSOT를 가리키게 정리. 훅은 로직 실수정 + 3케이스 검증(dev clone 출력 / 중첩 `.claude` 침묵=옛 로직은 오판·출력 / 남의 repo 침묵).
+  - **② `agents/finalizer.md` bump 전 `git fetch origin` 의무화**: 로컬 v3.63.0 기준 3.64.0 bump했으나 origin이 이미 3.64.0 발행 → 같은 번호 두 커밋, rebase 사후해소한 사고. 절차 1에 `git fetch origin` + `git rev-list --count HEAD..origin/main` 확인 필수 추가. **이번 v3.65.0 bump가 첫 이행**(fetch 결과 behind 0·origin 3.64.0 확인 후 발행).
+  - **③ `agents/finalizer.md` 고아 규칙 2건 상류 포팅**: 제품 repo 박제본(v3.22.2)에만 있고 상류엔 누락됐던 규칙 — feature 문서 append 전 tool-call 잔재(`</content>`·`</invoke>`) 점검 + 신규 파일의 `TESTER-TEMP`/`DEVELOPER-TEMP` 마커 grep(비차단, 기록만). `git log -S`로 상류 미존재(의도적 제거 아님) 검증 후 재적용.
+  - **④⑤ wiki 2종**: `javac-diagnostic-locale-message-match`(진단을 로케일 렌더 메시지에 영어 리터럴 contains → 영원히 false·무증상 GREEN. 판정은 `getCode()`, classpath 누락은 `doesnt.exist`, 널가드 필수) / `windows-node-execfile-tar-msys`(Node `execFile('tar')`가 Git Bash서 MSYS GNU tar 잡아 `-C C:\`를 SSH 호스트로 오인 → System32 절대경로로 bsdtar 강제). index 등록 + 링크 정합(dangling 0, 정기점검 L3 고아 1건 자연 해소).
+
 ## 3.64.0 — 2026-07-14
 - **정기점검(구조 감사) 후속 수정 — 차단훅 프론트 커버리지 + contextPath 읽기 정합 + README drift (사용자 "홀 점검" 요청) — MINOR, 거버넌스 무영향(불변식 커버리지 확대·문서 정합). 재시작 권장.**
   - **배경**: 5축 병렬 구조 감사(훅정합/참조무결성/문서drift/wiki/거버넌스)로 11홀 후보 탐지 → 백로그 `정기점검 2026-07-12` 기재. 검증 후 실수정분만 반영, 나머지는 오탐/wontfix/수용.

@@ -45,8 +45,12 @@
 3. 사용자에게 **"wiki에 이거 기록할까?"** 제안한다(자동 저장 X). 승인 시 커밋.
 
 **어디로 가나 (세션 종류 분기 — gotcha의 push 비대칭):**
-gotcha는 보통 **소비자 세션**(worktree=제품 repo, origin≠harness-setup)에서 발견된다. 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받는다(개선후보 inbox와 같은 비대칭).
-- **dev clone**(origin=harness-setup): 위 절차대로 직접 wiki 커밋(승인 시).
+gotcha는 보통 **소비자 세션**(제품 repo에 vendoring된 `.claude`)에서 발견된다. 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받는다(개선후보 inbox와 같은 비대칭).
+
+> **판별식 (SSOT — origin으로 판별 금지)**: `basename $(git rev-parse --show-toplevel)`가 `.claude`면 **소비자 세션**(중첩 vendoring), 아니면 **dev clone**(repo 루트가 하네스 자체 = `VERSION`이 루트에 있음).
+> ⚠ `origin=harness-setup` 판별은 **틀렸다** — 소비자의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같아 dev clone으로 **오판**한다(2026-07-15 실사고: finalizer가 소비자 세션서 하네스 직접 커밋 → 폐기·reset). 판별 기준은 origin이 아니라 **worktree가 중첩 `.claude`인가**다.
+
+- **dev clone**(toplevel basename ≠ `.claude`): 위 절차대로 직접 wiki 커밋(승인 시).
 - **소비자 세션**: 직접 커밋 금지. 준비한 스텁을 **회고 inbox로 드롭**(`~/.claude/harness-retro-inbox/`, 경로·형식은 `/harness-check` Step2.5 SSOT). content = gotcha 스텁(증상→원인→회피) + sources 후보(failure·CHANGELOG·발생세션). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성(inbox 경로가 `sources`로). SSOT 커밋·push 후 전 세션 git pull로 환원, 이후 읽기 트리거(orchestrator "wiki 참조" 절)가 집어준다.
 
 ## 페이지 형식

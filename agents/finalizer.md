@@ -46,7 +46,8 @@ memory: project
 ### 절차
 1. `docs/features/`에서 현재 기능에 해당하는 파일 검색
 2. **없으면**: planner 단계 누락 — 오케스트레이터에 보고 후 중단
-3. **있으면**: 아래 섹션을 파일 끝에 append
+3. **있으면**: append 전 파일 끝 수 줄을 확인해 이전 세션 중단으로 남은 tool-call 잔재(`</content>`, `</invoke>` 등)가 없는지 점검 — 있으면 append 전에 제거. 이후 아래 섹션을 파일 끝에 append
+4. 커밋 대상에 **신규(untracked) 소스/테스트 파일**이 있으면 같은 타이밍에 `TESTER-TEMP`, `DEVELOPER-TEMP` 류 임시 추적 마커 잔존 여부를 가볍게 grep(탐색 예산 1~2개, 별도 승인 불요). 발견해도 비차단(커밋 진행) — feature 문서 "남은 과제"와 최종 리뷰 출력 WARN에 파일:라인으로 기록만 한다.
 
 ### append 형식
 ```markdown
@@ -103,7 +104,7 @@ memory: project
 이번 커밋이 `.claude/` 하네스 파일(agent md / 훅 / settings / 워크플로 / 룰 / 로컬미러 스킬)을 변경했으면 아래를 커밋에 **반드시 포함**한다. 제품 코드 모듈(tocServer/tocProcess/tocFramework)만 변경한 커밋은 이 의식 **불요**. 설계: `.claude/docs/harness-versioning.md`.
 
 ### 절차
-1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석).
+1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석). **bump 전 `git fetch origin` + `git rev-list --count HEAD..origin/main` 확인 필수** — origin이 이미 발행한 번호를 fetch 없이 재사용하면 push 시 버전 충돌이 난다(2026-07-15 사고: 로컬 v3.63.0 기준으로 3.64.0 bump했으나 origin이 이미 3.64.0 발행 → 같은 번호 두 커밋, rebase로 사후 해소. fetch 1회면 안 났다).
 1.5. **분리 문서 정합성 점검 (drift 방지 — orchestrator.md 변경 커밋 시 필수)**: orchestrator.md는 트리거-조건부 절차를 `docs/playbook-*.md` + `docs/routing-map.md`로 분리한다(목록·매핑: `orchestrator.md ## 분리 문서`). 이 커밋이 orchestrator.md의 **라우팅·게이트·시퀀스·WI 템플릿**을 건드렸으면, 대응 playbook이 같은 변경을 반영했는지 대조한다.
    - 매핑: 메타운영 절차 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`.
    - 한쪽만 바뀌어 stale하면 **자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(분리 문서는 orchestrator.md와 한 몸). 분리 문서만 바뀐 커밋도 bump 대상(추적 범위 포함).
