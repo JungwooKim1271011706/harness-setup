@@ -77,7 +77,9 @@
 - 강제 규칙:
   - **plan이 SSOT**: 픽스처 mock seam·인자·반환이 plan 시그니처와 다르면 **plan이 이긴다**(픽스처를 plan에 맞춰 재작업, 추측 금지). orchestrator가 7.5 위임 시 plan의 신규/변경 시그니처(메서드 종류·인자순서·플래그·URL·반환shape)를 **명시 주입**한다.
   - **보안·런타임 임팩트 메서드 선택 특히 고정**: 인증 경로(`run`=PAT vs `runPlain`=비인증)·권한·트랜잭션 경계처럼 메서드 선택이 프로덕션 거동을 가르는 경우, 픽스처가 plan이 지정한 정확한 메서드를 캡처하는지 1줄 대조(틀린 seam = 프로덕션 인증/권한 버그).
-  - 게이트 연결: 7.6 RED sanity / 7.7 품질게이트서 "픽스처가 호출·캡처하는 헬퍼 시그니처가 plan과 일치하나" 1줄 확인. 불일치면 작성자(tester-design)에게 반환.
+  - **mock이 실 producer를 대신하면 계약테스트 1건 필수**: 코어가 소비하는 값을 mock(정형 `{id,name}` 등)으로 고정하는 곳마다, **그 mock shape ↔ 실 매퍼/어댑터 출력을 잠그는 계약 테스트**를 둔다. mock 정의만 freeze하는 건 불충분 — 실 producer가 `raw.id`를 버리거나 `{username}`만 반환해도 mock은 정형이라 게이트가 못 본다. ⚠ 계약테스트는 **실 producer를 구동**해야 한다 — mock 하드코딩 값을 자기 자신과 비교하면 tautological(공허). `R2` absence-pair의 계약테스트판.
+  - 게이트 연결: 7.6 RED sanity / 7.7 품질게이트서 "픽스처가 호출·캡처하는 헬퍼 시그니처가 plan과 일치하나 + mock 대체 경계에 실물 계약테스트가 있나" 1줄 확인. 불일치면 작성자(tester-design)에게 반환.
+  - 근거: tracker-migration blocking 4건 공통뿌리(매퍼가 id 버림→코어 최소-id 무효, lookupUser가 username만→GitLab 400). 방어책 TM-SEAM-1조차 실 어댑터 안 부르고 자기참조 비교=tautological로 나와 tester가 재작성.
 > 근거: repostitch PR-F2(`judgeFf` fetch를 plan은 `run`(PAT)·`-C dir`·`repo.httpUrl`로 명시했으나 픽스처가 `runPlain`(비인증)·`sub.oldUrl`로 캡처→기존 branch 서브모듈 전부 거짓거부 잠재버그. 변경검증 9-FAIL + 2소스 리뷰 + orchestrator src diff Read(receiving-code-review) 3중 적발). recurring-test-lessons #2(mock/real divergence), PR-S1 IPC shape 불일치와 같은 뿌리(mock이 실 계약 우회).
 
 ## 7.5 — RED 테스트 작성 (codex, public 행위 기준)
@@ -96,6 +98,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 
 - 실행 주체: **tester-backend**(Bash 보유 + 테스트 파일 미편집 — 작성자≠검증자 유지). `mvn test-compile` + RED 1회 실행.
 - 통과 기준: **① 컴파일 OK** + **② RED가 "올바른 이유로" FAIL**(미구현 도메인 동작에 의한 단언 실패/도메인 예외). 컴파일 에러, 매처 오용(primitive에 `any()`), `@BeforeEach` 팩토리 seam 미사용, `UnsupportedOperationException` 같은 "잘못된 이유"의 FAIL은 **불통과**.
+- ⚠ **(A)류 컴파일에러가 (B)류를 가린다**: 미구현 심볼 부재(A류, greenfield 정상)가 **module-wide test-compile을 멈추면**, 같은 파일의 테스트 자체 결함(B류: `throws` 누락·잘못된 import·문법)이 **애초에 리포트되지 않는다**. A류로 컴파일이 멈추면 → **신규 테스트 파일을 미구현 심볼 미참조 부분부터 단독/부분 컴파일**하거나 **javac 문법검사(체크예외·import)를 별도 수행**해 B류를 노출한다. 정적 검토만으론 놓친다. 근거: trackA LOOP2 `throws Exception` 누락이 A류에 가려져 GREEN 단계서야 발견(test-compile 전체 차단).
 - 처리:
   - 통과 → 7.7 진행.
   - 불통과 → **작성자(codex/tester-design)에게 반환해 재작성** [LOOP n/3, 7.7과 루프 카운트 공유]. 컴파일/셋업 결함 종류를 명시해 반환.
@@ -134,6 +137,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 
 ## 8 — developer GREEN 구현
 
+- **GREEN 위임은 파일-disjoint 단위로 쪼갠다**: 한 developer 태스크에 코어 알고리즘 + kit 함수 + 다수 어댑터 함수 + 훅을 몰아넣지 마라 — 대형 단일 태스크는 탐색만으로 토큰 소진해 산출 0으로 죽는다. 파일이 겹치지 않는 배치로 나눠 위임하면 각 태스크가 완주한다. 근거: trackA developer-backend가 9함수 코어 + 2 kit + 22 어댑터 + 2 훅을 한 태스크로 받아 243k 소진·산출 0으로 사망 → 4개 파일-disjoint 배치로 쪼개니 전부 완주(재작업 0).
 - developer가 7.5 RED 테스트를 통과시키는 구현 작성
 - **테스트 파일 편집 금지 (기계강제)**: developer는 `<module>/src/test/**`를 수정·삭제할 수 없다. PreToolUse 훅 `block-developer-test-edit.sh`가 agent_type=developer-* + 테스트경로 Edit/Write/MultiEdit를 차단(exit 2). 테스트 약화=reward-hacking 방어(백로그 #8, 근거 ImpossibleBench GPT-5 76%). 테스트가 틀렸다고 판단되면 구현 멈추고 **설계결함(DESIGN_MISMATCH)으로 보고** → FAIL 3분기의 설계결함 경로. (알려진 구멍: Bash sed -i 우회는 v1 미차단 — 백로그 #13)
 - **public 계약 준수** (co-plan/7c에서 freeze된 시그니처 변경 불가)

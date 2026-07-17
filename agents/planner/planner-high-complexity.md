@@ -21,6 +21,7 @@ permissionMode: plan
    - 모듈 경로가 있으면: `.claude/rules/package/<경로>/backend.md` 및 `frontend.md` Read
    - 모듈 경로가 없으면: Glob으로 `.claude/rules/package/**/*.md` 탐색 후 전부 Read
    - 고복잡도 계획이므로 백엔드·프론트 양쪽 규칙을 모두 파악한 후 설계 충돌 여부를 먼저 검토한다
+   - 프론트 diff가 있으면 **신규 store 상태·함수·prop을 소비·트리거하는 기존 컴포넌트의 배선(v-model→명시 핸들러 필요 여부·watcher 리셋 충돌·emit 계약)을 diff에 함께 명시**한다(`planner-frontend.md` "기존 컴포넌트 상호작용 대조"와 동일 — 미검토는 설계패널 critical 반복 원인).
 
 2. **도메인 용어 확인**: 용어집(CLAUDE.md Harness Configuration의 `contextPath`)을 Read로 읽어 도메인 용어를 확인한다.
    - 용어집의 정의를 기준으로 계획서의 용어를 통일한다.

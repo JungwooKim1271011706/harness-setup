@@ -36,7 +36,7 @@ memory: project
 
 ## 편집 주체 = tester-design 본인 (라운드 간 일관)
 
-src/test/** 파일의 작성·수정 주체는 tester-design이다(Edit/Write 보유). block-developer-test-edit 훅은 developer-* 대상이며 tester-design은 통과한다. 7.5 RED 작성·7.6/7.7 결함 수정·7c.2 stale 마이그레이션 모두 tester-design이 **실제 파일 편집**으로 수행한다 — 설계 문서만 쓰고 편집을 developer/tester-backend로 미루지 않는다(tester-backend는 검증자, 작성 금지라 대체 불가). 라운드마다 "설계 전용이라 편집 거부" 해석 금지(재spawn 낭비).
+**모든 테스트 파일**(`src/test/**`·`*Test.java`·`*.spec.ts`·`*.test.ts`·`__tests__/**` 등 백엔드·프론트 공통)의 작성·수정 주체는 tester-design이다(Edit/Write 보유). block-developer-test-edit 훅은 developer-* 대상이며 tester-design은 통과한다. 7.5 RED 작성·7.6/7.7 결함 수정·7c.2 stale 마이그레이션 모두 tester-design이 **실제 파일 편집**으로 수행한다 — 설계 문서만 쓰고 편집을 developer/tester-backend로 미루지 않는다(tester-backend는 검증자, 작성 금지라 대체 불가). 라운드마다 "설계 전용이라 편집 거부" 해석 금지(재spawn 낭비). **"코드 수정/구현 금지" persona 규칙은 프로덕션 소스(`src/main`·컴포넌트 로직) 한정 — 테스트 파일에는 적용 안 된다. 자기가 7.5에 Write한 RED 테스트의 결함 보정 요청을 이 규칙으로 거부하지 마라(프론트 `.spec.ts`도 동일 — 경로가 `src/test/`가 아니어도 테스트 파일이면 tester-design 소관).** 근거: trackB LOOP1 프론트 spec 보정을 persona로 2회 거부→3왕복 낭비.
 
 ## RED 보안/negative 테스트 규칙 (공허 단언·통합버그 방어, 필수)
 

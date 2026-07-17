@@ -3,6 +3,16 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.66.0 — 2026-07-18
+- **inbox 드레인 5세션 통합 — 외부API 실측 게이트 + mock↔실물 계약 + tester-design 프론트 확장 + TDD 규칙 6건 + wiki 4종 — MINOR, 거버넌스 무영향(게이트 커버리지 확대·규칙 추가). 재시작 권장.**
+  - **최대 발견 — "백엔드 경로만 박아둔 규칙이 프론트서 무력"이 재출현**: `tester-design.md`가 `src/test/**`(Java)만 명시해 프론트 `.spec.ts` 보정을 persona로 거부(3왕복). v3.60.0서 "규칙 있음"으로 reject했던 게 프론트라 무력이었음 = v3.64.0 C3와 같은 뿌리 → 모든 테스트파일 + "코드수정 금지=프로덕션 한정" 명문화.
+  - **외부 계약 검증 축 (tracker-migration: mock RED 전 게이트 통과 → 실서버 11함수 404)**: `orchestrator §0④` 트리거 명문화(신규 외부API어댑터 ≥2개 시 실측+측정대상 태깅+미검증 전제 노출 강제) + `playbook-tdd 7c.4` mock↔실 producer 계약테스트 필수(자기참조 tautological 금지).
+  - **TDD 게이트 보강**: `7.6` (A)류 컴파일에러가 (B)류 테스트결함 가림→부분컴파일 / `tester-quality §9` ⑤DB픽스처 런타임계약(`deleteById` 등)·⑥오라클 변별력(리셋제거시 FAIL 자가검증+픽스처 ≥3) / `playbook 8` GREEN 파일-disjoint 분할(243k 소진 사망 방지).
+  - **orchestrator 판단 규칙**: ADR 내부 일관성(원칙↔결정↔기각대안 모순 선확인, ADR-0009 자기모순) + 패널 번복 시 파생문서(CONTEXT/ADR) 동기화 + codex 신규 대량작성 ≥5파일 분할.
+  - **planner**: `planner-frontend`+`-high-complexity` 신규 상태·prop 소비하는 기존 컴포넌트 배선(v-model/watch/emit) 대조.
+  - **wiki 4종**: mockito-strictstubs-removal-wi / vitest-vimock-partial-throws / vue-vmodel-select-jsdom-artifact / codex-workspace-write-vitest-sandbox. index 등록, dangling 0.
+  - **reject 6**: codex Bash timeout(:638 완비=stale vendored) / finalizer add-commit 어긋남(원인 미확정, 기계강제 시기상조) / 전체회귀 부채 실효0(비차단 불변식=사용자 정당재량) / orchestrator 과신 3회·세션사망·codex r3 사망(기존방어 흡수·외부요인 YAGNI).
+
 ## 3.65.0 — 2026-07-15
 - **inbox 드레인 — 세션 판별식 오판 수정(실사고) + finalizer 규칙 3건 + wiki 2종 — MINOR, 거버넌스 무영향(판별식 정정·규칙 추가). 재시작 권장.**
   - **① 세션 판별식 오판 (핵심, 실사고 재발방지)**: `origin=harness-setup`=dev clone 판별이 **틀렸다** — 소비자 제품 repo의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같아 **dev clone으로 오판** → 2026-07-15 finalizer가 소비자 세션서 하네스 직접 커밋(295de16, `_schema` "어디로 가나" 위반) → 폐기·reset. 판별식을 **`basename $(git rev-parse --show-toplevel)` = `.claude` → 소비자**로 교체(dev clone은 repo 루트가 하네스 자체). `wiki/_schema.md`를 판별식 SSOT로 명시하고 산재 6곳(orchestrator:573·harness-check:49·harness-retro:21·README×2·`hooks/harness-inbox-nudge.sh`)이 SSOT를 가리키게 정리. 훅은 로직 실수정 + 3케이스 검증(dev clone 출력 / 중첩 `.claude` 침묵=옛 로직은 오판·출력 / 남의 repo 침묵).

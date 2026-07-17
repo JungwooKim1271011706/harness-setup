@@ -36,6 +36,10 @@
 - [[electron-builder-config-precedence]] — electron-builder read-config-file은 package.json `build` 키 있으면 electron-builder.yml 완전무시(병합 아님) → 배포계약(target/productName) 조용변경. build 설정 한 곳에만, 신규 필드 전 동종 config 존재 스캔
 - [[electron-vitest-vimock-createrequire]] — vitest `vi.mock('electron')`이 `createRequire`(러너 밖 네이티브 require) 경로 못 가로챔 → app undefined crash. mock 대신 인자화 seam(app override 파라미터)+resourcesPath 직접 스텁
 - [[write-tool-tmp-vs-bash-tmp-windows]] — Write 도구 /tmp ≠ Git Bash /tmp(Windows). Write 저장 후 bash `cat /tmp` 파이프가 빈 파일→codex 무작동(exit0). /c/ 절대경로로 통일
+- [[mockito-strictstubs-removal-wi]] — 제거 WI가 호출 라인 지우면 그 메서드 stub이 UnnecessaryStubbingException(STRICT_STUBS). 호출제거+stub제거 같은 커밋. 부재 검증은 sentinel-stub 말고 @JsonInclude 부재+null 직렬화
+- [[vitest-vimock-partial-throws]] — vitest `vi.mock` 부분대체서 factory 미반환 named export는 undefined 아닌 throw → script setup 전량 死. 모든 export를 factory에, 프로덕션 `?? fallback` 금지(테스트커플링)
+- [[vue-vmodel-select-jsdom-artifact]] — Vue v-model/select 리셋 RED에 DOM `.value` 단언 금지(jsdom `_assigning`+`wrapper.find` 정적캡처 이중 아티팩트). 리액티브 귀결로 단언+구별력 자가검증+픽스처 ≥3
+- [[codex-workspace-write-vitest-sandbox]] — codex workspace-write가 깊은 워크트리서 vitest 자기검증 전건 실패(샌드박스 상위 read 차단+PS 실행정책). 산출은 미검증 전제, 실행검증은 tester 라운드로 분리
 - [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)

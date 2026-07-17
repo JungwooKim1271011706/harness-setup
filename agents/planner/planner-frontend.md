@@ -49,6 +49,8 @@ permissionMode: plan
 1. Glob으로 해당 패키지/디렉터리 구조 전체 파악
 2. 주요 진입점(Controller/MainFrame, 인터페이스) 식별 후 호출 관계 파악
 3. 도메인 용어집(`contextPath`)으로 각 모듈 역할 정리
+
+**기존 컴포넌트 상호작용 대조 (신규 프론트 diff 필수)**: 신규 store 상태·함수·prop을 도입하면, 그것을 **소비·트리거하는 기존 컴포넌트의 배선**을 diff에 함께 명시한다 — ① **바인딩**(`v-model`이 신설 핸들러를 우회하고 값에 직접 대입하지 않나 → 명시 핸들러 필요 여부) ② **watcher**(기존 `watch(props.x)`의 리셋 조건이 신규 트리거와 충돌하지 않나) ③ **emit 계약**. 기존 컴포넌트 상호작용 미검토는 설계패널 critical 반복 원인. 근거: trackB LOOP2 신규 critical 2건 전부 배선 갭(`<ScopeToggle v-model>`이 신설 `setScope()` 우회 / `ActivityPanel watch`가 페이지 이동마다 필터 리셋해 UX 무력화).
 4. 지도가 완성된 후에 세부 파일 진입 (탐색 제한 규칙 준수)
 
 ## 출력 형식
