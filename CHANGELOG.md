@@ -3,6 +3,14 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.68.0 — 2026-07-19
+- **최고위험 게이트 claude측 슬롯 fable 상향 — fable∥codex 2소스 (사용자 결정) — MINOR, 거버넌스 무영향(게이트 구조·판정 로직·소스 수 불변, 슬롯 모델만 상향). 재시작 권장(tester-quality frontmatter).**
+  - **결정**: 이전 방향 B(claude∥codex∥fable 3소스)를 수정 — opus·fable 동계열(claude)이라 fable 제3소스 병렬은 비상관 증가 없음. 최고위험 게이트(설계패널 critical / 7.7 구조결함)의 claude측 슬롯을 fable 1순위로 상향, **fable 미가용 시 opus 폴백**(종전 기준 후퇴, 차단·재시도 없음).
+  - **`workflows/design-panel.js`**: eng·cso 렌즈 opus→fable. fable 호출 null(미가용·사망) 시 그 라운드부터 opus 폴백(`fableDown` 라치), `perPersona[].model`로 실사용 모델 표출. design/devex sonnet 불변.
+  - **`agents/tester/tester-quality.md`**: frontmatter `model: opus`→`fable`. 스폰 실패=fable 미가용 신호면 orchestrator가 `model: 'opus'` 오버라이드 1회 재스폰 + `⚠ fable 폴백(opus)` 태그.
+  - **`agents/orchestrator.md`**: §codex 형제에 fable∥codex 근거 인용구 + §패널 실행 "패널 모델" 정책 + §TDD 합의 구간 "7.7 모델" 폴백 절차. **`docs/playbook-tdd.md` 7.7 표 동기**.
+  - **불변**: orchestrator·planner×3 opus 핀, sonnet 워커 9종, 패널 인원규칙(최소3/최대4)·passEvidence·codex 폴백 체계 전부 그대로.
+
 ## 3.67.0 — 2026-07-18
 - **의사결정 요청 시 기술·백엔드 결정을 엔드유저 증상으로 번역 강제 (사용자 요청) — MINOR, 거버넌스 무영향.**
   - **`agents/orchestrator.md` §사용자 의사결정 요청 형식**: 기존 규칙이 UI 흐름·패널 severity 번역 중심이라 백엔드/기술 내부 결정(SHA 검증·DTO 필드·diff 소스·클래스/메서드명)이 **코드 심볼 덤프**로 사용자에게 그대로 제시되던 갭. "어느 사용자 시나리오에서 무슨 증상으로 겪나"로 번역 강제 + ✗/✓ 대조 예시(warnIfShaMismatch·CompareResponse.DiffEntry). 각 선택지도 시나리오 맥락(뭘 더 얻고 뭘 감수)으로. 근거: 사용자 피드백("코드 심볼만 던지면 이게 뭔지 어떻게 아냐, 엔드유저 맥락+시나리오 더해라").

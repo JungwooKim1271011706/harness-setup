@@ -117,7 +117,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 
 | 작성자 | 검증자 | 교차 원칙 |
 |--------|--------|---------|
-| codex (7.5 정상) | tester-quality(claude) 호출 | 작성자≠검증자 |
+| codex (7.5 정상) | tester-quality(claude — **fable 1순위**, 미가용 시 opus 폴백·orchestrator `## TDD 합의 구간` "7.7 모델" 참조) 호출 | 작성자≠검증자 |
 | claude (codex 폴백) | 오케스트레이터가 `codex` 스킬로 교차 판정 | 작성자≠검증자 |
 
 **rule 경로 주입 필수** (📋 0단계 확정 경로). tester-quality 호출 시 아래 컨텍스트를 전달한다:

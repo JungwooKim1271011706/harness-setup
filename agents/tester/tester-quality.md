@@ -1,7 +1,7 @@
 ---
 name: tester-quality
 description: "테스트 품질 검증 전용 서브에이전트. 작성된 테스트(케이스/RED 테스트/시나리오)가 업계 표준 기준으로 좋은지 판정만 한다. 테스트 작성·수정·실행은 하지 않는다(작성자에게 반환). TDD 합의 구간 7.5 직후 7.7 게이트에서 오케스트레이터가 호출."
-model: opus
+model: fable
 tools:
   - Read
   - Glob
