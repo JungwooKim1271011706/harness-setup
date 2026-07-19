@@ -100,6 +100,11 @@ mvn compile -f <모듈>/pom.xml
 - 신규·수정 테스트의 GREEN 근거는 **전체 실행 수치**(Tests run/Failures/Errors) 또는 `$Nested` 포함 실행으로 제시한다.
 - 배경·회피 상세: `.claude/wiki/surefire-nested-skip.md`.
 
+## 반환 계약 (컨텍스트 절감)
+- 최종 반환 = 오케스트레이터 **판정식 입력만**: 각 섹션 요점 + 파일 경로 포인터, 요약 ≤15줄(다항목이면 ≤30줄).
+- 코드·diff·로그 **전문을 반환에 붙이지 않는다** — 변경은 파일에 이미 있다(file:line 포인터로 가리킨다).
+- 요약이 판정에 부족하면 오케스트레이터가 부분 Read한다 — 부족을 예상해 미리 전문을 싣지 않는다.
+
 ## 출력 형식
 ## 구현 결과
 ### 변경 파일
@@ -109,7 +114,7 @@ mvn compile -f <모듈>/pom.xml
 ### 알려진 위험
 ### 테스터 집중 포인트
 ### 컴파일 결과
-(mvn compile 실행 결과 — BUILD SUCCESS 또는 오류 전문)
+(요지 1줄 — BUILD SUCCESS / 실패 시 첫 오류 ≤5줄 + 전체 로그는 `.claude/tmp/mvn-compile-<epoch>.log`로 리다이렉트 후 경로만)
 ### 블로커
 - 구현 중 해결 불가 문제 명시
 - planner 설계와 실제 코드 구조가 불일치하면 `블로커 유형: DESIGN_MISMATCH` 명시 후 구현 중단

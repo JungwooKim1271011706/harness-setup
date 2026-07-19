@@ -4,6 +4,7 @@ agent-memory/
 .gstack/
 .secrets/
 state/
+tmp/
 slack-webhook
 **/slack-webhook
 .obsidian/

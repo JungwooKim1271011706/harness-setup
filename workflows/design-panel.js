@@ -8,7 +8,8 @@ export const meta = {
 
 // ─────────────────────────────────────────────────────────────
 // args (orchestrator가 전달 — D2: 페르소나 선정·보안재스캔은 orchestrator 책임)
-//   planText   : planner 산출물 텍스트 (계획서 전문)
+//   planPath   : 계획서 파일 경로 (docs/features 기능 문서, repo 상대) — 우선. 페르소나가 자기 컨텍스트에서 Read(메인 무복제)
+//   planText   : planner 산출물 텍스트 (계획서 전문) — planPath 부재 시 폴백
 //   rulePaths  : ["...rules/package/tocServer/backend.md", ...]  0단계 확정 rule 경로
 //   complexity : 'normal' | 'high'
 //   personas   : [{ key, skillPath|null }]  skillPath 있으면 C(스킬 Read), null이면 임베드(cso)
@@ -18,13 +19,14 @@ let _a = args
 if (typeof _a === 'string') { try { _a = JSON.parse(_a) } catch (e) { _a = {} } }
 _a = _a ?? {}
 
+const planPath   = _a.planPath   ?? ''
 const planText   = _a.planText   ?? ''
 const rulePaths  = _a.rulePaths  ?? []
 const complexity = _a.complexity ?? 'normal'
 const personas   = _a.personas   ?? []
 
-if (!planText || personas.length === 0) {
-  return { error: 'planText 또는 personas 누락 — orchestrator args 확인', criticals: [], majors: [], minors: [], perPersona: [] }
+if ((!planPath && !planText) || personas.length === 0) {
+  return { error: 'planPath/planText 또는 personas 누락 — orchestrator args 확인', criticals: [], majors: [], minors: [], perPersona: [] }
 }
 
 const FINDINGS_SCHEMA = {
@@ -79,7 +81,7 @@ ${lensBlock}
 [준수 규칙] 다음 rule 파일을 Read하고 위반을 findings로 잡아라: ${rulePaths.join(', ') || '(없음)'}
 
 [검토 대상 계획서]
-${planText}
+${planPath ? `${planPath} 를 Read하라(전문 필독 — 안 읽고 비평 금지).` : planText}
 
 [출력] FINDINGS_SCHEMA(JSON). 규칙:
   - severity: critical(설계결함·게이트 차단감) / major(통과허용·승인화면 노출) / minor(기록만)

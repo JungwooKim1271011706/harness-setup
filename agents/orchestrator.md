@@ -338,12 +338,18 @@ rule 경로: <0단계 확정 경로>를 Read하고 준수
 ## 최소 컨텍스트 전달 규칙
 각 agent에는 아래만 전달한다.
 - 원본 요구사항
-- 직전 단계 산출물
+- 직전 단계 산출물 (**digest+경로** — 전문 필요 시 소비 에이전트가 경로를 자기 컨텍스트에서 Read)
 - 필요한 파일 경로 목록
 - 실패 시 에러 전문
 불필요한 작업 이력, 장문 회고, 중복 설명은 전달하지 않는다
 - planner의 "다음 권장 에이전트"는 참고용. 라우팅 최종 결정은 orchestrator 규칙을 따른다.
 - developer-backend / developer-frontend 호출 시, 작업 대상 모듈이 명확하면 `현재 모듈: <경로>` 컨텍스트 포함 (예: CLAUDE.md Harness Configuration의 `modules` 참조). 미확정이면 생략.
+
+## 산출 수신 계약 (컨텍스트 절감 — v3.69.0)
+서브에이전트·codex 산출은 **digest**(판정 + 산출 파일 경로 + 요약)로 받는다. 전문은 파일이 SSOT — 메인 컨텍스트에 전문을 상주시키지 않는다(반환측 강제는 각 agent md `## 반환 계약`).
+- **에스컬레이션 사다리**: ① digest만으로 판정(기본) → ② 부족하면 digest가 가리킨 file:line 주변만 부분 Read(Grep·offset/limit) → ③ 최후에 전문 Read(비용=종전과 동일 — 드물어야 정상). 선불 전문 수신 금지, 후불 선택 읽기.
+- **digest가 판정식 입력을 못 채우면 반환 계약 위반**: 누락 필드만 지목해 해당 에이전트에 1회 재요청. 반복되면 /harness-check 신호(해당 agent md 계약 보강 후보).
+- 게이트가 원문 대조를 요구하는 곳(코드대조·PASS 증거 기계검증)은 이 계약과 무관하게 기존 규칙대로 Read한다 — 절감은 "판정에 안 쓰는 전문"의 상주 제거지, 검증 생략이 아니다.
 
 ## 기능 문서 컨텍스트 전달 규칙
 
@@ -400,7 +406,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 2. 패널 멤버 선정 (최소3/최대4, 연관기반). → `personas[]` 구성.
    - 스킬 3종(eng/design/devex): `{ key, skillPath: '~/.claude/skills/gstack/plan-*-review/SKILL.md' }` (gstack 글로벌 설치 경로 — gstack/ 한 단계 아래)
    - cso: `{ key: 'cso', skillPath: null }` (null이면 워크플로가 임베드 `CSO_LENS` 사용)
-3. args 구성: `{ planText: <계획서 전문>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
+3. args 구성: `{ planPath: <계획서 파일 경로 — docs/features 기능 문서, repo 상대>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
+   - **planPath 우선** (v3.69.0 컨텍스트 절감): 페르소나가 자기 컨텍스트에서 Read — 계획 전문이 메인에 복제되지 않는다. 파일이 없을 때만 폴백으로 `planText: <계획서 전문>` 전달(워크플로가 둘 다 수용).
 
 **워크플로가 한다 (findings 생산만):**
 - 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드).
@@ -415,8 +422,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
    ① 전제가 실재하나(인용 라인이 정말 그러한가) ② 기존 코드/룰/프레임워크가 이미 막나 ③ YAGNI.
    - 코드로 전제 확인됨 → **생존 critical** (게이트 차단 대상).
    - 인용이 코드와 불일치/이미 차단/YAGNI → 기각(근거 기록).
-   - orchestrator가 직접 Read로 판정(저자보다 덜 아는 LLM 투표 금지 — verify 제거 취지).
-   - critical이 많아 직접 판정이 부담이면, 인용 라인 Read를 **강제**한 단일 서브에이전트에 위임 가능(단 "코드 안 읽으면 uncertain, refute-default 금지" 명시).
+   - 판정 주체 (v3.69.0 기본값 반전 — 컨텍스트 절감): **dedup 후 critical <3이면 orchestrator 직접 Read, ≥3이면 인용 라인 Read를 강제한 단일 서브에이전트 위임이 기본**(인용 파일 원문이 메인에 쌓이는 것 방지).
+   - 위임 프롬프트 강제: "코드 안 읽으면 uncertain, refute-default 금지" + 반환 = critical별 `{판정: 실재|불일치|이미차단|YAGNI, 근거 인용 ≤3줄(file:line)}`. **게이트 차단 확정은 orchestrator**(대조 노동의 위임이지 판정 권한 위임 아님). 투표 금지(단일 에이전트) 불변 — 직접판정 원칙의 근거는 도구 독점이 아니라 "저자보다 덜 아는 LLM 투표 금지"(verify 제거 취지)이므로, 단일 위임+Read강제는 취지를 보존한다.
 3. **생존 critical > 0** → 게이트 차단, planner 재작업 [LOOP n/3].
    **생존 critical == 0** → 사용자 승인 단계로. `majors` 승인화면 노출, `minors` 기록.
    - **재게이트(LOOP≥1) 입력 명시**: 재실행 workflow 프롬프트에 **직전 critical 목록 + 이번 rework diff**를 넣어 각 페르소나가 "① 직전 critical이 실제 해소됐나 ② 이 수정이 새 결함을 유발했나(downstream 부작용)"에 집중하게 한다. 재실행 **범위·페르소나는 그대로**(cold 전체재실행 — 게이트 완결성 유지: 1회차 수정이 무관 섹션에 부작용 낼 수 있어 스코프 축소 금지). 초점만 강화, 커버리지 불변. 근거: JAR관리 고복잡 패널 LOOP2 신규 critical 2건이 1회차 수정 유발분(finally 스코프·좌표 정규식).
@@ -444,7 +451,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 > **최고위험 게이트의 2소스 = fable∥codex** (설계패널 critical·7.7 구조결함): claude측 슬롯(패널 eng·cso, 7.7 tester-quality)은 **fable 1순위**로 상향한다. opus·fable은 동계열(claude)이라 fable을 제3소스로 병렬 추가해도 비상관 증가가 없다 — 소스 수는 2 유지, 슬롯 모델만 상향. fable 미가용 시 **opus 폴백**(종전 기준으로 후퇴, 게이트 구조·판정 로직 불변).
 
 - **호출**: 패널 Workflow 호출과 **동시에** `/codex`를 **consult 모드**로 호출해 계획서를 비평한다. review 모드 아님(아직 diff 없음), challenge 아님(코드 대상). 비대화형 표준 `codex exec "..." -s read-only < /dev/null`(§codex 호출 가드 — 기계강제는 /codex 스킬 담당, orchestrator 재지시 안 함).
-- **프롬프트 = 패널 reviewPrompt와 동형**: ① rulePaths를 "Read하고 준수" 주입(0단계 확정 경로) ② planText 전문 첨부 ③ 출력 = severity(critical 설계결함 / major 통과허용 / minor 기록) + location(plan 섹션 or file:line) + quote(동기 라인) + recommendation. **quote 못 달면 confidence 강등**(패널 규칙과 동일). 보안태그 시 cso 렌즈 중복을 피해 codex엔 아키텍처·정합·엣지케이스 렌즈를 명시(보안은 cso 페르소나가 SSOT).
+- **프롬프트 = 패널 reviewPrompt와 동형**: ① rulePaths를 "Read하고 준수" 주입(0단계 확정 경로) ② planPath 전달("계획서 파일을 Read하라" — `-s read-only` 샌드박스도 읽기는 가능. 파일 부재 시만 전문 첨부 폴백) ③ 출력 = severity(critical 설계결함 / major 통과허용 / minor 기록) + location(plan 섹션 or file:line) + quote(동기 라인) + recommendation. **quote 못 달면 confidence 강등**(패널 규칙과 동일). 보안태그 시 cso 렌즈 중복을 피해 codex엔 아키텍처·정합·엣지케이스 렌즈를 명시(보안은 cso 페르소나가 SSOT).
 - **페르소나 아님 (인원규칙 불변)**: codex는 floor=3 인원수·`passEvidence≥2`(claude 서브에이전트 lazy-PASS 가드)에 **포함되지 않는다**. 패널 구성 규칙(최소3/최대4, 연관기반)은 그대로. codex는 패널 옆 독립 cross-source다.
 - **게이트 합류 = 합집합**: codex findings는 패널 findings와 **같은** dedup+코드대조 게이트(위 "orchestrator가 한다 (워크플로 반환 후)")로 들어간다. codex critical도 근본원인별 dedup → 인용라인 Read 코드대조 → 생존 시 차단. **단독 생존 critical도 차단**(코드단계 "blocking 1건이라도 처리, 취사선택 금지"와 동일 — 한쪽 PASS가 다른 쪽 발견을 무효화하지 않는다). codex major/minor도 패널 것과 합쳐 동일 처리(major=승인화면 노출+RED 잠금, minor=기록).
 - **폴백**(§codex 호출 가드 실패 신호: `NOT_FOUND`/`AUTH_FAILED`/`stalled`/exit 124/`CODEX_TIMEOUT`): codex 죽으면 **패널(claude)만으로 게이트 진행** + 승인화면에 `⚠ 교차검증 없음(codex 미사용, 단일소스)` 태그. 자동 재시도 최대 1회 후 폴백 확정. 패널 자체는 정상이므로 게이트는 막지 않는다(코드단계 /codex review 폴백과 동형).
@@ -657,6 +664,15 @@ codex 가용성은 **orchestrator가 세션 1회 직접 probe**한 결과가 SSO
 - tester 서브에이전트는 codex 가용성을 **자기판단하지 않는다**(주어진 사실만 사용). 과거 tester가 호출형 오류("stdin is not a terminal")를 '미설치'로 오인해 독립 2번째 소스를 조용히 상실한 사건.
 - **주입 의무 + tester self-probe 제거 (재발 차단 메커니즘)**: orchestrator는 가용성(가용/불가)을 **모든 tester·review 호출 컨텍스트에 빠짐없이 주입**한다. tester의 self-probe(`codex --version`) 탈출구는 **제거**됐다 — 그 자리로 소비자 프로젝트의 오염된 per-agent 메모리("항상 폴백")가 기어들어 거짓 미가용 보고가 반복됐다(소프트 "메모리 비신뢰" 규칙이 in-context 메모리에 반복 패배). 이제 가용성은 orchestrator 단독 권한이고, 주입이 없으면 tester는 self-probe·메모리 참조 없이 `NEEDS_CONTEXT`로 돌려준다(orchestrator 누락 = 고쳐야 할 버그, paper-over 금지). 상세: `wiki/agent-memory-overrides-rule.md`.
 - **비대화형 호출 표준**: 전 codex 호출은 `codex exec "..." -s read-only < /dev/null`. `codex` 단독·stdin 미리다이렉트 금지(인터랙티브 stdin 기대 → 즉시 실패). `--json` 파이프는 이 PC python Windows Store stub로 broken pipe(`wiki/codex-python-shim-windows.md`) → 텍스트 캡처 사용.
+
+### stdout 봉쇄 (컨텍스트 절감 — v3.69.0)
+
+codex Bash 직접 호출은 stdout 전문을 메인 컨텍스트에 흘리지 않는다:
+- 표준형: `LOG=.claude/tmp/codex-<단계>-<epoch>.log; codex exec "$(cat "$PF")" -s read-only < /dev/null > "$LOG" 2>&1; EC=$?; tail -n 60 "$LOG"; echo "[codex exit $EC]"` (`.claude/tmp/`는 gitignore, 없으면 mkdir -p)
+- 프롬프트에 **"최종 출력은 `## FINDINGS` 블록(구조화 findings만, ≤60줄)으로 끝내라"**를 명시한다 — tail 60줄 추출이 기계적이게.
+- tail에 FINDINGS 블록이 안 잡히면(장문·형식 이탈) 로그 파일을 Grep·부분 Read로 회수한다. **전문 재주입 금지.**
+- 실패 신호 판정(아래 신호 목록)은 exit code + tail 60줄로 충분하다. probe(60s smoke)는 출력이 작아 리다이렉트 불요.
+- tester 보조 codex(tester 자기 컨텍스트 내 실행)도 동일 패턴 — tester 반환의 "Codex 보조 의견"엔 로그 경로 + 핵심 ≤5줄만(원문 금지, 각 tester md `## 반환 계약`).
 
 ### orchestrator 책임 (실패 신호 인식 + 폴백 — 무한 대기·맹목 재시도 금지)
 

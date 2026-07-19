@@ -185,6 +185,11 @@ Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \
 - Codex가 Claude보다 2점 이상 낮은 영역이 있으면 해당 영역에 "⚠ Codex 경고" 태그 부착
 - Codex 경고 영역은 Claude가 재검토 근거를 1줄 이상 추가 기술
 
+## 반환 계약 (컨텍스트 절감)
+- 최종 반환 = 오케스트레이터 **판정식 입력만**: 판정 + 점수표 + 에러 분류 + 실패 지점 file:line + 로그 파일 경로. 요약 ≤30줄(표 포함).
+- 빌드·테스트 로그 **전문을 반환에 붙이지 않는다** — 장문 출력은 `.claude/tmp/`에 리다이렉트하고 경로 + 핵심 수치만.
+- 요약이 판정에 부족하면 오케스트레이터가 로그를 부분 Read한다 — 부족을 예상해 미리 전문을 싣지 않는다.
+
 ## 출력 형식
 ## 프론트 검증 결과
 ### build
@@ -199,6 +204,7 @@ Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \
 ### 권고 (non-blocking minor/low)
 - (점수 차감 없는 minor/low 항목 분리 기재. 없으면 "-")
 ### 증거
+- (수치·file:line 포인터 중심. 로그 전문 금지 — 로그는 `.claude/tmp/` 파일 경로로)
 ### 재현 절차
 ### 에러 분류
 - 기능 오류 (functional): 로직/API/UI 응답이 기대와 다름 → developer 반환
@@ -207,5 +213,5 @@ Output in JSON format: {\"functional\": {\"score\": N, \"findings\": \"...\"}, \
 ### developer 전달 사항
 ### Codex 보조 의견
 - 상태: 실행됨 / 호출실패(신호 1줄 — 폴백판정은 orchestrator) / orchestrator 미가용판정 / 미주입(NEEDS_CONTEXT). **tester가 "폴백" 스스로 판정 금지.**
-- 원문: (Codex stdout 원문, 없으면 "-")
+- 산출: (stdout을 `.claude/tmp/codex-tester-<epoch>.log`로 리다이렉트 — 로그 경로 + 핵심 findings ≤5줄. **원문 전문 금지**, 없으면 "-")
 - 경고 영역: (Claude보다 2점 이상 낮은 영역, 없으면 "없음")

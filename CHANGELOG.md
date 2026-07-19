@@ -3,6 +3,15 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.69.0 — 2026-07-19
+- **컨텍스트 절감 레버 1~4 — digest 반환 계약 + codex stdout 봉쇄 + planPath 전달 + 코드대조 위임 기본값 (사용자 요청: 세션 컨텍스트 5~70% → 3~40% 목표) — MINOR, 거버넌스 무영향(게이트·판정 로직 불변, 산출 운반 방식만 파일화). 재시작 권장(agent md 전반).**
+  - **원리**: 메인 컨텍스트에 박히는 건 대화 주입 텍스트뿐, 디스크 파일은 0토큰. 전문은 파일이 SSOT, 메인은 digest(판정+경로+요약)만 수신, 부족 시 부분 Read 에스컬레이션(선불 전문 수신 → 후불 선택 읽기). 최악 케이스=현행 동일, 평균만 하락.
+  - **레버1 `## 반환 계약` 13종 agent md**: planner×3(반환=태그+문서경로+섹션요약, 전문은 docs/features만) / developer×2(컴파일 오류 전문→첫 오류 5줄+로그 경로) / tester-backend·frontend(codex stdout 원문 embed 제거→로그 경로+5줄, 증거=수치·file:line) / tester-design(케이스 본문→문서, 반환=제목·시그니처 목록) / tester-quality·runtime·reviewer×2·finalizer(전문 인용 금지 캡). + orchestrator `## 산출 수신 계약`(에스컬레이션 사다리 + digest 미달=계약 위반 1회 재요청).
+  - **레버2 orchestrator §stdout 봉쇄**: codex Bash 직접 호출 표준에 `> .claude/tmp/codex-*.log` 리다이렉트 + `## FINDINGS` 블록(≤60줄) 종결 명시 + tail 60 추출. 실패 신호 판정=exit code+tail. gitignore `tmp/` 추가. (gstack /codex 스킬 자체는 글로벌 자동생성물이라 불변경 — repo측 호출 표준으로 커버.)
+  - **레버3 planPath**: design-panel args `planPath` 우선(페르소나가 자기 컨텍스트서 Read — 계획 전문 메인 복제 제거), planText는 폴백. codex 형제 프롬프트 ②도 동일. 문법검증 통과.
+  - **레버4 코드대조 위임 기본값 반전**: dedup 후 critical ≥3 → 단일 서브에이전트 위임 기본(<3은 직접 Read). 사용자 질문 "orchestrator만 도구 보유?" 판정: **아니다** — 서브에이전트도 Read/Glob/Grep 보유(tester-quality 등), :417 직접판정 근거는 도구 독점이 아니라 "덜 아는 LLM 투표 금지"였고 :418에 위임 탈출구 기존재. 단일 에이전트+Read 강제+차단 확정은 orchestrator 유지로 취지 보존.
+  - **불변**: 게이트 구조·severity 처리·PASS 증거 기계검증·코드대조 원문 대조 의무(수신 계약 예외 명시)·codex 폴백 체계.
+
 ## 3.68.0 — 2026-07-19
 - **최고위험 게이트 claude측 슬롯 fable 상향 — fable∥codex 2소스 (사용자 결정) — MINOR, 거버넌스 무영향(게이트 구조·판정 로직·소스 수 불변, 슬롯 모델만 상향). 재시작 권장(tester-quality frontmatter).**
   - **결정**: 이전 방향 B(claude∥codex∥fable 3소스)를 수정 — opus·fable 동계열(claude)이라 fable 제3소스 병렬은 비상관 증가 없음. 최고위험 게이트(설계패널 critical / 7.7 구조결함)의 claude측 슬롯을 fable 1순위로 상향, **fable 미가용 시 opus 폴백**(종전 기준 후퇴, 차단·재시도 없음).
