@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.72.0 — 2026-07-19
+- **inbox 드레인 — grep binary 오탐 + java \u 이스케이프 함정 → wiki 2종 + test-compile 규칙 2곳 (3건 전승인) — MINOR, 거버넌스 무영향(규칙 추가·게이트 구조 불변). 재시작 권장(developer-backend).**
+  - **wiki 2종**: [[grep-binary-misdetect-touch-surface]](ripgrep이 비-UTF8 바이트 파일을 binary 오탐→무음 제외 → 시그니처 회귀범위 카운트 무음 누락, WI-C 11≠12파일) / [[java-unicode-escape-compile-trap]](javac \u 치환=렉싱 전 전처리 JLS 3.3 — 주석·문자열 무관 컴파일 에러, 3회 반복). index 등록, 상호링크.
+  - **`docs/playbook-tdd.md` 7c.2** 시그니처/위임 부류: grep 카운트=하한 + 인벤토리 후 `mvn test-compile` 봉인.
+  - **`agents/developer/developer-backend.md`** :35·:76: 셀프체크 `mvn compile`→`mvn test-compile`(main+test — compile-only 통과 후 tester FAIL LOOP 낭비 실측).
+  - reject 0. inbox 2건 → applied/. 원장 기재(+Fable draft 항목 v3.68.0 적용완료 정합 메모).
+
 ## 3.71.0 — 2026-07-19
 - **워크스루·인출 스킵 시 사유 1줄 필수 (v3.70.0 사용자 검토 반영) — MINOR, 거버넌스 무영향.** `인출: 생략(사용자 선택) — 사유: <1줄>` 형식. 사유 없으면 1회 요청, 그래도 없으면 `미제공` 기록 후 진행(비차단 유지). 파라미터(브리핑 ≤30줄·판단지점 2~3·핵심 1~2파일 10분·인출 2~5줄·WARN 비차단)는 검토 승인대로 유지.
 

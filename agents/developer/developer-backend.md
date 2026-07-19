@@ -32,7 +32,7 @@ planner-backend 결과만 구현한다.
 - **계획서 diff 준수**: planner diff가 정확한 식·시그니처(예: 특정 getter `getApiBaseUrl()`)를 지정하면 임의로 다른 식으로 바꾸지 않는다. 다르게 구현할 근거가 있으면 멈추고 보고한다 — 임의 이탈은 단위테스트가 mock으로 가리는 라이브 배선버그를 부른다(실제 baseUrl `getUrl()`↔`getApiBaseUrl()` 혼동 사고).
 - **plan SSOT > 픽스처**: RED 픽스처가 호출·캡처하는 헬퍼 시그니처(메서드 종류 `run`/`runPlain`·인자순서·플래그·URL)가 **plan과 다르면 plan을 따른다**. "RED를 GREEN으로" 목표 때문에 틀린 픽스처에 수렴하지 마라 — 멈추고 불일치를 보고(인증경로 `run`(PAT)↔`runPlain`(비인증) 혼동이 프로덕션 인증버그를 부른 PR-F2). playbook-tdd 7c.4.
 - 설정/빈/profile 변경도 planner 명시 범위 안에서만 수행
-- Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn compile`)과 단위 테스트(`mvn test`)는 허용
+- Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn test-compile` — main+test 소스. `mvn compile`은 test 소스 결함을 못 잡는다)과 단위 테스트(`mvn test`)는 허용
 - **빌드계약 변경(pom/assembly/descriptor)은 compile 자가확인으로 불충분 — GREEN 보고에 명시 플래그**: `mvn compile`은 package 단계(assembly descriptor 조립·appendAssemblyId 등)를 안 돈다. assembly·distribution descriptor·pom 빌드설정을 바꿨으면 "compile만 자가확인, package/assembly 영향 미검증 — 변경검증서 `mvn package` 1회 필요" 플래그를 GREEN 보고에 넣는다(developer는 package 금지라 직접 검증 불가 → 고지가 의무). 근거: pom assembly 2분리 변경이 compile만 통과해 잠복, /review 디스크검증이 적발(1라운드).
 - 프론트엔드 파일(CLAUDE.md Harness Configuration의 `frontendRoot` 하위) 수정 금지
 
@@ -73,8 +73,10 @@ planner-backend 결과만 구현한다.
 구현 완료 선언 전 반드시 컴파일 확인 명령어를 실행하고 결과를 출력에 포함한다:
 
 ```bash
-mvn compile -f <모듈>/pom.xml
+mvn test-compile -f <모듈>/pom.xml
 ```
+
+- `test-compile` 필수(`compile` 금지) — `mvn compile`은 main 소스만 컴파일해 test 소스 결함(시그니처 변경 파급·`\u` 이스케이프 등)을 못 잡는다. compile만 통과한 셀프체크가 tester 단계 FAIL로 LOOP 낭비된 실측([[java-unicode-escape-compile-trap]]).
 
 - **BUILD SUCCESS**: 결과를 출력에 첨부 후 완료 선언 가능
 - **BUILD FAILURE**: 컴파일 오류 수정 후 재실행. 오류 해결 전 완료 선언 금지

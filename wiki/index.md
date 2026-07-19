@@ -40,6 +40,8 @@
 - [[vitest-vimock-partial-throws]] — vitest `vi.mock` 부분대체서 factory 미반환 named export는 undefined 아닌 throw → script setup 전량 死. 모든 export를 factory에, 프로덕션 `?? fallback` 금지(테스트커플링)
 - [[vue-vmodel-select-jsdom-artifact]] — Vue v-model/select 리셋 RED에 DOM `.value` 단언 금지(jsdom `_assigning`+`wrapper.find` 정적캡처 이중 아티팩트). 리액티브 귀결로 단언+구별력 자가검증+픽스처 ≥3
 - [[codex-workspace-write-vitest-sandbox]] — codex workspace-write가 깊은 워크트리서 vitest 자기검증 전건 실패(샌드박스 상위 read 차단+PS 실행정책). 산출은 미검증 전제, 실행검증은 tester 라운드로 분리
+- [[grep-binary-misdetect-touch-surface]] — ripgrep이 비-UTF8 바이트 섞인 파일을 binary 오탐→무음 제외 → 시그니처 변경 회귀범위 grep 카운트에 무음 누락(WI-C 11≠12파일). 카운트=하한, mvn test-compile이 진실
+- [[java-unicode-escape-compile-trap]] — javac \u 치환은 렉싱 전 전처리(JLS 3.3) — 주석·문자열 어디든 \u+비hex면 컴파일 에러. mvn compile(main만)은 test 소스 못 잡음 → test-compile로 확인
 - [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)
