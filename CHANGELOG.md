@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.73.0 — 2026-07-20
+- **inbox 드레인 — WI-B 회고 3건: bg Agent 폴백 + Skill 인라인 폴백 + codex CJK 역할 제한 (전승인) — MINOR, 거버넌스 무영향(폴백·역할 제한 규칙, 게이트 구조·작성자≠검증자 불변). 재시작 권장.**
+  - **A `orchestrator.md` §병렬 위임 폴백(신설)**: `Agent(run_in_background)`가 tmux 부재로 즉시 실패하는 환경 → 재시도 없이 fg 고정, 병렬은 Bash bg ∥ Agent fg 조합. 근거: WI-B 7a bg 실패 + review 조합 우회 성공.
+  - **B `code-reviewer.md`**: `Skill(code-review)`가 disable-model-invocation로 거부되면 루브릭 인라인 수행 폴백 + "폴백 사유" 기재(실측: 수동 폴백으로 동일 루브릭 완수됨 — 명문화).
+  - **C `orchestrator.md` §CJK 소스 프로젝트 제약(신설) + wiki [[codex-cjk-mojibake]]**: codex가 CJK 소스·문서 전반 mojibake 독해([[codex-review-mojibake-line-merge]] 라인병합 오독과 별개 모드) → 파일쓰기(7.5)·문서독해 배제, 비평/consult만. 7.5=tester-design 폴백+`⚠ 단일 소스` 태그(기존 폴백 체계 재사용), review/consult에 "주석 독해 의존 금지" 주입. index 등록·상호링크.
+  - 관찰만 2건(세션한도·정상 LOOP) reject 없음 YAGNI. inbox 1건 → applied/.
+
 ## 3.72.0 — 2026-07-19
 - **inbox 드레인 — grep binary 오탐 + java \u 이스케이프 함정 → wiki 2종 + test-compile 규칙 2곳 (3건 전승인) — MINOR, 거버넌스 무영향(규칙 추가·게이트 구조 불변). 재시작 권장(developer-backend).**
   - **wiki 2종**: [[grep-binary-misdetect-touch-surface]](ripgrep이 비-UTF8 바이트 파일을 binary 오탐→무음 제외 → 시그니처 회귀범위 카운트 무음 누락, WI-C 11≠12파일) / [[java-unicode-escape-compile-trap]](javac \u 치환=렉싱 전 전처리 JLS 3.3 — 주석·문자열 무관 컴파일 에러, 3회 반복). index 등록, 상호링크.

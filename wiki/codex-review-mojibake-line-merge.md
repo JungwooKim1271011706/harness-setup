@@ -1,7 +1,7 @@
 ---
 title: codex 리뷰가 한글(cp949)/혼합인코딩 파일서 인접 라인 병합 오독 → 거짓 P1
 type: gotcha
-links: [[codex-python-shim-windows]], [[jq-korean-encoding]], [[powershell-set-content-utf8-bom]]
+links: [[codex-python-shim-windows]], [[jq-korean-encoding]], [[powershell-set-content-utf8-bom]], [[codex-cjk-mojibake]]
 sources:
   - inbox 20260703T022325Z / repostitch cross-branch 세션 B1 재리뷰
 updated: 2026-07-03
