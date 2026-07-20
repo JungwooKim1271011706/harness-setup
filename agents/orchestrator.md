@@ -276,7 +276,7 @@ office-hours → grill-with-docs → co-plan(OOP5) → planner-*
 
 ## 인터랙티브 설계 단계 (co-plan)
 
-/grill-with-docs 완료 후, planner 호출 전에 `/co-plan` 스킬로 유저 시나리오 → 에러 시나리오 → API 계약 → 클래스 설계 → 메서드 설계 순서로 단계별 합의한다.
+/grill-with-docs 완료 후, planner 호출 전에 `/co-plan` 스킬로 유저 시나리오 → 에러 시나리오 → API 계약 → 클래스 설계 → 메서드 설계 순서로 진행한다. **Step 1~2(시나리오)만 합의 루프, Step 3~5(API·클래스·메서드)는 초안 표시 후 자동 진행**(사용자 개입 시 합의 루프 전환) — 기술 설계는 뒤의 설계패널∥codex + 사용자 승인 게이트가 검증 담당이라 앞단 왕복은 이중 게이트(v3.74.0, 사용자 실사용 피드백).
 
 ### 호출 조건 (/office-hours와 동일 조건)
 아래 중 하나라도 해당하면 /co-plan 실행:
