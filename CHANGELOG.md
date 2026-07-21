@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.75.0 — 2026-07-20
+- **inbox 드레인 — WI-C 인라인 L1 회고: 휴대분만 추출(A·B applied, wiki route·C reject) — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **A `tester-design.md` R17**: 파일/산출물 존재검증 픽스처 = 실 프로덕션 경로 규칙 배치 + **anti-naive 케이스**("배포경로 부재+소스경로 존재→FAIL") 쌍. 픽스처가 naive 구현과 동형 오해 공유하면 false-GREEN(mock↔실물 계약 계열의 파일시스템 축, R13 연장).
+  - **B `orchestrator.md` 0단계 ④**: 트리거 예시에 경로변환/배포 레이아웃 규칙 추가 + WI-C 근거(전 게이트 GREEN, 라이브만 발각 — 게이트는 내부정합만 본다는 존재이유 재확인).
+  - **reject**: wiki 페이지 통째 이식(ArtifactVerifier·getDeployPath 등 앱 특정 오염 — 프로젝트 로컬 feature doc에 기존재) / C planner 접점계약 계산법 명세(1건뿐 + B가 앞단 커버, YAGNI — 사용자 확정).
+  - inbox 1건 → applied/ (부분 적용 기재).
+
 ## 3.74.0 — 2026-07-20
 - **co-plan Step 3~5 자동 진행 전환 (사용자 실사용 피드백) — MINOR, 거버넌스 무영향(사용자 승인 게이트·설계패널 불변). 재시작 권장.**
   - **근거**: Step 1~2(유저·에러 시나리오)=사용자가 SSOT인 도메인 지식 → 합의 루프 정당. Step 3~5(API·클래스·메서드)=기술 실현 → 뒤에 planner→설계패널∥codex→사용자 승인이 검증하는데 앞단 왕복은 **이중 게이트**(실사용서 형식적 "ㅇㅇ"만 반복). v3.70.0 프레임("사용자 역할=무엇을·승인·인출, 기계=어떻게+게이트")의 연장.
