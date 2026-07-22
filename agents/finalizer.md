@@ -113,7 +113,7 @@ memory: project
    - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/grill-with-docs`.
    - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(planner 3종 + orchestrator가 grill 포맷을 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
 3. **VERSION bump**: `.claude/VERSION` 첫 줄 X.Y.Z를 레벨에 맞게 증가.
-4. **CHANGELOG 갱신**: `.claude/CHANGELOG.md` 최상단에 `## X.Y.Z — YYYY-MM-DD` + 변경 요약 1~3줄 추가.
+4. **CHANGELOG 갱신**: `.claude/CHANGELOG.md`를 **Read(limit: 20)로 상단만** 읽고 최상단에 `## X.Y.Z — YYYY-MM-DD` + 변경 요약 1~3줄을 prepend(Edit)한다. 전문 Read 금지(prepend 앵커는 상단 몇 줄로 충분 — 파일 전체 수만 토큰).
 5. **한 커밋**: 하네스 변경분 + VERSION + CHANGELOG + (non-critical) 스킬 미러 갱신을 한 커밋으로. push는 기존 규칙(사내 products main 직접 push 금지 등).
 
 ### 불변식

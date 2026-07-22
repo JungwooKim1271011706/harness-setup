@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.77.1 — 2026-07-22
+- **토큰 다이어트 2종 — PATCH(행동 규칙 무변경, 주석·중복 Read 제거)**
+  - **finalizer CHANGELOG Read(limit: 20)**: bump 의식 4단계에 상단만 Read 명시 — 종전 매 커밋 전문 Read(~34k 토큰)가 prepend 앵커 10줄 얻자고 낭비되던 것 차단.
+  - **orchestrator.md ③유형 출처주석 제거 (−3.8KB)**: `근거: <사건>` 서사 22건 + 버전·백로그 꼬리표 12건 + 절충 축약 2건(scriptPath 이유, 투표금지 방어논리). 분류 기준: 행동 규칙(①)·범위 한정 근거(②)·wiki `[[링크]]`는 전부 보존, 사건 이력은 git blame/CHANGELOG가 아카이브. 서브에이전트 md는 실측상 출처주석 1~4%뿐이라 제외(무손실 절감 없음).
+
 ## 3.77.0 — 2026-07-22
 - **사람 E2E 점검 스킬화 — `/human-e2e` render/record 2모드 신설 (사용자 공동설계) — MINOR, 거버넌스 무영향(비차단 불변식 유지, finalizer 렌더 시점 불변). 재시작 권장(스킬 등록·finalizer).**
   - **`skills/human-e2e/SKILL.md` 신설 (필드 SSOT)**: A 헤더(기능/워크트리·브랜치/변경 표면/소요/필요 환경/자동 커버) + B 시나리오 행(#/무엇을/기대 결과/실패 힌트/**판정 PASS·FAIL·SKIP**/**관찰값**(신설 — FAIL 재현 보고 재료)) + C 결과 기록(수행일·수행자/항목별 판정/총평/**실패 후속 = FAIL 3분기 라우팅 제안**). 컬럼 폭 상한+각주 규칙(터미널 잘림 방지). record 입력=자유 서술 → 스킬이 정규화, verbatim 존중·임의 PASS 금지·SKIP≠FAIL 구별. 기록처 = feature 문서 `## 수동 E2E 검증` 스탬프(커밋 후 아무 세션 가능 — 디스크 SSOT).
