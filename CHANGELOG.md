@@ -3,6 +3,16 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.76.0 — 2026-07-22
+- **inbox 드레인 2파일 6건 전승인 — 렌더 RED geometry(R18) + design-reviewer 렌더 확대 + 타입 freeze + codex 거짓critical ground-truth + PR전용 폴백 + greenfield DDL — MINOR, 거버넌스 무영향(게이트 위치·순서 불변). 재시작 권장.**
+  - **#1 `tester-design.md` R18**: 렌더 중심 기능 RED에 stub class/attr 단언만 금지 — jsdom 속성으로 시각 불변식 잠금(실 요소 구조·geometry(viewBox⊇최대좌표)·**멀티레인/경계 케이스**·DOM 순서잠금(1-C 통합)). RG-SVG-5 실증(완전 E2E 불요). 같은 프로젝트 3회 재발(차트 false PASS→스타일 유예 blocking 6→lane 클리핑). orchestrator 실측 백스톱의 RED측 짝.
+  - **#2 `orchestrator.md` :508·라우팅표·트랙라인 + `routing-map.md`**: design-reviewer 발동조건 확대 — 목업 게이트 발동 **또는 렌더 중심 기능**. ⚠ 위치 조기화(/review 병렬)는 **기각**(게이트 순서 변경=MAJOR + R18이 앞단 차단 — 재발 시 재론).
+  - **#3 `orchestrator.md` :36**: 신규 공유 타입/DTO 2저자 병렬 저작 전 **필드명+스텁 형태 freeze 주입**(fromRef/fromSha divergence·고아 케이스).
+  - **#4 `orchestrator.md` §CJK 제약 + `wiki/codex-cjk-mojibake.md` 확장(새 페이지 아님 — 같은 결함클래스 통합) + `playbook-tdd.md` :128**: codex "구문오류/미종료 리터럴/주석처리" 계열 critical = CJK 인코딩 거짓양성 클래스(quote mojibake=신호) → Read 코드대조 애매 시 **`od -c` + vitest/mvn 재파싱 ground-truth**. 프롬프트에 "원본 UTF-8 Read, git diff/Get-Content 금지" 주입. 근거: 7.7 critical 4건 전건 거짓양성·재검증 1라운드.
+  - **#5 `code-reviewer.md`**: `/code-review` 스킬 = GitHub-PR 전용(gh pr diff) — 비-PR 로컬 워크트리면 시도 없이 즉시 인라인 폴백(매번 재발견 제거, v3.73.0 B 확장).
+  - **#6 `playbook-tdd.md` 7.6 greenfield**: 엔티티 @Column 추가 시 stub 단계에 DDL 포함(ddl-auto=validate context 로드 전제 — "잘못된 이유" FAIL 1왕복 차단).
+  - 관찰 9건 조치 없음(기규칙화·가드 정상작동·1회성·외부요인). inbox 2건 → applied/.
+
 ## 3.75.0 — 2026-07-20
 - **inbox 드레인 — WI-C 인라인 L1 회고: 휴대분만 추출(A·B applied, wiki route·C reject) — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **A `tester-design.md` R17**: 파일/산출물 존재검증 픽스처 = 실 프로덕션 경로 규칙 배치 + **anti-naive 케이스**("배포경로 부재+소스경로 존재→FAIL") 쌍. 픽스처가 naive 구현과 동형 오해 공유하면 false-GREEN(mock↔실물 계약 계열의 파일시스템 축, R13 연장).

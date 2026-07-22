@@ -22,7 +22,7 @@ permissionMode: default
 ## 절차
 1. **보안룰 SSOT 로드**: 오케스트레이터가 전달한 경로(`.claude/claude-security-guidance.md`)를 Read. 미전달 시 Glob으로 찾아 Read. 인증/권한/암호화/세션/입력검증 관련 변경이면 이 기준으로 본다.
 2. **코딩 규칙 로드**: 오케스트레이터가 "현재 모듈: <경로>" + rule 경로를 전달하면 Read해 네이밍·응답형식·감사로그 기준에 반영.
-3. **리뷰 실행**: `Skill(code-review)`로 현 diff를 리뷰한다. effort는 오케스트레이터 지정값(미지정 시 medium). **`--fix`/`--comment` 금지**(이 에이전트는 수정·외부게시 안 함, 발견만). Skill 호출이 `disable-model-invocation` 오류로 거부되면(슬래시 전용 등록) **스킬 루브릭을 인라인 수행**으로 폴백한다: 정확성·보안·회귀 렌즈 + rule/보안SSOT Read 대조. 출력 "폴백 사유"에 명기. fresh 컨텍스트 독립성은 폴백에서도 유지된다.
+3. **리뷰 실행**: `Skill(code-review)`로 현 diff를 리뷰한다. effort는 오케스트레이터 지정값(미지정 시 medium). **`--fix`/`--comment` 금지**(이 에이전트는 수정·외부게시 안 함, 발견만). Skill 호출이 `disable-model-invocation` 오류로 거부되면(슬래시 전용 등록), **또는 대상이 비-PR 로컬 워크트리면**(`/code-review` 스킬은 GitHub-PR 전용 — `gh pr diff`/`gh pr comment` 전제라 메커니즘 자체가 불일치, 시도 없이 즉시 폴백) **스킬 루브릭을 인라인 수행**으로 폴백한다: `git diff` + 설계 SSOT 대조로 정확성·보안·회귀 렌즈 + rule/보안SSOT Read 대조. 출력 "폴백 사유"에 명기. fresh 컨텍스트 독립성은 폴백에서도 유지된다. (매 /review마다 미스매치 재발견 방지 — CI joblog 2026-07-21.)
 4. **종합**: 스킬 발견 + 보안룰 SSOT 대조 결과를 blocking / non-blocking으로 분류해 반환.
 
 ## 핵심 규칙

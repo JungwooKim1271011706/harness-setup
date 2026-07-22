@@ -68,7 +68,7 @@
       ▼
  tester-backend ∥ tester-frontend
       │
-      ├── PASS → [design-reviewer: 목업 게이트 발동 시만, report-only→developer]
+      ├── PASS → [design-reviewer: 목업 게이트 발동 또는 렌더 중심 기능, report-only→developer]
       │               │
       │    /verify-implementation (verify-* 등록 시)
       │               │

@@ -103,7 +103,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
   - 통과 → 7.7 진행.
   - 불통과 → **작성자(codex/tester-design)에게 반환해 재작성** [LOOP n/3, 7.7과 루프 카운트 공유]. 컴파일/셋업 결함 종류를 명시해 반환.
 - codex 미가용 폴백(claude 단일 소스)이어도 7.6은 동일 수행(오히려 단일 소스라 더 필요).
-- **greenfield(신설 클래스 — prod 미존재) 처리**: 신설 클래스는 prod stub이 없어 RED가 GREEN 전 컴파일 불가 → 7.6 선검증이 구조적으로 막힌다. 이때 **developer가 GREEN 전 최소 prod stub(public 시그니처만, 미구현)을 먼저 생성**한다(2단계: stub → 7.6 → GREEN).
+- **greenfield(신설 클래스 — prod 미존재) 처리**: 신설 클래스는 prod stub이 없어 RED가 GREEN 전 컴파일 불가 → 7.6 선검증이 구조적으로 막힌다. 이때 **developer가 GREEN 전 최소 prod stub(public 시그니처만, 미구현)을 먼저 생성**한다(2단계: stub → 7.6 → GREEN). ⚠ **엔티티 @Column 추가(스키마 변경)가 있으면 stub 단계에 DDL(신규설치 스키마 + 증분 마이그레이션)도 함께 반영** — `ddl-auto=validate` 환경서 @SpringBootTest RED가 context 로드하려면 컬럼 선존 필요(stub=시그니처+DDL). 미반영 시 `Schema-validation: missing column`으로 "잘못된 이유" FAIL 1왕복. 근거: CI joblog 세션 7.6 백엔드 DDL 갭(2026-07-21).
   - stub은 **benign 기본값 반환**(null/빈 컬렉션/false 등). `UnsupportedOperationException`·throw 금지 — 그건 7.6 ②의 "잘못된 이유 FAIL"이 된다. RED가 stub의 benign 반환에 대해 **단언 실패(올바른 이유)**로 FAIL해야 7.6 통과.
   - 경계 유지: stub=prod라 developer 소유(작성자≠구현자 불변 — 테스트는 여전히 codex/tester-design). developer는 7.6 통과용 시그니처만 만들고 실제 로직은 8(GREEN)에서 채운다.
   - 7c 합의서 freeze된 public 시그니처를 그대로 stub에 쓴다(추측 금지). prod가 일부 존재하면 그 시그니처를 Grep해 정합(시그니처 불일치 컴파일에러 사전차단).
@@ -125,7 +125,7 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - 7.5 RED 테스트 코드 파일 경로
 - 승인된 설계 문서 경로
 - rule 경로
-- **codex 교차판정 경로(claude 폴백분)일 때**: "trailing `// 설명` 주석(예 `// RED: 미구현`)과 주석처리된 실행라인을 혼동 말 것 — '주석처리되어 실행 안 됨' 주장 시 그 라인을 정확히 인용하고 그 라인이 `//`로 시작하는지 확인하라" 경고 주입. 근거: codex가 설명주석 많은 RED 파일에서 인접 live 단언을 'commented out'으로 오인해 거짓 critical 양산(repostitch 2026-06-30, 코드대조로 전부 기각됐으나 호출·검증 비용). 게이트(코드대조)가 2차로 잡으므로 안전망은 유지.
+- **codex 교차판정 경로(claude 폴백분)일 때**: "trailing `// 설명` 주석(예 `// RED: 미구현`)과 주석처리된 실행라인을 혼동 말 것 — '주석처리되어 실행 안 됨' 주장 시 그 라인을 정확히 인용하고 그 라인이 `//`로 시작하는지 확인하라" 경고 주입. ⚠ **CJK 파일에서 codex의 "구문오류/미종료 리터럴/주석처리" 계열 critical은 인코딩 거짓양성 클래스** — Read 코드대조로 판정 애매(렌더 아티팩트 충돌)하면 `od -c` 바이트검사 + vitest/mvn 재파싱을 ground-truth로 판정(orchestrator `### CJK 소스 프로젝트 제약` 참조). 근거: codex가 설명주석 많은 RED 파일에서 인접 live 단언을 'commented out'으로 오인해 거짓 critical 양산(repostitch 2026-06-30, 코드대조로 전부 기각됐으나 호출·검증 비용). 게이트(코드대조)가 2차로 잡으므로 안전망은 유지.
 
 **게이트 처리**:
 - critical 0건 + 근거 명시 → 통과 → 8 진행
