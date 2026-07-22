@@ -3,6 +3,12 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.77.0 — 2026-07-22
+- **사람 E2E 점검 스킬화 — `/human-e2e` render/record 2모드 신설 (사용자 공동설계) — MINOR, 거버넌스 무영향(비차단 불변식 유지, finalizer 렌더 시점 불변). 재시작 권장(스킬 등록·finalizer).**
+  - **`skills/human-e2e/SKILL.md` 신설 (필드 SSOT)**: A 헤더(기능/워크트리·브랜치/변경 표면/소요/필요 환경/자동 커버) + B 시나리오 행(#/무엇을/기대 결과/실패 힌트/**판정 PASS·FAIL·SKIP**/**관찰값**(신설 — FAIL 재현 보고 재료)) + C 결과 기록(수행일·수행자/항목별 판정/총평/**실패 후속 = FAIL 3분기 라우팅 제안**). 컬럼 폭 상한+각주 규칙(터미널 잘림 방지). record 입력=자유 서술 → 스킬이 정규화, verbatim 존중·임의 PASS 금지·SKIP≠FAIL 구별. 기록처 = feature 문서 `## 수동 E2E 검증` 스탬프(커밋 후 아무 세션 가능 — 디스크 SSOT).
+  - **`agents/finalizer.md`**: 내장 출력 블록 제거 → 스킬 템플릿 **Read 위임**(서브에이전트 Skill 호출 불가 — reference 패턴, 중복 서술 금지로 drift 방지). 수집 절차·redact 가드·비차단은 finalizer 절 SSOT 유지, 렌더까지만 담당.
+  - **갭 해소**: 종전엔 ☐ 렌더로 끝 — 수행 결과가 어디에도 안 남았음. record 모드가 결과 환류(스탬프+3분기 라우팅 제안) 신설. `skills/versions.md` repo SSOT 목록 등록.
+
 ## 3.76.0 — 2026-07-22
 - **inbox 드레인 2파일 6건 전승인 — 렌더 RED geometry(R18) + design-reviewer 렌더 확대 + 타입 freeze + codex 거짓critical ground-truth + PR전용 폴백 + greenfield DDL — MINOR, 거버넌스 무영향(게이트 위치·순서 불변). 재시작 권장.**
   - **#1 `tester-design.md` R18**: 렌더 중심 기능 RED에 stub class/attr 단언만 금지 — jsdom 속성으로 시각 불변식 잠금(실 요소 구조·geometry(viewBox⊇최대좌표)·**멀티레인/경계 케이스**·DOM 순서잠금(1-C 통합)). RG-SVG-5 실증(완전 E2E 불요). 같은 프로젝트 3회 재발(차트 false PASS→스타일 유예 blocking 6→lane 클리핑). orchestrator 실측 백스톱의 RED측 짝.

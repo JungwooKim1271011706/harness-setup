@@ -27,7 +27,7 @@
 | `co-plan` | planner 호출 전 인터랙티브 계획. orchestrator 참조. (v3.0.0 직접 수정) |
 | `pair-impl` | developer 호출 전 페어 구현. orchestrator 참조. |
 | `learning-gate` | orchestrator 하드코딩 트리거 `"학습 게이트 완료. 계속 진행해."` 의존. |
-| 그 외 | claude-notify·harness-setup·harness-retro·harness-check·manage-skills·merge-worktree·rule-maker·verify-implementation — repo SSOT. |
+| 그 외 | claude-notify·harness-setup·harness-retro·harness-check·human-e2e·manage-skills·merge-worktree·rule-maker·verify-implementation — repo SSOT. |
 
 > `harness-retro`(v2.4.0~): 회고→하네스 규칙화 진입점. orchestrator `## 하네스 회고 반영` 참조.
 > `harness-check`(v3.1.0~): 운영 고통 자가 탐지 → 개선 후보 → `/harness-retro` 위임. orchestrator `## 하네스 운영 자가 회고` 참조.
