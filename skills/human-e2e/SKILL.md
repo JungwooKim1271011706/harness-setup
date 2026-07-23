@@ -65,4 +65,5 @@ argument-hint: "[render | record <결과 자유서술>]"
 
 ## finalizer 연동
 - finalizer는 커밋 직전 이 파일의 **출력 템플릿·필드 스키마를 Read해 렌더**한다(Skill 도구 없음 — reference Read 패턴). 수집 절차·redact 가드·비차단 불변식은 finalizer 절이 SSOT.
+- **finalizer는 render만 — 결과 창작 금지.** record(판정·관찰값 기입)는 실제 수행자 입력이 있을 때만 채운다. finalizer가 판정을 PASS로 미리 채우거나 tester 자동검증을 "사용자 수행 결과"로 흡수하지 않는다(무결성 — durable 문서 날조 차단). 상세: `finalizer.md ## 사람 E2E 점검 안내` 불변식.
 - record는 커밋 후 아무 세션에서나 가능 — feature 문서가 디스크 SSOT라 세션 무관.

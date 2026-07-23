@@ -32,6 +32,7 @@ planner-frontend 결과만 구현한다.
 - **승인된 디자인 목업이 전달되면 그것을 시각 스펙으로 삼아 구현한다.** 단 목업은 standalone HTML(Pretext, JSP 아님) → 목업 마크업을 복붙·커밋하지 않고 프로젝트 JSP/taglib(`c:`/`fmt:`/`spring:`/`cr:`)·CSS 규칙으로 **변환** 구현한다.
 - 빌드/실행 금지
 - 백엔드 파일(CLAUDE.md Harness Configuration의 `backendRoot` 하위) 수정 금지
+- **신규 sticky/오버레이(고정 헤더·드롭다운·모달 등) 도입 시 기존 오버레이 z-index 인벤토리를 먼저 대조**한다(새 레이어가 기존 툴팁/거터 위·아래 어디 끼는지 grep 확인) — 미대조 시 기존 오버레이를 가려 정보 손실.
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일

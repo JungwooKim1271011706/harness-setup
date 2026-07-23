@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.78.0 — 2026-07-23
+- **inbox 드레인 (DEVUNIT-authpatch 회고 3파일) → 4 항목 — MINOR, 거버넌스 무영향(차단훅·게이트구조 변경 0). 재시작 권장.**
+  - **렌더 레이어링 실측 축 (geometry와 별개)**: tester-frontend에 "z-index 겹침·sticky·스크롤 오버레이 가림은 painted/크기로 안 잡힘 → 스크롤+hover 레이어 노출까지 실측" 1줄 + developer-frontend "신규 sticky/오버레이 시 기존 z-index 인벤토리 대조" 1줄. (orchestrator 위임 주입 추가는 tester md 자동로드 중복이라 reject.)
+  - **기존 컴포넌트 확장 시 현재 계약 실측 (rule④ 확장)**: 확장 대상 현재 능력(prop·메커니즘·소비자)을 사용자에게 설계옵션·비용표 제시 전 Read/Grep 1회 실측. 미검증 전제 비용표는 사용자 오도(BaseModal resizable 이미 존재/8소비자 미검증→재결정 사이클).
+  - **finalizer amend 안전 게이트 신설**: amend 전 `git branch --contains` — 다른 로컬 브랜치(main) 포함 시 amend 금지·별도 커밋 폴백. 허용 조건 "미push"→"미push AND 다른 로컬 브랜치 미병합"(로컬 main 병합 커밋 amend→분기→머지 충돌 차단).
+  - **finalizer 사람 E2E 렌더 날조 차단**: 불변식 3항(render=빈 점검표·PASS 미리채움 금지 / 수행주체 분리 tester자동↔사용자 / 미수행 명시) + human-e2e SKILL 연동절 "finalizer는 render만, 결과 창작 금지" 1줄. durable 문서에 "사용자 확인함" 날조 = 미래 오진 씨앗 차단.
+
 ## 3.77.1 — 2026-07-22
 - **토큰 다이어트 2종 — PATCH(행동 규칙 무변경, 주석·중복 Read 제거)**
   - **finalizer CHANGELOG Read(limit: 20)**: bump 의식 4단계에 상단만 Read 명시 — 종전 매 커밋 전문 Read(~34k 토큰)가 prepend 앵커 10줄 얻자고 낭비되던 것 차단.

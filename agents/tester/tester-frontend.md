@@ -28,6 +28,7 @@ memory: project
 - 변경 라우트/페이지 실제 진입 확인
 - 브라우저 자동화 가능 시 우선 사용
 - **렌더 영향 변경은 실브라우저 렌더 실측 없이 PASS 금지.** 변경이 화면 출력에 영향(차트/캔버스/신규 화면·컴포넌트/레이아웃/조건부 렌더)이면 vue-tsc exit0 + 유닛 PASS만으로 종결 금지 — `$B`로 **대상 요소가 실제 painted 됐는지** 확인해야 PASS(canvas면 client 크기가 컨테이너로 리사이즈됐는지/비-0, 요소 visible + 비-0 크기). 정적·유닛은 "차트가 보인다"를 보장 못 함(`new Chart()`가 mount 타이밍에 bail해도 타입체크·컴포넌트 테스트는 통과 → [[vue-immediate-watch-template-ref]]). 디스크 수정이 화면에 반영 안 되면 서빙 stale 의심 → [[vite-stale-served-source-windows]]로 서빙 소스 확인 후 재시작.
+- **레이어링/스택/스크롤 상호작용은 geometry 실측과 별개 축.** z-index 겹침·sticky 헤더·스크롤 시 오버레이(툴팁/드롭다운/거터)가 가려지는 건 위 룰의 painted 여부·크기로 안 잡힌다 — jsdom도 스택 컨텍스트·scoped computed 미지원이라 커버 난망. 신규 sticky/오버레이·z-index 변경이면 `$B`로 **스크롤+hover 상태의 레이어 노출**(가려지는 요소 없는지)까지 실측해야 PASS. geometry만 보고 z-order 사각을 놓치면 유닛 GREEN 통과 후 실브라우저 backstop서만 발각(누적 재발).
 - **렌더 미검증을 PASS로 위장 금지 (false PASS 금지).** 인증 게이트(OAuth 등)·환경 제약으로 실브라우저 렌더를 못 봤으면 "정적만 검증, 런타임 미검증"을 PASS가 아니라 **ESCALATION**으로 명시하고 orchestrator에 실측 위임한다("부분확인(데이터의존)" 같은 약한 표기로 PASS 처리 금지). 근거: bugfix-autopatch-dashboard — 첫 검증이 vue-tsc exit0 + vitest 12 PASS로 PASS 줬으나 차트 실제 미렌더 → 사용자 재보고 + 수동 브라우저 조사 1라운드 낭비(`wiki` 위 2개 gotcha).
 - 수정 필요 시 developer-frontend로 반환
 - 근거 부족 시 "미확정"
