@@ -3,6 +3,11 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.79.0 — 2026-07-24
+- **inbox 드레인 (approx-hint flex-fill 세션 회고) → 2 항목 — MINOR, 거버넌스 무영향. 재시작 권장.**
+  - **§0④ 렌더·레이아웃 전제는 소스 Read가 검증이 아니다**: percentage height 해결·flex 사이징·스크롤 주체·stacking·sticky pin에 의존하는 전제는 스타일시트 Read로 확정 금지 → 브라우저 실측 1회 또는 `⚠ 미검증 전제` 태깅으로만 진입. 사후 렌더 실측 강제와 사전 전제검증의 비대칭 해소. + **전제 주입 시 검증수단 라벨**(`전제(검증수단: 브라우저 실측|소스 Read|미검증)`) — Read/미검증 라벨이면 서브에이전트가 의심 대상으로 삼고, "재발견 불요" 봉인 금지. 근거: max-height만 있는 조상 아래 percentage-height를 CSS Read로 "확정" 오판 → 구현+검증 1라운드(226k 토큰) + 사용자 에스컬레이션 낭비.
+  - **decision-log 실패 폴백**: `gstack-decision-log` 실패·미설치 시 feature 문서 결정 기록 절에 남긴다(조용한 스킵 금지 — 승인 반전이 가장 durable해야 할 기록인데 유실됐음).
+
 ## 3.78.0 — 2026-07-23
 - **inbox 드레인 (DEVUNIT-authpatch 회고 3파일) → 4 항목 — MINOR, 거버넌스 무영향(차단훅·게이트구조 변경 0). 재시작 권장.**
   - **렌더 레이어링 실측 축 (geometry와 별개)**: tester-frontend에 "z-index 겹침·sticky·스크롤 오버레이 가림은 painted/크기로 안 잡힘 → 스크롤+hover 레이어 노출까지 실측" 1줄 + developer-frontend "신규 sticky/오버레이 시 기존 z-index 인벤토리 대조" 1줄. (orchestrator 위임 주입 추가는 tester md 자동로드 중복이라 reject.)
