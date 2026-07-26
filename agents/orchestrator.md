@@ -408,7 +408,7 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 패널은 `Workflow({ scriptPath: '.claude/workflows/design-panel.js', args })`로 실행한다(경로는 프로젝트 루트 기준 상대경로 — 머신·프로젝트 독립). orchestrator 책임과 워크플로 책임을 분리한다(가드레일: research preview라 게이트 단독판정 금지).
 > **scriptPath 고정**(세션 캐시본 풋건 회피 — 항상 디스크 최신). args는 JSON 문자열로 전달되며 스크립트가 방어적 파싱한다.
-> **패널 모델**: eng·cso = **fable 1순위**(최고위험 게이트 claude측 슬롯 — `### codex 형제`의 fable∥codex 참조), design/devex = sonnet. fable 미가용·사망 시 워크플로가 opus로 자동 폴백하고 `perPersona[].model`에 `opus(fable 폴백)`로 표출 — orchestrator는 승인화면에 `⚠ fable 폴백(opus)` 정보 태그만 단다(게이트 유효성 불변 — opus=종전 기준, codex 폴백과 달리 차단·재시도 없음).
+> **패널 모델**: eng·cso = **fable 1순위**(최고위험 게이트 claude측 슬롯 — `### codex 형제`의 fable∥codex 참조), design/devex = sonnet. **fable 미가용은 실패가 아니라 무음 강등이다** — 워크플로는 이를 감지 못 하고 `perPersona[].model`도 요청값(`fable(요청·미검증)`)만 보고한다. 실제 실행 모델 확인·폴백 판정은 **orchestrator의 사후 실측**이 단독 책임이다(아래 [모델 실측](#모델-실측-게이트-산출-수령-직후-필수)). 실측 결과 강등이면 `topModel:'opus'`를 args에 명시 주입해 **재실행**한다(자동 폴백 아님 — 그런 건 없다).
 
 **orchestrator가 한다 (워크플로 호출 전):**
 1. 변경영역 태그 판정 + 0단계 ② 보안 키워드 재스캔(아래 인용구 규칙).
@@ -455,13 +455,38 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 설계패널(claude 페르소나)과 **나란히** codex를 1회 호출해 cross-model 비상관 소스를 1개 더 둔다. 코드단계 `/review ∥ /codex review`의 설계단계 대칭 — 구현은 교차검증하면서 설계는 안 하던 비대칭을 메운다(CONTEXT.md "반복≠신뢰": claude→codex=종류 다름=정보 증가). 이 codex = **gstack `/codex`**(자동흐름 경로), 공식 플러그인 아님 — `## codex provider — 역할 분리` 참조.
 
-> **최고위험 게이트의 2소스 = fable∥codex** (설계패널 critical·7.7 구조결함): claude측 슬롯(패널 eng·cso, 7.7 tester-quality)은 **fable 1순위**로 상향한다. opus·fable은 동계열(claude)이라 fable을 제3소스로 병렬 추가해도 비상관 증가가 없다 — 소스 수는 2 유지, 슬롯 모델만 상향. fable 미가용 시 **opus 폴백**(종전 기준으로 후퇴, 게이트 구조·판정 로직 불변).
+> **최고위험 게이트의 2소스 = fable∥codex** (설계패널 critical·7.7 구조결함): claude측 슬롯(패널 eng·cso, 7.7 tester-quality)은 **fable 1순위**로 상향한다. opus·fable은 동계열(claude)이라 fable을 제3소스로 병렬 추가해도 비상관 증가가 없다 — 소스 수는 2 유지, 슬롯 모델만 상향. fable 미가용 시 **opus 폴백**(종전 기준으로 후퇴, 게이트 구조·판정 로직 불변) — 단 이 폴백은 **자동으로 일어나지 않는다**. 미가용이 무음 강등(→sonnet)으로 나타나기 때문에, orchestrator가 [모델 실측](#모델-실측-게이트-산출-수령-직후-필수)으로 잡아 명시 재실행해야만 성립한다.
 
 - **호출**: 패널 Workflow 호출과 **동시에** `/codex`를 **consult 모드**로 호출해 계획서를 비평한다. review 모드 아님(아직 diff 없음), challenge 아님(코드 대상). 비대화형 표준 `codex exec "..." -s read-only < /dev/null`(§codex 호출 가드 — 기계강제는 /codex 스킬 담당, orchestrator 재지시 안 함).
 - **프롬프트 = 패널 reviewPrompt와 동형**: ① rulePaths를 "Read하고 준수" 주입(0단계 확정 경로) ② planPath 전달("계획서 파일을 Read하라" — `-s read-only` 샌드박스도 읽기는 가능. 파일 부재 시만 전문 첨부 폴백) ③ 출력 = severity(critical 설계결함 / major 통과허용 / minor 기록) + location(plan 섹션 or file:line) + quote(동기 라인) + recommendation. **quote 못 달면 confidence 강등**(패널 규칙과 동일). 보안태그 시 cso 렌즈 중복을 피해 codex엔 아키텍처·정합·엣지케이스 렌즈를 명시(보안은 cso 페르소나가 SSOT).
 - **페르소나 아님 (인원규칙 불변)**: codex는 floor=3 인원수·`passEvidence≥2`(claude 서브에이전트 lazy-PASS 가드)에 **포함되지 않는다**. 패널 구성 규칙(최소3/최대4, 연관기반)은 그대로. codex는 패널 옆 독립 cross-source다.
 - **게이트 합류 = 합집합**: codex findings는 패널 findings와 **같은** dedup+코드대조 게이트(위 "orchestrator가 한다 (워크플로 반환 후)")로 들어간다. codex critical도 근본원인별 dedup → 인용라인 Read 코드대조 → 생존 시 차단. **단독 생존 critical도 차단**(코드단계 "blocking 1건이라도 처리, 취사선택 금지"와 동일 — 한쪽 PASS가 다른 쪽 발견을 무효화하지 않는다). codex major/minor도 패널 것과 합쳐 동일 처리(major=승인화면 노출+RED 잠금, minor=기록).
 - **폴백**(§codex 호출 가드 실패 신호: `NOT_FOUND`/`AUTH_FAILED`/`stalled`/exit 124/`CODEX_TIMEOUT`): codex 죽으면 **패널(claude)만으로 게이트 진행** + 승인화면에 `⚠ 교차검증 없음(codex 미사용, 단일소스)` 태그. 자동 재시도 최대 1회 후 폴백 확정. 패널 자체는 정상이므로 게이트는 막지 않는다(코드단계 /codex review 폴백과 동형).
+
+### 모델 실측 (게이트 산출 수령 직후, 필수)
+
+**미가용 모델 요청은 실패하지 않는다 — 조용히 강등된다.** `Agent(model:'fable')`이 미가용 계정에서 에러·null이 아니라 **정상 산출 + 실제 `claude-sonnet-5`** 로 돌아온다(2026-07-26 실측). 그래서 "실패를 감지해 폴백"하는 장치는 전부 무력이고, 최고위험 게이트가 폴백 기준(opus)보다 **아래인 sonnet으로 무음 저하**된다. 실제 사고 발각 경로 = 사용자 육안 지적. 하네스는 내내 정상 보고 중이었다.
+
+**가용성은 요청 결과가 아니라 transcript로만 확인된다.**
+
+- **대상**: 최고위험 claude 슬롯 — 설계패널 `eng`·`cso`, TDD `7.7 tester-quality`.
+- **절차**(게이트 산출 수령 직후 1회, Bash):
+  ```bash
+  # 이 세션의 서브에이전트 transcript에서 실제 모델 집계 (최근 것부터)
+  D=$(ls -dt ~/.claude/projects/*/*/subagents 2>/dev/null | head -1)
+  ls -t "$D"/agent-*.jsonl "$D"/workflows/*/agent-*.jsonl 2>/dev/null | head -8 \
+    | xargs -I{} sh -c 'echo "$(basename {}) $(grep -o "\"model\":\"[^\"]*\"" {} | sort -u | head -1)"'
+  ```
+  - 일반 Agent는 `agent-<id>.meta.json`에 **요청** 모델이, `.jsonl`에 **실제** 모델이 남는다 → 두 값 대조.
+  - 워크플로 슬롯의 meta는 `{"agentType":"workflow-subagent"}`뿐이라 **실제값만** 나온다 → `claude-fable-*` 건수로 판정.
+- **판정**: 최고위험 슬롯에 `claude-fable-*`가 **0건**이면 강등이다(요청은 fable이었는데 실행이 아님).
+- **조치 (차단)**: 사용자 승인화면에 올리기 **전에** 막고 재실행한다. 강등 산출로 게이트를 통과시키지 않는다.
+  - 설계패널: args에 `topModel: 'opus'`를 **명시 주입**해 재호출.
+  - 7.7: Agent `model: 'opus'` 오버라이드로 재스폰.
+  - 재실행분에 `⚠ fable 폴백(opus)` 태그(판정 기준·게이트 구조 불변).
+- ⚠ **자기보고 신뢰 금지**: `perPersona[].model`은 **요청값**이다(`fable(요청·미검증)`). 실제 사고에서 이 필드는 `fable`로 거짓 보고했다. tester self-probe 제거·`wiki/agent-memory-overrides-rule.md`와 동류 — **판단 자리를 자기보고에서 실측으로 옮긴다.**
+- ⚠ **사전 probe는 해법이 아니다**: 사고 원인이 세션 **도중** 계정 전환(`/login`)이었다. 세션 시작 probe는 "fable OK"를 반환하고 이후 라운드를 그대로 통과시킨다 — 같은 사고 재발. 게다가 probe 1회가 ~33k 토큰(1단어 응답 실측)이다. 사후 실측은 파일 읽기라 **토큰 0**이고 실제 실행을 검증한다.
+- 상세 함정: `wiki/claude-model-override-silent-downgrade.md`.
 
 ### PASS 증거 강제
 
@@ -735,7 +760,7 @@ codex 호출 산출에 아래 신호 중 하나라도 보이면 **즉시 실패�
 
 핵심 불변식(여기 유지): **작성자(codex/tester) ≠ 구현자(developer) ≠ 검증자(tester-quality).** developer 테스트파일 편집 기계강제 차단. codex 폴백 시 `⚠ 교차검증 없음(단일 소스)` 태그 + 7.7 더 엄격. (실패 신호·타임아웃·백스톱은 `## codex 호출 가드`.)
 
-**7.7 모델**: tester-quality는 **fable 핀**(frontmatter — 최고위험 게이트 claude측 슬롯, `### codex 형제`의 fable∥codex 참조). 스폰 실패가 fable 미가용 신호면 Agent `model: 'opus'` 오버라이드로 1회 재스폰 + 산출에 `⚠ fable 폴백(opus)` 태그(판정 기준·게이트 처리 불변).
+**7.7 모델**: tester-quality는 **fable 핀**(frontmatter — 최고위험 게이트 claude측 슬롯, `### codex 형제`의 fable∥codex 참조). ⚠ **"스폰 실패 = 미가용" 판정은 성립하지 않는다** — 미가용 fable은 실패 없이 sonnet으로 조용히 강등된다. 7.7 산출 수령 직후 [모델 실측](#모델-실측-게이트-산출-수령-직후-필수)으로 실제 모델을 확인하고, 강등이면 Agent `model: 'opus'` 오버라이드로 1회 **재스폰**한다(판정 기준·게이트 처리 불변). 재스폰분엔 `⚠ fable 폴백(opus)` 태그.
 
 ---
 

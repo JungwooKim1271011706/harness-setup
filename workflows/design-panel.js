@@ -13,6 +13,9 @@ export const meta = {
 //   rulePaths  : ["...rules/package/tocServer/backend.md", ...]  0단계 확정 rule 경로
 //   complexity : 'normal' | 'high'
 //   personas   : [{ key, skillPath|null }]  skillPath 있으면 C(스킬 Read), null이면 임베드(cso)
+//   topModel   : 최고위험 슬롯(eng·cso) 모델. 생략 시 'fable'.
+//                ⚠ orchestrator가 직전 라운드 transcript 실측으로 fable 무음강등을 확인했으면
+//                'opus'를 명시 주입한다 — 스크립트는 강등을 스스로 감지할 수 없다(아래 주석).
 // ─────────────────────────────────────────────────────────────
 // args는 객체 기대. 일부 호출 경로에서 JSON 문자열로 도착할 수 있어 방어적 파싱.
 let _a = args
@@ -24,6 +27,7 @@ const planText   = _a.planText   ?? ''
 const rulePaths  = _a.rulePaths  ?? []
 const complexity = _a.complexity ?? 'normal'
 const personas   = _a.personas   ?? []
+const topModel   = _a.topModel   ?? 'fable'
 
 if ((!planPath && !planText) || personas.length === 0) {
   return { error: 'planPath/planText 또는 personas 누락 — orchestrator args 확인', criticals: [], majors: [], minors: [], perPersona: [] }
@@ -93,10 +97,20 @@ ${planPath ? `${planPath} 를 Read하라(전문 필독 — 안 읽고 비평 금
 async function runPersona(persona) {
   const maxRounds = (persona.key === 'eng' && complexity === 'high') ? 3 : 1
   // 최고위험 게이트 claude측 슬롯 = fable 1순위 (fable∥codex 2소스 — opus·fable 동계열이라 fable 제3소스 병렬은 비상관 증가 없음).
-  // eng(깊은 아키텍처 추론)+cso(보안 놓침=최악)만 fable, 나머지(design/devex) sonnet(토큰 절감).
-  // fable 호출이 null(미가용·사망)이면 그 라운드부터 opus 폴백 — perPersona[].model로 표출, orchestrator가 승인화면 태그.
+  // eng(깊은 아키텍처 추론)+cso(보안 놓침=최악)만 topModel(기본 fable), 나머지(design/devex) sonnet(토큰 절감).
+  //
+  // ⚠ **이 스크립트는 모델 강등을 감지할 수 없다** (2026-07-26 실측):
+  //   미가용 모델 요청은 실패하지 않는다. `Agent(model:'fable')`이 미가용 계정에서 에러·null이 아니라
+  //   **정상 산출 + 실제 모델 claude-sonnet-5** 로 조용히 강등된다. 따라서 종전의
+  //   `if (res === null) fableDown = true` 는 영영 false인 죽은 코드였고, 최고위험 게이트가
+  //   무음으로 sonnet(폴백 기준 opus보다 아래)까지 내려가도 아무 신호가 없었다.
+  //   워크플로 스크립트는 파일시스템 접근이 없어 transcript 실측도 불가 →
+  //   **탐지 책임은 orchestrator**(게이트 산출 수령 시 transcript `"model"` 대조. orchestrator.md §모델 실측).
+  //   여기서는 (a) orchestrator가 주입한 topModel을 그대로 쓰고 (b) 아래 model 필드를
+  //   **요청값·미검증**으로 정직하게 표기한다(자기보고를 가용성 근거로 쓰지 않게).
+  //   res === null 은 fable 미가용 신호가 아니라 진짜 사망(터미널 API 에러·사용자 skip)이다.
   const isTop = persona.key === 'eng' || persona.key === 'cso'
-  let fableDown = false
+  let died = false
   const all = []
   const evidence = [] // PASS 근거 누적 (다라운드 병합). orchestrator의 PASS 근거 기계검증 소스
   for (let r = 1; r <= maxRounds; r++) {
@@ -107,9 +121,9 @@ async function runPersona(persona) {
       model: m,
     })
     let res = null
-    if (isTop && !fableDown) {
-      res = await agent(reviewPrompt(persona, r), opts('fable'))
-      if (res === null) fableDown = true
+    if (isTop && !died) {
+      res = await agent(reviewPrompt(persona, r), opts(topModel))
+      if (res === null) died = true   // 진짜 사망만 여기 걸린다(강등은 안 걸림 — 위 주석)
     }
     if (res === null) res = await agent(reviewPrompt(persona, r), opts(isTop ? 'opus' : 'sonnet'))
     if (Array.isArray(res?.passEvidence)) evidence.push(...res.passEvidence)
@@ -117,8 +131,9 @@ async function runPersona(persona) {
     if (found.length === 0) break // dry → 다라운드 중단 (단 passEvidence는 위에서 이미 수집)
     all.push(...found)
   }
+  // model = **요청값**이지 실행값이 아니다. orchestrator가 transcript로 대조하기 전엔 신뢰 금지.
   return { persona: persona.key, findings: all, passEvidence: evidence,
-           model: isTop ? (fableDown ? 'opus(fable 폴백)' : 'fable') : 'sonnet' }
+           model: isTop ? (died ? 'opus(사망 폴백)' : `${topModel}(요청·미검증)`) : 'sonnet' }
 }
 
 // ── 페르소나 병렬 리뷰만 (적대검증 제거 — orchestrator가 dedup+코드대조 판정) ──

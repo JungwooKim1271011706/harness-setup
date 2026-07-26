@@ -3,6 +3,18 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.82.0 — 2026-07-27
+- **inbox 드레인 1건(high) — fable 무음 강등으로 최고위험 게이트가 소리 없이 기준 미달이던 것 수정 — MINOR. 재시작 권장.**
+  - ⚠ **MAJOR 여지**: 승인화면 진입 전 **차단 조건이 하나 늘었다**(모델 실측 실패 시 재실행 강제). 불변식("최고위험 게이트 = fable∥codex 2소스")은 그대로고 그동안 거짓이던 것을 참으로 만든 것이라 MINOR로 잡았으나, "게이트 구조 변경"으로 보면 MAJOR도 타당. v3.81.0의 편집차단 반전과 함께 **누적 2건** — 묶어서 4.0.0으로 올릴지는 사람 판단.
+  - **근본 원인 — 전제 오류**: 하네스의 fable 폴백 규칙 3곳이 전부 *"fable 요청이 실패(null/스폰 실패)한다"*는 전제 위에 있었다. 실제 런타임은 미가용 모델을 **성공 강등**시킨다. dev clone 독립 재현(2026-07-27): `Agent(model:'fable')` → 에러·null 아닌 정상 산출 + 실제 `claude-sonnet-5`, `Agent(model:'opus')` → `claude-opus-5` 정상. 원 사고는 세션 **도중** `/login` 계정 전환이 방아쇠(R1 fable×4 정상 → R2 sonnet×6). **발각 경로 = 사용자 육안 지적** — 하네스는 내내 정상 보고 중이었고 `perPersona[].model`은 `fable`로 거짓 보고했다.
+  - **`orchestrator.md` §모델 실측 신설 (게이트 산출 수령 직후 필수)**: 최고위험 슬롯(패널 eng·cso, 7.7)의 실제 모델을 transcript로 대조 — 일반 Agent는 `agent-<id>.meta.json`(요청) ↔ `.jsonl`(실제), 워크플로 슬롯은 meta에 model이 없어 `.jsonl`의 `claude-fable-*` 건수로 판정. 0건이면 강등 → **승인화면 통과 전 차단**하고 `topModel:'opus'` 명시 주입(패널) / `model:'opus'` 오버라이드(7.7)로 재실행. 자기보고 필드 신뢰 금지.
+  - **회고 1순위(사전 probe)는 기각**: ① 사고 원인이 세션 **중** 가용성 변화라 startup probe는 "OK" 반환 후 그대로 통과 — **원 사고를 못 막는다** ② probe 1회 ~33k 서브에이전트 토큰(1단어 응답 실측) ③ 대리 실행이라 실제 게이트 슬롯을 검증 안 함. 회고 2순위(사후 transcript 대조)를 1순위로 승격 — 파일 읽기라 토큰 0, 실제 실행 검증, 세션 중 변화도 포착.
+  - **아키텍처 제약 명시**: 워크플로 스크립트는 파일시스템 접근이 없어 `design-panel.js`가 자가 검증할 수 없다 → 탐지 책임은 orchestrator 단독. 회고가 전제한 "스크립트가 probe" 방향은 부분 불가.
+  - **`design-panel.js`**: 죽은 코드 `if (res === null) fableDown = true` 제거(`died`로 의미 정정 — null은 fable 미가용이 아니라 진짜 사망). `topModel` args 추가(기본 `fable`, orchestrator가 강등 확인 시 `opus` 주입). 반환 `model` 필드를 `fable(요청·미검증)`으로 정직 표기 — 요청값이지 실행값이 아님을 호출측이 알게.
+  - **`tester-quality.md`**: frontmatter `model: fable` 핀 유지하되 "핀은 요청일 뿐 보장이 아니다 — 강등 시 무신호" 경고 + orchestrator 실측 위임 명시. `orchestrator.md:738`의 "스폰 실패가 미가용 신호면 재스폰"·`:411`·`:458`, `playbook-tdd.md:120`의 "자동 폴백" 서술도 정정(자동 폴백은 존재하지 않는다).
+  - **`wiki/claude-model-override-silent-downgrade.md` 신설**: 증상·재현·죽은 안전망 3곳·transcript 확인법·probe 기각 사유. [[agent-memory-overrides-rule]]과 상호 링크 — **같은 클래스**(자기보고를 믿게 하는 대신 판단 근거를 실측으로 교체)로 격상. 적용 범위는 fable 한정 아님(모든 `model:` 오버라이드가 동일 성질로 추정).
+  - **Layer1 근거 고정 첫 실사용**: v3.80.0에 세운 규칙대로 inbox 원문을 `wiki/sources/20260726T060029Z__DEVUNIT-authpatch_draft.md`로 복사 고정 후 상대경로 인용(사본 무결성 `diff` 확인). 규칙이 실제 드레인에서 작동함을 검증.
+
 ## 3.81.0 — 2026-07-26
 - **orchestrator 편집차단 fail-open 수정(허용리스트 전환) + 소비자 프로젝트명 하드코딩 제거 + config drift 확장 — MINOR. 재시작 권장.**
   - ⚠ **MAJOR 여지 있음**: 편집차단의 판정 방식이 차단리스트→허용리스트로 **반전**됐다. 불변식("orchestrator 직접 코드수정 금지")은 그대로고 강제 충실도만 올라간 것이라 MINOR로 잡았으나, "게이트 구조 변경"으로 보면 MAJOR(4.0.0)도 타당. 사람 판단 대상.

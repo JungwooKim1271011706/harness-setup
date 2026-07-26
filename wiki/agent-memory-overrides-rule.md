@@ -1,7 +1,7 @@
 ---
 title: stale agent-memory가 agent md 규칙을 덮어쓴다 (codex 거짓 미가용 재발)
 type: gotcha
-links: [[codex-python-shim-windows]], [[codex-tmp-windows-path]]
+links: [[codex-python-shim-windows]], [[codex-tmp-windows-path]], [[claude-model-override-silent-downgrade]]
 sources:
   - ~/.claude/harness-retro-inbox/applied/20260620T054002Z__DEVUNIT-repostitch.md  # PR-D2 후보1
   - ~/.claude/harness-retro-inbox/20260620T102121Z__DEVUNIT-repostitch.md          # PR-D4 후보1 (재발)
@@ -29,3 +29,5 @@ updated: 2026-06-22
 5. (병행) stale 메모리 삭제는 여전히 유효하나 **근본책임 아님** — surface가 없으면 메모리가 끼어들 자리가 없다.
 
 **일반 교훈 (격상)**: 규칙을 agent md에 넣어도 **모순 per-agent 메모리가 같은 컨텍스트에 로드되면 메모리가 이긴다**. "메모리 비신뢰" 소프트 명시도 in-context 메모리에 **반복 패배**한다(1차 규칙 부재 → 2차 소프트룰 → 둘 다 재발). 결정적 해법 = **그 판단을 모델 권한에서 빼서 deterministic 입력(orchestrator 주입)으로 강제**한다. "모델에게 X 믿지마"가 아니라 "모델이 X를 판단할 자리를 없앤다". 모델이 규칙대로 안 움직이는 재발 클래스는 소프트룰 추가 말고 **판단 surface 제거**를 먼저 고려.
+
+**같은 클래스 재발(2026-07-26)**: [[claude-model-override-silent-downgrade]] — 이번엔 모델이 아니라 **런타임**이 거짓 보고했다(`Agent(model:'fable')`이 미가용 시 실패 대신 무음 sonnet 강등, 자기보고 필드는 `fable`). 해법도 동형 — 자기보고를 믿게 하는 대신 **판단 근거를 transcript 실측으로 교체**.

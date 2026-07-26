@@ -23,6 +23,7 @@
 - [[codex-review-mojibake-line-merge]] — codex review(PowerShell Get-Content)가 한글/혼합인코딩 파일서 인접 라인 병합 렌더 → 정상 코드를 "주석처리"로 오독, 거짓 P1 blocking. 출력 mojibake(`3?몄옄??`)가 신호. codex P1은 항상 디스크 직접 Read 인용라인 대조(receiving-code-review). python-shim·tmp-path와 별개 렌더축
 - [[claude-rules-gitignore-local-only]] — .claude/rules/ 는 양쪽 git서 gitignore(제품 repo .claude/ + harness-setup rules/) → rule 편집이 커밋 안 됨(로컬 전용). 편집=커밋 착각 금지, git check-ignore -v가 SSOT. 공유할 규칙은 CONTEXT/docs로
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
+- [[claude-model-override-silent-downgrade]] — `Agent(model:'fable')`이 미가용 계정서 에러 아니라 **조용히 sonnet 강등**(정상 반환) → "실패 감지 후 폴백" 안전망 3곳 전부 무발동, 최고위험 게이트가 무음으로 기준 미달. 가용성은 요청 결과 아닌 transcript `"model"` 실측으로만 확인. 사전 probe는 오답(세션 중 계정 전환이 원인)
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
 - [[springshell-noninteractive-runner-order]] — spring-shell 비대화형 배치(TTY 없음)서 셸 러너가 leftover 인자를 명령으로 해석→CommandNotFound. 커스텀 ApplicationRunner에 @Order(HIGHEST_PRECEDENCE) 줘야 먼저 실행. CLI 플래그로는 못 고침
 - [[spring-componentscan-basepackages-root-omission]] — 명시 @ComponentScan(basePackages)는 기본 스캔을 **대체**(보강 아님) → 루트 패키지 빠지면 @Component 빈 조용히 미등록·run() 미호출(예외도 없음). 리플렉션 단위테스트는 등록 검증 못함→ApplicationContext 통합테스트로
