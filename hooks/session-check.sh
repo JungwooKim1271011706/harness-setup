@@ -188,6 +188,20 @@ fi
 #    CLAUDE.md Harness Config 없는 dev clone은 자동 침묵. 경로 파싱 best-effort(못 잡으면 침묵 — false-positive 안 냄).
 CLAUDE_MD="$PROJECT_DIR/CLAUDE.md"
 if [ -f "$CLAUDE_MD" ]; then
+  # Harness Config 표 행 `| `key` | `value` | 설명` 에서 **2번째** 백틱 토큰 = 값.
+  #   설명 칸에도 백틱이 있어(예: contextPath 행의 `.claude/`) tail -1은 설명을 집는다.
+  cfgval() {
+    grep -iE "\| *\`$1\`" "$CLAUDE_MD" 2>/dev/null | head -1 \
+      | grep -oE '`[^`]+`' | sed -n '2p' | tr -d '`'
+  }
+  # 선언 경로가 실재하는지. 없으면 경고만(자동수정 금지). 값 파싱 실패 시 침묵(false-positive 회피).
+  check_path() { # $1=키 $2=값 $3=사유
+    local p
+    [ -z "$2" ] && return 0
+    case "$2" in /* | [A-Za-z]:*) p="$2" ;; *) p="$PROJECT_DIR/$2" ;; esac
+    [ -e "$p" ] && return 0
+    MESSAGES+=("⚠ 하네스 drift: CLAUDE.md ${1} 경로 부재(${2}) — 복제 재사용 후 미갱신 의심. ${3} /harness-setup 재실행 또는 값 수정 권장")
+  }
   # 9a) memoryDir 실재 — CLAUDE.md 값이 가리키는 경로가 없으면 실패패턴 저장 불가
   MEMDIR=$(grep -iE 'memoryDir' "$CLAUDE_MD" 2>/dev/null | grep -oE '[A-Za-z]:\\[^ |`]+|/[^ |`]+/memory/?' | head -1)
   if [ -n "$MEMDIR" ]; then
@@ -212,7 +226,7 @@ if [ -f "$CLAUDE_MD" ]; then
   #      .claude/CONTEXT.md(공유 하네스)에 두면 타 프로젝트로 오염된다. 실파일은 gitignore(template만 커밋).
   CTX_TMPL="$PROJECT_DIR/.claude/CONTEXT.md.template"
   CTX_IN_CLAUDE="$PROJECT_DIR/.claude/CONTEXT.md"
-  CTXPATH=$(grep -iE 'contextPath' "$CLAUDE_MD" 2>/dev/null | grep -oE '`[^`]+`' | tail -1 | tr -d '`')
+  CTXPATH=$(cfgval contextPath)
   if [ -f "$CTX_IN_CLAUDE" ] && grep -q "프로젝트 특화" "$CTX_TMPL" 2>/dev/null; then
     # .claude/CONTEXT.md 실파일이 존재 = 공유 하네스에 용어집이 눌러앉음(오염 경로). template과 구분: 플레이스홀더 남았으면 미현지화, 없으면 도메인용어 유입 의심
     if ! head -5 "$CTX_IN_CLAUDE" 2>/dev/null | grep -q "템플릿"; then
@@ -221,6 +235,13 @@ if [ -f "$CLAUDE_MD" ]; then
   elif [ -z "$CTXPATH" ] && [ -f "$CTX_TMPL" ]; then
     MESSAGES+=("ℹ 용어집 미설정: CLAUDE.md에 contextPath 미선언 — CONTEXT.md.template을 product 추적 경로로 복사 후 Harness Configuration에 contextPath 선언 권장(grill/co-plan 용어 쓰기 대상)")
   fi
+
+  # 9d) 선언 경로 실재 — 하네스 복제 재사용 후 값을 안 고치면 developer/tester의 수정경계와
+  #     용어집 쓰기 대상이 통째로 헛돈다(조용한 no-op). 경고만 — 자동수정 없음.
+  #     ⚠ `modules`는 검사 대상 아님: 값이 자유서술이라(백틱 리스트 / 산문 혼재) 파싱하면 오탐만 낸다.
+  check_path backendRoot  "$(cfgval backendRoot)"  "developer-frontend 수정금지 경계가 무효."
+  check_path frontendRoot "$(cfgval frontendRoot)" "developer-backend 수정금지 경계가 무효."
+  [ -n "$CTXPATH" ] && check_path contextPath "$CTXPATH" "grill/co-plan 용어 쓰기 대상이 없어 용어집이 파편화된다."
 fi
 
 # 회고 inbox pending 알림은 SessionStart가 아니라 UserPromptSubmit(매 프롬프트)로 처리한다.

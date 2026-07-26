@@ -70,7 +70,7 @@ Glob: "{mainModule}/src/main/java/**/*.java"
 | 패턴 유형 | PageController | REST/Async | Service | 비고 |
 |----------|---------------|-----------|---------|------|
 | 표준형 | `*Controller` | `*RestController` | `*Service` | Spring Boot 일반 |
-| MainFrame형 | `*MainFrame` | `*Async` | `*Manager` | 이 프로젝트 tocServer |
+| MainFrame형 | `*MainFrame` | `*Async` | `*Manager` | 레거시 Spring MVC 계열 (예: tocServer) |
 | 혼합형 | 위 중 감지된 것 | 위 중 감지된 것 | 위 중 감지된 것 | |
 
 이 단계에서 잘못 가정하면 Step 4에서 파일을 못 찾는다.

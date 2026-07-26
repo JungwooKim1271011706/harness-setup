@@ -108,7 +108,7 @@ memory: project
 
 ## 하네스 버전 bump 의식 (하네스 `.claude/` 변경 커밋 시 필수)
 
-이번 커밋이 `.claude/` 하네스 파일(agent md / 훅 / settings / 워크플로 / 룰 / 로컬미러 스킬)을 변경했으면 아래를 커밋에 **반드시 포함**한다. 제품 코드 모듈(tocServer/tocProcess/tocFramework)만 변경한 커밋은 이 의식 **불요**. 설계: `.claude/docs/harness-versioning.md`.
+이번 커밋이 `.claude/` 하네스 파일(agent md / 훅 / settings / 워크플로 / 룰 / 로컬미러 스킬)을 변경했으면 아래를 커밋에 **반드시 포함**한다. 제품 코드(`.claude/` 밖)만 변경한 커밋은 이 의식 **불요**. 설계: `.claude/docs/harness-versioning.md`.
 
 ### 절차
 1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석). **bump 전 `git fetch origin` + `git rev-list --count HEAD..origin/main` 확인 필수** — origin이 이미 발행한 번호를 fetch 없이 재사용하면 push 시 버전 충돌이 난다(2026-07-15 사고: 로컬 v3.63.0 기준으로 3.64.0 bump했으나 origin이 이미 3.64.0 발행 → 같은 번호 두 커밋, rebase로 사후 해소. fetch 1회면 안 났다).
@@ -143,17 +143,17 @@ memory: project
 2. state 읽기: `~/.gstack/projects/$SLUG/regression-debt.json`. **파일이 없거나 JSON 파싱에 실패하면 빈 부채(N=0)로 간주하고 그대로 진행한다. 절대 커밋을 차단하거나 에러로 중단하지 않는다.**
 3. 부채 계산:
    - `commits_since` 길이 = N (마지막 전체회귀 후 코드 모듈 터친 커밋 수)
-   - `commits_since`의 modules 합집합에 tocFramework 포함 여부 = framework 격상 플래그
+   - `commits_since`의 modules 합집합에 **공용 프레임워크 모듈**(다른 모듈이 의존하는 최하위 모듈 — CLAUDE.md `modules`의 의존 관계로 판정. 예: tocFramework) 포함 여부 = framework 격상 플래그. 단일 모듈 프로젝트처럼 공용 모듈이 없으면 이 플래그는 항상 false.
 4. 트리거 판정 (2트리거, 강력권장으로 격상):
    - ① N ≥ 5 (N=5)
-   - ② tocFramework 변경 감지 (리셋 전까지 유지)
+   - ② 공용 프레임워크 모듈 변경 감지 (리셋 전까지 유지)
 5. 렌더:
    - 트리거 hit 아님 + N=0(마지막 전체회귀 후 코드 모듈 터친 커밋 0개): **📊 정보줄도 출력 생략**(노이즈 방지).
    - 트리거 hit 아님 + N≥1(정보): `📊 전체회귀 부채: 후 N커밋 / M모듈(모듈명). 임계 미만 — 참고.`
    - 트리거 hit(강력권장):
      ```
      ⚠ 전체회귀 강력 권장
-       - (framework 터치 시) tocFramework 변경 감지 (tocServer+tocProcess 양쪽 영향)
+       - (framework 터치 시) <공용 모듈명> 변경 감지 (의존 모듈 전체 영향)
        - 마지막 전체회귀 후: N커밋
        - 권장: "회귀 돌려"로 tester-runtime 전체회귀 1회
        (소프트 — 차단 안 함)
@@ -161,7 +161,7 @@ memory: project
 6. 출력 후 멈추지 않고 커밋 진행(6단계).
 
 ### 커밋 후 state 갱신 (코드 모듈 터친 커밋만 카운트)
-1. 이번 커밋이 제품 코드 모듈을 터쳤는지 판정: `git diff --cached --name-only`(또는 커밋 직후 `git show --name-only`) 경로 첫 세그먼트가 tocServer / tocProcess / tocFramework 중 하나면 코드 모듈.
+1. 이번 커밋이 제품 코드 모듈을 터쳤는지 판정: `git diff --cached --name-only`(또는 커밋 직후 `git show --name-only`)에 **`.claude/`·`docs/`·루트 문서 밖 경로**가 있으면 코드 모듈. 모듈명 = 그 경로의 첫 세그먼트(CLAUDE.md `modules` 규약을 따른다 — 다중 모듈이면 `tocServer` 같은 모듈 디렉터리, 단일 앱이면 `src` 등. 프로젝트가 CLAUDE.md에 카운트 세그먼트를 명시했으면 그 값이 우선).
 2. 문서·.claude만 바뀐 커밋은 카운트 제외(state 미변경).
 3. 코드 모듈 터쳤으면 `commits_since`에 `{sha: 커밋 sha, modules: [터친 모듈 첫세그먼트 목록], ts: 시각}` append.
 4. 파일/디렉터리 없으면 생성. 스키마 = `{last_full_regression:{sha,ts}, commits_since:[{sha,modules,ts}]}`.

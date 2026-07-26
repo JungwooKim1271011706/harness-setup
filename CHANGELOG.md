@@ -3,6 +3,16 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.81.0 — 2026-07-26
+- **orchestrator 편집차단 fail-open 수정(허용리스트 전환) + 소비자 프로젝트명 하드코딩 제거 + config drift 확장 — MINOR. 재시작 권장.**
+  - ⚠ **MAJOR 여지 있음**: 편집차단의 판정 방식이 차단리스트→허용리스트로 **반전**됐다. 불변식("orchestrator 직접 코드수정 금지")은 그대로고 강제 충실도만 올라간 것이라 MINOR로 잡았으나, "게이트 구조 변경"으로 보면 MAJOR(4.0.0)도 타당. 사람 판단 대상.
+  - **`block-orchestrator-edit.sh` v2 — fail-open 실버그 수정**: v1은 특정 모듈명(`tocServer|tocProcess|tocFramework`) 차단리스트라 **그 이름을 안 쓰는 프로젝트에선 아무것도 막지 못했다**. 실측(2026-07-26): 한 소비자는 제품코드가 `src/**`라 매치 0 → `orchestrator.md`가 "기계강제"라 선언한 게이트가 **통째로 사망**, 다른 소비자는 `cm/tocServer`가 우연히 매치돼 살아 있었음. CLAUDE.md `modules`로 유도하는 안은 **폐기** — 값이 자유서술이라 파싱 불가(한쪽 백틱 리스트, 한쪽 산문). 대신 "무엇이 제품이 아닌가"만 열거하는 허용리스트로 전환: `.claude/**` · `docs/**` · 루트 `*.md` · repo 밖만 allow, 나머지 repo 내부는 프로젝트 구조와 무관하게 deny. 21케이스 격리 테스트(POSIX/Windows 백슬래시/상대경로/jq부재/서브에이전트).
+  - **정규화 fail-open 2차 수정**: jq 부재 폴백은 JSON 이스케이프(`C:\\Users`)를 그대로 뽑아 `tr`이 `C://Users`로 만들어 repo root prefix 매치가 실패 → 조용히 통과했다(테스트가 적발). `norm()`에 중복 슬래시 축약 추가.
+  - **잔여 구멍 명시**: ① Bash 내부쓰기(`sed -i`/`tee`) 미차단(기존) ② 훅 PATH에 `git` 부재 시 repo 루트 미확정으로 통과 ③ file_path 추출 실패 시 통과. `orchestrator.md` §직접수정금지 항목에 동기화.
+  - **소비자 프로젝트명 하드코딩 제거**: `orchestrator.md` ③모듈판정(모듈 목록 SSOT = CLAUDE.md `modules`, toc*는 예시로 강등 + "기본값 아님" 주석), `finalizer.md` bump 의식 조건(`제품 코드 모듈(toc*)` → `.claude/ 밖`)·회귀부채 격상(`tocFramework` → **공용 프레임워크 모듈**, 단일 모듈 프로젝트면 항상 false)·코드모듈 판정, `playbook-design-mode.md` 영향모듈 템플릿, `rule-maker` 명명규약 표("이 프로젝트 tocServer" → "레거시 Spring MVC 계열(예: tocServer)"). 명시적 예시 표기(tester-backend `# 예:`, design-panel.js 주석, rule-maker 대화 예시)와 ADR·wiki 이력은 **미변경**(무리한 소급 금지).
+  - **`session-check.sh` 9d — 선언 경로 실재 검사**: `backendRoot`/`frontendRoot`/`contextPath`가 가리키는 경로가 없으면 경고(자동수정 없음). 복제 재사용 후 값 미갱신 시 developer 수정경계·용어집 쓰기 대상이 조용한 no-op이 되던 것 차단. `modules`는 **검사 제외**(자유서술 → 파싱 시 오탐만).
+  - **`cfgval` 추출 버그 수정**: 기존 `contextPath` 파싱이 `grep -oE '`[^`]+`' | tail -1`이라 **설명 칸의 백틱**(`.claude/` 금지 문구)을 값으로 집었다. Harness Config 표의 2번째 백틱 토큰을 값으로 삼는 `cfgval()`로 교체. 실제 소비자 2곳 CLAUDE.md로 검증(오탐 0).
+
 ## 3.80.0 — 2026-07-26
 - **소비자 clone 자동 전파 + wiki 카파시 패턴 정합 (사용자 주도 점검) — MINOR. 재시작 권장(settings 훅 신설).**
   - **⚠ 원칙 개정**: README §버전관리의 *"자동 변형 없음 — 순수 안내"* → *"배포는 자동, 저작은 사람 승인"*. 사용자 명시 승인 후 변경. 거버넌스 불변식(하네스 **저작**=사람 승인 게이트)은 불변 — 자동화 범위는 승인된 SSOT를 **받아오는 것**에 한정.

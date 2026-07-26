@@ -22,7 +22,7 @@ memory: project
 
 ## 핵심 규칙
 - 직접 구현 금지
-- 직접 코드 수정 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-edit.sh`가 메인스레드의 Edit/Write/MultiEdit를 제품모듈(tocServer/tocProcess/tocFramework) 대상이면 차단. .claude/ 하네스 자가수정·메모리·docs는 허용. 알려진 구멍: Bash 내부쓰기(`sed -i`/`tee`/`cp`/`>` 리다이렉트/python·node write)는 도구매처에 안 걸려 v1 미차단)
+- 직접 코드 수정 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-edit.sh`가 메인스레드의 Edit/Write/MultiEdit를 **허용리스트 밖이면 전부 차단**. 허용 = `.claude/**`(하네스 자가수정·메모리·state) · `docs/**`(feature 문서) · 루트 `*.md`(CLAUDE/CONTEXT 등) · repo 밖(스크래치·inbox). 그 외 repo 내부는 프로젝트 구조와 무관하게 제품소스로 본다. 알려진 구멍: ① Bash 내부쓰기(`sed -i`/`tee`/`cp`/`>` 리다이렉트/python·node write)는 도구매처에 안 걸림 ② 훅 PATH에 `git`이 없으면 repo 루트 미확정으로 통과)
 - 직접 테스트 실행 금지
 - developer의 테스트 파일 변조 금지 (**기계강제**: PreToolUse 훅 `block-developer-test-edit.sh`가 agent_type=developer-backend|frontend의 `<module>/src/test/**` Edit/Write/MultiEdit를 차단 — GREEN 단계 reward-hacking 방어. tester-*/메인은 통과. 알려진 구멍: Bash 내부쓰기(`sed -i`/`tee`/`cp`/`>`/python·node write) 우회 v1 미차단)
 - Bash 도구는 스킬 preamble 실행 및 환경 점검 전용. 직접 git commit/build/test/배포 명령 금지 (**기계강제**: PreToolUse 훅 `block-orchestrator-exec.sh`가 메인스레드의 git commit/push·mvn/gradle 차단. 해당 작업은 finalizer/tester-* 위임)
@@ -159,15 +159,18 @@ orchestrator는 fan-out 배치 작업에 한해 Workflow 도구로 동적 워크
 
 ### ③ 모듈 판정 및 rule 경로 확정
 
-변경 대상 모듈(tocFramework / tocProcess / tocServer)을 판정하고, 해당 rule 경로를 확정한다.
+변경 대상 모듈을 판정하고, 해당 rule 경로를 확정한다. **모듈 목록은 CLAUDE.md Harness Configuration의 `modules`가 SSOT다**(프로젝트마다 다름 — 하드코딩 금지). `modules` 값이 산문 서술이면 `backendRoot`/`frontendRoot`와 실제 디렉터리 구조로 보완 판정한다.
 확정된 rule 경로는 **이후 모든 단계(planner, developer, tester, gstack/codex 스킬)에 주입**한다.
 
 ```
-rule 경로 예시:
-  tocServer  → .claude/rules/package/tocServer/backend.md (+ frontend.md)
-  tocProcess → .claude/rules/package/tocProcess/backend.md
-  tocFramework → .claude/rules/package/tocFramework/backend.md
+rule 경로 규약:  .claude/rules/package/<모듈>/{backend,frontend}.md
+
+예시 (다중 모듈 Java 프로젝트):        예시 (단일 앱 프로젝트):
+  tocServer   → .../tocServer/backend.md (+ frontend.md)    src/main     → .../<모듈>/backend.md
+  tocProcess  → .../tocProcess/backend.md                   src/renderer → .../<모듈>/frontend.md
+  tocFramework→ .../tocFramework/backend.md
 ```
+> 위 이름은 **예시일 뿐** 기본값이 아니다. 실제 모듈명은 그 프로젝트 `modules` 값을 따른다.
 
 gstack/codex 단계(co-plan, 설계패널, 7b, 7.5, review, codex review)에는 호출 시 컨텍스트에 "아래 rule 경로를 Read하고 준수하라"를 명시 주입한다.
 planner/developer/tester agent md는 기존 자동 Read 로직으로 처리하므로 별도 주입 불필요.
