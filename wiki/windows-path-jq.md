@@ -2,6 +2,8 @@
 title: Windows에서 훅이 jq를 못 찾는 문제 (stale PATH)
 type: gotcha
 links: [[slack-notify-hook]], [[jq-korean-encoding]]
+sources:
+  - (pre-inbox, 근거 유실)
 updated: 2026-06-14
 ---
 

@@ -2,6 +2,8 @@
 title: codex 모델 stall — smoke ping은 통과하나 실프롬프트가 hang (probe false-positive)
 type: gotcha
 links: [[codex-python-shim-windows]] [[codex-tmp-windows-path]]
+sources:
+  - ../CHANGELOG.md — v3.26.0 "codex probe false-positive"
 updated: 2026-06-22
 ---
 

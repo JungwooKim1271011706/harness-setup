@@ -2,6 +2,8 @@
 title: gstack Windows 설치·등록 함정 (브라우저 hang → 스킬 미등록)
 type: gotcha
 links: [[windows-path-jq]]
+sources:
+  - (pre-inbox, 근거 유실)
 updated: 2026-06-16
 ---
 

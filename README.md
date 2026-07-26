@@ -144,7 +144,7 @@ git -C .claude pull origin main
 | ② capture | `wiki/` 운영지식 capture (`wiki/_schema.md` SSOT) | post_commit 자가점검 |
 | ③-입력 | `/harness-check` 스킬 (운영 고통 신호 → 개선 후보 → ③에 위임) | 워크플로 종료 시 자동(고통 감지) / "하네스 자가 점검" |
 | ③ 규칙화 | `/harness-retro` 스킬 (회고 → 분류·라우팅·초안·승인·적용) | "하네스 회고 반영" / `/harness-check` 위임 / 회고 텍스트 |
-| ④ 전파 | `VERSION`/`CHANGELOG` + drift 탐지 + `git -C .claude pull` | session-check 훅 |
+| ④ 전파 | `VERSION`/`CHANGELOG` + 소비자 clone **자동 pull** + drift 탐지 | harness-autopull 훅(세션 시작·1일 1회) / session-check 훅 |
 
 ①·③은 백로그(`agent-memory/orchestrator/project_harness_improvement_backlog.md`)를 단일 원장으로 공유한다. ③의 입력은 사람이 회고를 가져오거나(`/harness-retro`), 하네스가 자기 운영 고통을 스스로 탐지해(`/harness-check`) 자동 생성한다 — **탐지·초안은 자동, 적용은 사람 승인**.
 
@@ -170,7 +170,9 @@ git -C .claude pull origin main
 하네스는 `VERSION`(semver `MAJOR.MINOR.PATCH`)으로 동작 버전을 관리한다.
 
 - **SSOT**: `.claude/VERSION`. 변경 이력은 `CHANGELOG.md`.
-- **drift 안내**: 세션은 시작 시점 하네스(특히 agent md·settings)를 메모리에 들고 간다. 세션 도중 하네스가 갱신되면(다른 세션이 pull/커밋) `session-check.sh` 훅이 compact/resume 시 버전 차이를 감지해 **세션 재시작을 안내**한다(MAJOR=필수, 그 외=권장). 자동 변형 없음 — 순수 안내.
+- **자동 전파**: 소비자 `.claude`는 프로젝트마다 독립 nested clone이라 사람이 `git -C .claude pull`을 기억해야만 갱신됐고, 안 하면 조용히 뒤처졌다(2026-07-26 실측: 한 프로젝트가 17커밋·16버전 뒤). `harness-autopull.sh` 훅이 **세션 시작 시(startup 한정, 1일 1회)** `git pull --ff-only`로 SSOT를 당긴다. agent md를 읽기 전 시점이라 교체가 안전하고, ff-only라 소비자 clone에 로컬 커밋이 있으면(하네스 직접커밋 금지 위반) 병합 대신 **실패하며 드러난다**. 오프라인은 침묵. dev clone은 `.claude`가 없어 자동 no-op.
+  - ⚠ **자동인 것은 배포뿐이다.** 승인된 SSOT를 받아오는 것만 자동이고, 하네스 **저작**(규칙 신설·변경)은 여전히 사람 승인 게이트다(거버넌스 불변식).
+- **drift 안내**: 세션은 시작 시점 하네스(특히 agent md·settings)를 메모리에 들고 간다. 세션 **도중** 하네스가 갱신되면(다른 세션이 pull/커밋) `session-check.sh` 훅이 compact/resume 시 버전 차이를 감지해 **세션 재시작을 안내**한다(MAJOR=필수, 그 외=권장). 세션 도중 자동 변형은 없다 — 안내만(교체는 위 startup 시점에만).
 - **bump 주체**: 하네스 **동작**(agent md 규칙·훅·settings·스킬)을 바꾸는 커밋에서 `finalizer`가 VERSION bump + CHANGELOG 갱신 + `sync-skills.sh` 동반 실행. 순수 문서(README/순수 설계 docs)만 바꾼 커밋은 bump 대상 아님. ⚠ 단 `docs/playbook-*.md`·`docs/routing-map.md`는 orchestrator.md에서 분리한 **동작 문서**(라우팅 뇌 외부화분)라 bump 대상 — `finalizer`의 "분리 문서 정합성 점검"이 동기 강제.
 - 설계 전문: `docs/harness-versioning.md`.
 
@@ -183,7 +185,7 @@ git -C .claude pull origin main
 | `workflows/` | 설계패널 게이트 엔진 `design-panel.js`(orchestrator 설계검증 전반 참조) + `harness-feature-scan.js`(자기개선 루프 ①발견) | track |
 | `review/` | 리뷰모드 사람 스크립트 템플릿 (`human-script.template.md`, `scenarios.local.md.example`) | track |
 | `hooks/` | 세션 점검 훅 | track |
-| `scripts/` | 유틸 스크립트 — `worktree-status.sh`(온디맨드 워크트리×기능 대시보드, 읽기전용), `link-worktree-claude.sh`(전역 SessionStart 훅용 — 워크트리에 `.claude` 자동 junction) | track |
+| `scripts/` | 유틸 스크립트 — `worktree-status.sh`(온디맨드 워크트리×기능 대시보드, 읽기전용), `link-worktree-claude.sh`(전역 SessionStart 훅용 — 워크트리에 `.claude` 자동 junction), `wiki-check.sh`(wiki 정합성 점검, 읽기전용) | track |
 | `settings.json` | 공유 설정 | track |
 | `VERSION` · `CHANGELOG.md` | 하네스 버전(semver) + 변경 이력 | track |
 | `docs/` | 설계 문서(ADR·하네스 버전관리 등) + **orchestrator 분리 동작문서**(`playbook-harness-ops/design-mode/tdd.md`·`routing-map.md` — v3.2.0, on-demand Read) | track |

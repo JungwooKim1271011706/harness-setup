@@ -3,6 +3,18 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.80.0 — 2026-07-26
+- **소비자 clone 자동 전파 + wiki 카파시 패턴 정합 (사용자 주도 점검) — MINOR. 재시작 권장(settings 훅 신설).**
+  - **⚠ 원칙 개정**: README §버전관리의 *"자동 변형 없음 — 순수 안내"* → *"배포는 자동, 저작은 사람 승인"*. 사용자 명시 승인 후 변경. 거버넌스 불변식(하네스 **저작**=사람 승인 게이트)은 불변 — 자동화 범위는 승인된 SSOT를 **받아오는 것**에 한정.
+  - **`hooks/harness-autopull.sh` 신설 + settings SessionStart 등록(session-check보다 먼저)**: 소비자 `.claude`는 프로젝트별 독립 nested clone이라 사람이 `git -C .claude pull`을 기억해야만 갱신 — 안 하면 조용히 뒤처졌다(실측: repostitch 17커밋·v3.63.0, authpatch 3커밋·v3.77.0. session-check 버전 drift는 "세션 스탬프 vs 로컬 VERSION" 둘 다 로컬이라 **아무도 pull 안 하면 영원히 침묵**). `source=startup` 한정 + 1일 1회 throttle + `pull --ff-only` + timeout 8s. startup은 agent md Read 전이라 교체가 안전한 유일 시점. dev clone은 `.claude` 부재로 자동 no-op. **소비자 쪽 pull 채택 이유** = dev clone 팬아웃은 소비자 경로 레지스트리 필요(git엔 client post-push 훅 없음)하고 등록 누락 시 같은 실패 재발 → 소비자가 당기면 레지스트리 불요(self-healing). session-check(timeout 10)에 안 넣고 분리한 이유 = 느린 pull이 훅을 죽여 다른 경고까지 유실.
+  - **자동 pull이 하네스 직접커밋 위반 탐지기 겸용**: `--ff-only`라 발산 시 병합 대신 실패·경고. 추가로 `rev-list --count origin/main..HEAD`로 **ahead-only**(behind 0이라 ff가 "up to date"로 성공해 침묵하던 구멍 — 2026-07-15 사고 클래스: 커밋이 제품 repo에 갇혀 SSOT가 못 받음)도 잡는다. 8케이스 격리 E2E 검증(behind/최신/ahead only/발산/throttle/resume/dev clone).
+  - **wiki Layer1 근거 고정 (카파시 패턴 정합)**: `sources:`가 전부 `~/.claude/harness-retro-inbox/`를 가리켰는데 **머신로컬(gitignore) + 드레인이 `applied/`로 이동** → 18건 중 15건이 이미 경로 stale, 타 머신은 18/18 dangle. 카파시 Layer1(raw sources)의 "불변·상주" 위반이라 **출처 검증 불가**(본문은 자기완결이라 지식 유실은 아님). `_schema.md`에 `## 근거 고정 (Layer1)` 신설 — repo 밖 근거는 `wiki/sources/`로 복사 고정 후 상대경로 인용, 사본은 불변. **소급 안 함, 신규 인용부터**.
+  - **Layer1 배선 (문서만 고치면 무효인 부분)**: 실제로 wiki 페이지를 만드는 주체는 `/harness-retro` Step5다 — 거긴 여전히 "inbox 파일 경로를 sources 후보로"였다. `harness-retro/SKILL.md` Step5에 근거 고정 필수 지시(Step7-5 이동이 경로를 죽인다는 이유 명시), `harness-check/SKILL.md`는 "경로 참조 대상"→"사본 원문"으로 정정(본문 자체가 근거로 읽혀야 함), `_schema.md` "어디로 가나"의 자기모순 문장 제거.
+  - **`scripts/wiki-check.sh` 신설**: `_schema.md` lint 절이 요구하던 기계 점검분. index 미등록 / 깨진 `[[링크]]`(템플릿 예시·POSIX 문자클래스 제외) / 빈 파일 / `title`·`updated` 누락 / gotcha `sources` 누락. 읽기 전용, 어떤 훅에도 미연결. 첫 실행서 **결손 12건 검출** — "Obsidian 그래프가 lint를 대신한다"는 기존 문구가 부분 거짓임이 실측으로 드러나(그래프는 링크 구조만 봄) lint 절을 기계/사람 2분할로 개정.
+  - **wiki ingest 파편화 방지**: capture 절차에 "신규 생성 전 같은 엔티티 Grep, 3개 이상이면 허브로 통합·갱신" 1줄. 근거 = codex 함정이 7페이지로 파편화(shim/tmp/stall/timeout/heredoc/mojibake×2) — 카파시 ingest의 "기존 페이지 revise" 단계 부재의 결과.
+  - **gotcha 10p `sources` 결손 복원**: CHANGELOG 실증 대조로 7건 복원(v3.3.0·v3.10.0·v2.3.0·v3.24.0·v3.26.0), 근거 유실 3건(`gstack-install-windows`·`jq-korean-encoding`·`windows-path-jq`)은 invent 금지 원칙대로 `(pre-inbox, 근거 유실)` 정직 표기. 전부 repo 내부 경로라 소비자·타 머신서 열린다. `updated:` 날짜는 **의도적으로 미변경**(메타데이터만 바뀌었는데 올리면 내용 갱신 거짓 신호). 빈 파일 `wiki/2026-07-25.md`(0바이트·미추적) 제거.
+  - **잔여(미해결, 의도적)**: inbox 경로를 인용 중인 기존 16p는 소급 대상 제외 — 소비자에서 여전히 근거 미열람. 소급하려면 `_schema.md` "소급 안 함" 문장부터 개정 필요.
+
 ## 3.79.0 — 2026-07-24
 - **inbox 드레인 (approx-hint flex-fill 세션 회고) → 2 항목 — MINOR, 거버넌스 무영향. 재시작 권장.**
   - **§0④ 렌더·레이아웃 전제는 소스 Read가 검증이 아니다**: percentage height 해결·flex 사이징·스크롤 주체·stacking·sticky pin에 의존하는 전제는 스타일시트 Read로 확정 금지 → 브라우저 실측 1회 또는 `⚠ 미검증 전제` 태깅으로만 진입. 사후 렌더 실측 강제와 사전 전제검증의 비대칭 해소. + **전제 주입 시 검증수단 라벨**(`전제(검증수단: 브라우저 실측|소스 Read|미검증)`) — Read/미검증 라벨이면 서브에이전트가 의심 대상으로 삼고, "재발견 불요" 봉인 금지. 근거: max-height만 있는 조상 아래 percentage-height를 CSS Read로 "확정" 오판 → 구현+검증 1라운드(226k 토큰) + 사용자 에스컬레이션 낭비.

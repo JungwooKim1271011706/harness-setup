@@ -2,6 +2,8 @@
 title: @Profile은 빈 정의 등록 시점에 평가 — ApplicationContextRunner withInitializer는 너무 늦다
 type: gotcha
 links: [[surefire-it-naming-skip]]
+sources:
+  - ../CHANGELOG.md — v3.10.0 "운영 wiki 신설"
 updated: 2026-06-19
 ---
 

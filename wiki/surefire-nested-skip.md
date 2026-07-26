@@ -2,6 +2,8 @@
 title: Surefire 2.22.2가 -Dtest 격리 실행에서 JUnit5 @Nested를 조용히 스킵
 type: gotcha
 links: [[windows-path-jq]], [[surefire-it-naming-skip]]
+sources:
+  - ../CHANGELOG.md — v2.3.0 "docs/learnings에서 이관"
 updated: 2026-06-19
 ---
 

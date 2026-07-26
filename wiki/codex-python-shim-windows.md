@@ -2,6 +2,8 @@
 title: codex --json 파서가 Windows Store python shim을 골라 broken pipe (exit 101)
 type: gotcha
 links: [[codex-tmp-windows-path]]
+sources:
+  - ../CHANGELOG.md — v3.10.0 "운영 wiki 신설"
 updated: 2026-06-19
 ---
 

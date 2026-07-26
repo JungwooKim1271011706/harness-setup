@@ -58,7 +58,8 @@ argument-hint: "[회고 텍스트 또는 회고 파일 경로]"
 - agent md 규칙: 삽입할 정확한 문장(어느 절에) — 기존 규칙과 충돌·중복 점검.
 - 게이트 구조: 변경 전/후 단계 시퀀스를 명시.
 - 훅: 스크립트 초안 + `settings.json` 등록 위치.
-- wiki: [[_schema]] 형식 페이지 스텁 + index 한 줄. **Step1에서 추출한 근거를 frontmatter `sources`에 보존**(회고 텍스트·failure·CHANGELOG·docs 경로). inbox 모드면 inbox 파일 경로 + `source_session`/`project`/`date`를 sources 후보로. 같은 결함 클래스가 기존 wiki에 있으면(Step2 "기존 통합" 규칙) 새 페이지 말고 **기존 페이지 갱신 + sources 병합**. 근거 없으면 sources invent 금지 — 승인요청에 "근거 부족" 표시.
+- wiki: [[_schema]] 형식 페이지 스텁 + index 한 줄. **Step1에서 추출한 근거를 frontmatter `sources`에 보존**(회고 텍스트·failure·CHANGELOG·docs 경로). 같은 결함 클래스가 기존 wiki에 있으면(Step2 "기존 통합" 규칙) 새 페이지 말고 **기존 페이지 갱신 + sources 병합**. 근거 없으면 sources invent 금지 — 승인요청에 "근거 부족" 표시.
+  - ⚠ **근거 고정 (inbox 모드 필수)**: inbox 파일 경로를 `sources`에 그대로 쓰지 마라 — Step7-5가 그 파일을 `applied/`로 **옮기는 순간 경로가 죽고**, `~/.claude/`라 타 머신에선 애초에 안 열린다. 원문을 `wiki/sources/<inbox 파일명>`으로 **복사**하고 `sources: - sources/<파일명>` 으로 인용한다(복사본은 불변 — 이후 수정 금지). `source_session`/`project`/`date`는 그 사본 안에 이미 들어 있다. 설계: [[_schema]] "근거 고정 (Layer1)".
 - VERSION/CHANGELOG 초안.
 
 ## Step 6 — 사람 승인 게이트 (필수)

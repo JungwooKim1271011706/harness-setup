@@ -2,6 +2,8 @@
 title: codex 호출 시 TMP 경로 mktemp 실패 → /tmp 폴백
 type: gotcha
 links: [[windows-path-jq]], [[gstack-install-windows]]
+sources:
+  - ../CHANGELOG.md — v3.3.0 "codex TMP Windows 경로 gotcha 문서화"
 updated: 2026-06-19
 ---
 

@@ -2,6 +2,8 @@
 title: Slack 알림 한글 인코딩 함정
 type: gotcha
 links: [[slack-notify-hook]], [[windows-path-jq]]
+sources:
+  - (pre-inbox, 근거 유실)
 updated: 2026-06-14
 ---
 

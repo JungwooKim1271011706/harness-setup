@@ -41,8 +41,9 @@
 
 **절차 (advisory — 자동 커밋 금지, repo R1 정책):**
 1. 새 페이지(또는 기존 페이지 갱신)를 [아래 형식](#페이지-형식)으로 **스텁까지 준비**한다. 이때 근거(회고·failure·CHANGELOG·docs 경로 중 **최소 하나**)를 `sources`에 남긴다 — 근거 없으면 invent 금지, 제안 시 "근거 부족" 표시.
-2. `index.md`에 한 줄 등록 + 관련 페이지에 `[[링크]]` 연결.
-3. 사용자에게 **"wiki에 이거 기록할까?"** 제안한다(자동 저장 X). 승인 시 커밋.
+2. 근거 원문이 **repo 밖**(inbox·failure 등)이면 `wiki/sources/`로 **복사 고정**한다 — 아래 [근거 고정](#근거-고정-layer1) 절. ⚠ 복사 주체 = **페이지를 실제로 커밋하는 쪽**(dev clone). 소비자 세션은 이 단계 해당 없음(아래 "어디로 가나"대로 inbox 드롭까지만 — 복사는 드레인 때 일어난다).
+3. `index.md`에 한 줄 등록 + 관련 페이지에 `[[링크]]` 연결. ⚠ 신규 생성 전에 **같은 엔티티 페이지를 먼저 Grep** — 이미 3개 이상이면 새 페이지를 더 만들지 말고 **허브 페이지로 통합·갱신**한다(추가만 하면 한 주제가 N페이지로 파편화돼 조회 시 전부 읽어야 한다).
+4. 사용자에게 **"wiki에 이거 기록할까?"** 제안한다(자동 저장 X). 승인 시 커밋.
 
 **어디로 가나 (세션 종류 분기 — gotcha의 push 비대칭):**
 gotcha는 보통 **소비자 세션**(제품 repo에 vendoring된 `.claude`)에서 발견된다. 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받는다(개선후보 inbox와 같은 비대칭).
@@ -51,7 +52,16 @@ gotcha는 보통 **소비자 세션**(제품 repo에 vendoring된 `.claude`)에�
 > ⚠ `origin=harness-setup` 판별은 **틀렸다** — 소비자의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같아 dev clone으로 **오판**한다(2026-07-15 실사고: finalizer가 소비자 세션서 하네스 직접 커밋 → 폐기·reset). 판별 기준은 origin이 아니라 **worktree가 중첩 `.claude`인가**다.
 
 - **dev clone**(toplevel basename ≠ `.claude`): 위 절차대로 직접 wiki 커밋(승인 시).
-- **소비자 세션**: 직접 커밋 금지. 준비한 스텁을 **회고 inbox로 드롭**(`~/.claude/harness-retro-inbox/`, 경로·형식은 `/harness-check` Step2.5 SSOT). content = gotcha 스텁(증상→원인→회피) + sources 후보(failure·CHANGELOG·발생세션). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성(inbox 경로가 `sources`로). SSOT 커밋·push 후 전 세션 git pull로 환원, 이후 읽기 트리거(orchestrator "wiki 참조" 절)가 집어준다.
+- **소비자 세션**: 직접 커밋 금지. 준비한 스텁을 **회고 inbox로 드롭**(`~/.claude/harness-retro-inbox/`, 경로·형식은 `/harness-check` Step2.5 SSOT). content = gotcha 스텁(증상→원인→회피) + sources 후보(failure·CHANGELOG·발생세션). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성. ⚠ 이때 **inbox 원문을 `wiki/sources/`로 복사**하고 그 repo 내부 경로를 `sources`에 쓴다 — inbox 경로를 그대로 인용하면 드레인이 `applied/`로 옮기는 순간 죽는다([근거 고정](#근거-고정-layer1)). SSOT 커밋·push 후 전 세션 git pull로 환원, 이후 읽기 트리거(orchestrator "wiki 참조" 절)가 집어준다.
+
+## 근거 고정 (Layer1)
+카파시 패턴의 Layer1(raw sources)은 **불변·상주**여야 한다. 우리 근거는 대부분 회고 inbox(`~/.claude/harness-retro-inbox/`)인데 이건 **머신로컬(gitignore)** 이고 드레인이 `applied/`로 **이동**시킨다 — 인용 경로가 두 겹으로 죽는다(타 머신=전부 dangle, 이동 후=경로 stale). 본문은 자기완결적이라 지식은 안 날아가지만 **출처 검증이 불가능**해진다.
+
+- repo 밖 근거를 인용할 땐 원문을 `wiki/sources/<원본파일명>`으로 **복사**하고, `sources:`는 그 상대경로(`sources/...`)를 가리킨다.
+- `wiki/sources/`는 **읽기 전용 사본**이다. 수정 금지(불변). 지식 갱신은 wiki 페이지 쪽에서 한다.
+- 이미 repo 안에 있는 근거(`../CHANGELOG.md`, `../docs/...`)는 복사 불요 — 그대로 상대경로 인용.
+- 소급 적용 안 함. **신규 인용부터** 적용한다(기존 페이지는 근거 유실 시 아래 표기법).
+- 근거가 유실됐으면 지어내지 말고 `sources: (pre-inbox, 근거 유실)`로 **정직하게 표기**한다.
 
 ## 페이지 형식
 파일명 = `kebab-case.md` (개념 1개당 1파일). frontmatter + 본문:
@@ -62,7 +72,8 @@ title: 사람이 읽는 제목
 type: operational | gotcha | reference   # 운영지식 / 함정·교훈 / 외부참조
 links: [[다른-페이지-slug]], [[또-다른-slug]]
 sources:                                 # 이 지식의 근거. gotcha는 가능한 한 필수
-  - ../CHANGELOG.md#... | ../docs/... | failure_*.md | inbox 파일 | 회고 경로
+  - sources/<복사한-원문>.md | ../CHANGELOG.md#... | ../docs/...
+  #  repo 밖 근거(inbox·failure)는 sources/ 로 복사 후 인용 — "근거 고정" 절
 updated: YYYY-MM-DD
 ---
 
@@ -75,6 +86,12 @@ repo 밖 설계 문서나 코드 경로는 일반 마크다운 링크/경로로 
 - 새 페이지를 추가하면 **`index.md`에 한 줄 등록**한다(=카탈로그).
 
 ## 유지보수 (lint)
-- 페이지가 늘면 주기적으로: 모순 페이지, 고아 페이지(들어오는 링크 0), 깨진 `[[링크]]`, 낡은 내용을 점검.
-- 신규·갱신 **gotcha 페이지에 `sources` 존재** 점검. (operational/reference는 출처 약하면 생략 가능 — invent 금지)
-- 지금은 페이지가 적어 수동으로 충분. **Obsidian으로 이 폴더를 열면** 그래프 뷰가 고아/허브를 시각적으로 보여줘 lint를 대신한다.
+**기계 점검 — `bash scripts/wiki-check.sh`** (읽기 전용, 발견 시 exit 1)
+- index 미등록 / 깨진 `[[링크]]` / 빈 파일 / `title`·`updated` 누락 / **gotcha인데 `sources` 없음**을 잡는다.
+  (operational·reference의 `sources`는 출처 약하면 생략 가능 — invent 금지. 그래서 점검 대상 아님)
+- 페이지 추가·갱신 후, 그리고 하네스 회고(`/harness-retro`) 드레인 끝에 1회 돌린다.
+
+**사람 점검 (스크립트가 못 잡는 것)**
+- 모순 페이지, stale claim(내용이 낡음), data gap.
+- 고아 페이지(들어오는 링크 0) — **Obsidian으로 이 폴더를 열면** 그래프 뷰가 고아/허브를 시각적으로 보여준다.
+- ⚠ 그래프 뷰는 링크 구조만 본다. index 미등록·frontmatter 결손은 **안 보인다** — 그건 위 스크립트 몫이다(그래프가 lint를 대신하지 못한다).

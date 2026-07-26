@@ -2,6 +2,8 @@
 title: Surefire 기본 스캔이 *IT 명명 테스트를 조용히 누락 (failsafe 미바인딩 pom)
 type: gotcha
 links: [[surefire-nested-skip]]
+sources:
+  - ../CHANGELOG.md — v3.10.0 "tester-backend *IT 스캔 누락 가드"
 updated: 2026-06-19
 ---
 

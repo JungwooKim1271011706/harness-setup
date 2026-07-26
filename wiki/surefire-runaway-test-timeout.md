@@ -2,6 +2,8 @@
 title: 폭주(무한루프) 테스트가 surefire 포크 JVM을 무한 점유 → 머신 메모리 고갈
 type: gotcha
 links: [[surefire-nested-skip]] [[surefire-it-naming-skip]]
+sources:
+  - ../CHANGELOG.md — v3.24.0 "신설"
 updated: 2026-06-21
 ---
 
