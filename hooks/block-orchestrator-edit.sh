@@ -59,14 +59,20 @@ esac
 #   .claude/**  하네스 자가수정 + agent-memory + state (소비자의 memoryDir이 여기인 경우 포함)
 #   docs/**     feature 문서 append(orchestrator 워크스루 기록)·설계 문서
 #   루트 *.md   CLAUDE.md·CONTEXT.md(contextPath 용어집)·README·TODOS 등
+#   .<도구>/**  repo 안에 눌러앉은 **gitignored 툴 아티팩트**(.gstack 리포트·.omc 상태·.vscode/.idea 설정 등).
+#               제품소스가 아니고 빌드 산출도 아니라 orchestrator가 직접 쓰는 게 정상이다.
+#               ⚠ `git check-ignore` 호출로 일반화하지 않는다 — 훅에 git 의존이 하나 더 늘고
+#               (기존 구멍 ②: PATH에 git 없으면 fail-open) target/·node_modules 같은 빌드산출까지
+#               열려 오히려 넓어진다. **점으로 시작하는 디렉터리**로 한정하는 게 좁고 안전.
 # 그 외 repo 내부 = 제품소스 → 차단.
 case "$REL" in
   .claude/*) exit 0 ;;
   docs/*) exit 0 ;;
-  */*) ;;                          # 루트 아닌 하위 경로 → 아래서 차단
+  .*/*) exit 0 ;;                  # 루트의 dot-디렉터리 하위 (.gstack/ .omc/ .vscode/ .idea/ 등)
+  */*) ;;                          # 그 외 하위 경로 → 아래서 차단
   *.md) exit 0 ;;                  # 루트 직속 마크다운만 허용(pom.xml·package.json 등은 차단)
 esac
 
 echo "[hook] 오케스트레이터 제품소스 직접편집 금지 — 구현·수정은 developer-backend/developer-frontend에 위임하라. (차단 file_path: ${file_path})
-      허용: .claude/** · docs/** · 루트 *.md · repo 밖. 이 경로가 제품소스가 아닌데 막혔다면 하네스 개선 후보다(/harness-check)." >&2
+      허용: .claude/** · docs/** · 루트 *.md · 루트 dot-디렉터리(.gstack/ 등) · repo 밖. 이 경로가 제품소스가 아닌데 막혔다면 하네스 개선 후보다(/harness-check)." >&2
 exit 2

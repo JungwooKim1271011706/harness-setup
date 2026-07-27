@@ -1,7 +1,7 @@
 ---
 title: 모델 오버라이드는 미가용 시 에러가 아니라 조용히 강등된다 — 가용성은 transcript로만 확인
 type: gotcha
-links: [[agent-memory-overrides-rule]]
+links: [[agent-memory-overrides-rule]], [[gates-verify-present-code-only]]
 sources:
   - sources/20260726T060029Z__DEVUNIT-authpatch_draft.md
   - ../CHANGELOG.md — v3.82.0 "fable 무음 강등"
