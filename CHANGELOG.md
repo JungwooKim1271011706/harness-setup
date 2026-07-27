@@ -3,6 +3,27 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 4.0.0 — 2026-07-27 — **게이트 강제 재정립 (MAJOR · 세션 재시작 필수)**
+
+> 릴리즈 묶음: v3.80.0~v3.83.0의 누적을 MAJOR로 승격한다. 코드 변경은 아래 네 항목이 전부이고 이 엔트리는 **등급 재판정**이다(각 항목 상세는 해당 버전 엔트리 참조). 승격 사유 = 게이트 **강제 구조**가 두 곳에서 바뀌었고, 둘 다 소비자 세션의 실제 차단 동작을 바꾼다.
+
+**왜 MAJOR인가 (2건 누적)**
+1. **편집차단 판정 반전** (v3.81.0) — `block-orchestrator-edit.sh`가 차단리스트 → **허용리스트(fail-closed)**. 종전엔 특정 모듈명을 쓰지 않는 프로젝트에서 **아무것도 막지 못했다**(실측: 한 소비자는 매치 0으로 "기계강제"가 통째로 사망). 이제 `.claude/**` · `docs/**` · 루트 `*.md` · repo 밖을 뺀 **모든 repo 내부 경로가 메인스레드 편집 차단 대상**이다. 차단 범위가 실질 확대되므로 기존 세션 감각과 다르다.
+2. **승인화면 전 차단 조건 신설** (v3.82.0) — 최고위험 게이트(패널 eng·cso, 7.7)의 **실제 실행 모델을 transcript로 실측**하고, 무음 강등(fable→sonnet)이면 승인화면 통과 전 차단·재실행. 게이트 통과 경로에 단계가 하나 늘었다.
+
+두 변경 모두 **불변식 자체는 그대로**다("orchestrator 직접 코드수정 금지", "최고위험 게이트 = fable∥codex 2소스"). 바뀐 것은 그 불변식이 **그동안 거짓이었다가 이제 참이 된 것**이다. 그래서 개별 항목은 MINOR로 기록했으나, 소비자 입장에서 체감 동작이 달라지므로 릴리즈 등급은 MAJOR로 올린다.
+
+**소비자가 해야 할 일**
+- **세션 재시작 필수.** 진행 중 세션은 옛 agent 정의를 들고 있어 새 차단 동작과 문서 설명이 어긋난다.
+- 최초 1회 수동 `git -C .claude pull` (v3.80.0의 자동 pull 훅 자체를 받아야 하므로 부트스트랩 불가). 이후는 세션 시작 시 자동.
+- 편집차단 확대로 막히는 경로가 생기면 오탐이 아니라 **위임 신호**다(developer-* 로). 제품소스가 아닌데 막혔으면 `/harness-check`로 개선 후보 등록.
+
+**함께 들어간 비-게이트 변경** (등급 무관, 상세는 각 버전)
+- v3.80.0 소비자 clone 자동 전파(`harness-autopull.sh`) + wiki 카파시 Layer1 근거 고정 + `scripts/wiki-check.sh`
+- v3.81.0 소비자 프로젝트명 하드코딩 제거 + `session-check` 선언경로 실재 검사(9d)
+- v3.82.0 `wiki/claude-model-override-silent-downgrade.md`
+- v3.83.0 `wiki/vtu-teleport-spec-native-dom.md` + `_schema` 허브 규칙 정밀화
+
 ## 3.83.0 — 2026-07-27
 - **inbox 드레인 1건(medium) — VTU Teleport spec 함정 wiki화 + 허브 규칙 정밀화 — MINOR, 거버넌스 무영향. inbox pending 0.**
   - **`wiki/vtu-teleport-spec-native-dom.md` 신설**: `<Teleport to="body">` 컴포넌트 RED spec이 3라운드 소모한 함정. 원인 두 겹 — ① `wrapper.find()`는 마운트 서브트리만 뒤지는데 Teleport는 노드를 `document.body`로 옮긴다 ② 흔한 회피책 `global.stubs.teleport:true`가 **더 나쁜 오답**(제자리 렌더 → 클리핑·리페어런팅 검증 대상 자체가 소멸 + remount/재열림 아티팩트로 단언 흔들림 = 라운드마다 실패 양상이 달랐던 정체). 회피 = stub 제거 + `document.body.querySelectorAll` + `dispatchEvent`(`trigger()`도 같은 이유로 무효) + body 잔여노드 cleanup. 애초 판단기준도 명시 — 클리핑 회피 목적이면 **재배치가 Teleport보다 우선**(프로젝트 rule의 기존 취지와 정합).
