@@ -1,0 +1,57 @@
+# CLAUDE.md — dev clone 세션 지침 (템플릿)
+
+> ⚠ **이 파일은 템플릿이다.** harness-setup을 **dev clone**(= repo 루트가 하네스 자체)으로 열어 작업할 때만
+> 루트 `CLAUDE.md`로 **복사**해 쓴다. 실파일은 **gitignore**다 — 커밋하면 소비자 `.claude/CLAUDE.md`로 딸려가
+> 모든 소비자 세션에 "하네스를 만드는 세션" 지침이 주입된다(오염). `CONTEXT.md`·`claude-security-guidance.md`와 동일 패턴.
+>
+> ```bash
+> cp CLAUDE.dev.md.template CLAUDE.md   # dev clone에서 1회
+> ```
+>
+> **왜 필요한가**: dev clone은 자체 `.claude/`가 없어 **repo 훅·settings가 하나도 안 걸린다**(`settings.json`의
+> `"agent": "orchestrator"`도 미적용). 즉 **하네스를 수정하는 세션이 하네스 규칙 밖에서 돈다.** 소비자 세션이
+> 자동으로 받는 거버넌스를 여기선 아무도 안 알려준다 — 사용자가 매번 프롬프트로 적어주지 않으면 그냥 커밋된다.
+> 이 파일이 그 공백을 메운다.
+>
+> **중복 금지**: 각 항목은 1줄 + 파일 포인터만. 규칙 전문을 여기 복붙하면 SSOT가 둘이 되어 drift한다.
+
+---
+
+## 이 repo가 무엇인가
+
+**하네스 SSOT**다. 여기서의 모든 변경 = **거버넌스 파일 변경**이고, 커밋·push하면 전 소비자 프로젝트로 전파된다.
+소비자에서는 이 repo 전체가 제품 repo의 `.claude/`에 nested clone으로 들어간다(`git -C .claude pull` 또는 세션시작 자동 pull).
+
+- **세션 판별식**: `basename $(git rev-parse --show-toplevel)` ≠ `.claude` → dev clone. SSOT는 `wiki/_schema.md` "어디로 가나".
+  ⚠ origin으로 판별 금지 — 소비자의 중첩 `.claude/`도 origin이 같아 오판한다(2026-07-15 실사고).
+
+## 불변식 (지켜야 할 것)
+
+- **자동 커밋·자동 push 금지.** 하네스 변경은 **사람 승인 게이트**를 거친다. 승인 없는 대규모 재작성 금지.
+- **하네스 저작은 사람 승인, 배포만 자동.** 소비자 clone은 세션시작 자동 pull(`hooks/harness-autopull.sh`)로 받는다.
+- **소비자 오염 금지**: 프로젝트 특화 지식을 이 repo에 커밋하지 않는다. 도메인 용어→`contextPath`, 코딩규칙→`rules/`(gitignore),
+  보안→`claude-security-guidance.md`(gitignore). 판단 축과 예외는 `wiki/_schema.md` 라우팅 표.
+- **특정 소비자 프로젝트명을 기본값처럼 쓰지 않는다.** 모듈 판정 기준은 CLAUDE.md `Harness Configuration`. 예시는 "예:"로 명시.
+
+## 커밋 의식 (하네스 변경 시 필수)
+
+`.claude/` 하네스 파일(agent md·훅·settings·워크플로·룰·로컬미러 스킬)을 바꿨으면:
+**VERSION bump + CHANGELOG 갱신 + `bash skills/sync-skills.sh`** — 절차·등급 기준은 `agents/finalizer.md` "하네스 버전 bump 의식",
+설계 전문은 `docs/harness-versioning.md`. 순수 문서(README·template)만 바꾼 커밋은 bump 대상이 아니다.
+
+## 슬래시 스킬이 없다 (dev clone 한정)
+
+클코는 슬래시 스킬을 `.claude/skills/`에서 등록하는데 dev clone은 스킬이 **repo 루트**(`skills/…`)라 그 경로가 없다.
+→ `/harness-retro`·`/harness-check` 등은 **호출 불가**. 해당 작업은 `skills/<이름>/SKILL.md`를 Read해 **절차를 직접 실행**한다(결과 동일).
+
+## 자주 쓰는 것
+
+| 무엇 | 어디 |
+|------|------|
+| 운영지식·gotcha 기록 규칙 | `wiki/_schema.md` (capture 트리거·Layer1 근거 고정·lint) |
+| wiki 정합성 점검 | `bash scripts/wiki-check.sh` (읽기전용) |
+| 회고 inbox 드레인 | `skills/harness-retro/SKILL.md` (inbox: `~/.claude/harness-retro-inbox/`) |
+| 라우팅 흐름도 | `docs/routing-map.md` |
+| 개선 백로그 원장 | `agent-memory/orchestrator/project_harness_improvement_backlog.md` (gitignore) |
+
+> 프로젝트 특화: (이 clone에서만 쓰는 로컬 메모가 필요하면 여기 추가 — 커밋 안 됨)

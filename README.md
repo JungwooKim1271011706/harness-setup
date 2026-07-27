@@ -194,6 +194,8 @@ git -C .claude pull origin main
 | `claude-security-guidance.md.template` | 보안 SSOT 제너릭 OWASP 골격 (재사용 시 실파일로 복사·현지화) | track |
 | `CONTEXT.md` | 프로젝트 도메인 용어집 (`.template`에서 생성·현지화 — grill/co-plan 쓰기, `contextPath` 경유. product 추적 경로 권장) | ignore |
 | `CONTEXT.md.template` | 용어집 골격 (하네스 메커니즘 + `> 프로젝트 특화:` 플레이스홀더. 재사용 시 contextPath 위치로 복사·현지화) | track |
+| `CLAUDE.md` | **dev clone 세션 지침** (`.dev.md.template`에서 복사). dev clone은 자체 `.claude/`가 없어 훅·settings가 안 걸리므로 거버넌스를 이 파일이 알린다. ⚠ 커밋 금지 — 소비자 `.claude/CLAUDE.md`로 딸려가 오염 | ignore |
+| `CLAUDE.dev.md.template` | dev clone 지침 골격 (불변식·커밋 의식·슬래시 미등록 안내. 규칙 전문 복붙 금지 — 포인터만) | track |
 | `rules/` | 프로젝트별 코딩 규칙 (rule-maker 생성) | ignore |
 | `agent-memory/` | 프로젝트별 메모리 (auto-memory, 머신로컬·휴대 안 됨) | ignore |
 | `settings.local.json` | 로컬 권한/secret | ignore |
