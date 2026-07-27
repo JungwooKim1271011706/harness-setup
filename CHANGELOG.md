@@ -3,6 +3,18 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 4.2.0 — 2026-07-27
+- **전체회귀 부채 계산을 산문 절차 → `scripts/regression-debt.sh`로 이관 — MINOR. 재시작 권장.**
+  - **동기**: 부채 안내는 매 커밋 도는데 계산이 전부 **결정론**인데도 agent md 산문 38줄로 LLM에게 시키고 있었다(slug 산정 → JSON Read → 배열 길이 → modules 합집합 → 2트리거 비교 → 3분기 렌더 → 커밋 후 append). LLM 판단은 0인데 **커밋당 5~6턴 + JSON 본문이 컨텍스트에 상주**. 판단 없는 절차를 산문으로 두면 토큰과 오계산 축을 동시에 문다.
+  - **`scripts/regression-debt.sh` 신설** — `render`(커밋 직전 통지) / `update`(커밋 직후 append) / `reset`(전체회귀 PASS) / `show`(디버그) / `set-escalation`(트리거② 시딩). 렌더 문구·2트리거·임계 N=5·모듈 매핑 규칙은 종전과 **동일**(동작 불변, 실행 주체만 이동).
+  - **ADR-0002 D7 "양쪽이 같은 명령을 써야 slug 일치"가 규율 의존 → 구조적 보장으로.** finalizer(흐름10)와 tester-runtime(흐름8)이 각자 `gstack-slug`를 부르던 것을 한 스크립트로 합쳤다. 종전엔 한쪽이 slug를 다르게 산정하면 **부채가 영구 리셋 실패**(무음)했는데 이제 호출 지점이 하나라 발생 불가.
+  - **불변식은 스크립트 안으로 이동**: jq·gstack 부재, state 부재·파손, 쓰기 실패 — 전부 stdout 비우고 **exit 0**. agent md는 "exit code로 분기 금지"만 남는다. ADR-0002 D4(비차단 단방향 통지)가 LLM 준수 의존에서 코드 보장으로.
+  - **프로젝트 특화 설정은 state 파일 선택 필드로** (`escalation_modules`, `module_depth`) — repo 밖(`~/.gstack/projects/{slug}/`)이라 하네스 미오염. 종전엔 "CLAUDE.md `modules` 의존관계로 판정"을 LLM이 매번 추론했다.
+    - ⚠ **소비자 마이그레이션 (다중 모듈 프로젝트 필수, 1회)**: `bash .claude/scripts/regression-debt.sh set-escalation "<공용프레임워크모듈>"`. **미시딩이면 트리거②가 조용히 false**가 되어 공용 모듈 변경 격상이 죽는다(단일 모듈 프로젝트는 원래 false라 무해). finalizer md에 "격상이 안 잡히면 시딩 먼저 의심" 문구 동봉.
+  - **축소**: `finalizer.md` 38줄 → 11줄, `tester-runtime.md` 8줄 → 4줄. `CONTEXT.md.template`·ADR-0002는 SSOT 포인터로 갱신(중복 서술 제거 = drift 방지).
+  - **검증(수동, 격리 HOME)**: 3렌더 분기(무출력/📊정보/⚠권장) · 트리거①(N≥5) · 트리거②(state 필드·env override 양쪽) · `update` 멱등(같은 sha 3회 → 길이 1) · `reset` 후 `escalation_modules` 보존 · 실패 5종(state 부재 / JSON 파손 / gstack 부재 / jq 부재 / 잘못된 명령) 전부 stdout 공백 + exit 0 · `update`/`reset`의 stdout 오염 없음.
+  - 판단 규칙(재사용): 스크립트화 = **ⓐ결정론 ∧ ⓑ매 사이클 반복 ∧ ⓒ출력 5줄 이하**. 셋 다 만족할 때만. 판단이 섞이거나 출력이 길면 LLM이 낫다(덤프하는 스크립트는 파일 Read보다 비싸다).
+
 ## 4.1.0 — 2026-07-27
 - **inbox 드레인 4후보 → 2 적용 / 1 기각(이미 구현) / 1 축소 — MINOR. 재시작 권장. inbox pending 0.**
   - **[HIGH·적용] 승인 항목 미구현이 전 기계 게이트를 무사통과했다.** 계획서가 승인한 FROZEN 예외 ①(`RestTemplate` 소켓 타임아웃 프로퍼티화)이 미구현인 채 7.7 PASS·변경검증 77/77·frontend 실측·/review blocking 0·/codex·/cso findings 0을 **전부 통과**, finalizer 직전에야 발각. 구조적 원인 = **기계 게이트는 전부 "있는 코드"만 본다**(7.7=작성된 RED 품질, 변경검증=실행된 테스트, /review·codex=diff, /cso=존재하는 공격표면). "있어야 하는데 없는 코드"는 어느 게이트의 시야에도 없다. 연쇄 피해: codex finding 기각 근거가 *"소켓 타임아웃만이 유일한 실질 상한"*이었는데 **그 상한이 미구현** — 없는 안전망을 근거로 리뷰 지적을 기각한 셈.

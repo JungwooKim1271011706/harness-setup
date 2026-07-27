@@ -49,8 +49,12 @@
 전 도메인 안전망. tester-runtime이 담당하며 cross-module 통합 + 변경 무관 도메인까지 전체 스위트를 1회 돈다. **매 구현마다 강제하지 않는다**(과거엔 강제였고 그게 과부하의 원인이었다). 호출 경로는 둘뿐: ① 사용자 수동("회귀 돌려") ② [[전체회귀 부채]] 권장 수락. 실행해 PASS하면 부채가 리셋된다.
 
 ### 전체회귀 부채 (Full Regression Debt)
-마지막 전체회귀 PASS 이후 쌓인 미검 회귀 위험의 누적량. state 파일 `~/.gstack/projects/{slug}/regression-debt.json`에 영속(기존 체크포인트 패턴 재사용, repo 밖이라 비공유). **{slug}는 `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`으로 산정(리뷰모드 체크포인트와 동일 메커니즘)**. 스키마 = { last_full_regression: {sha, ts}, commits_since: [{sha, modules, ts}] }. 부채 누적은 **제품 코드 모듈을 터친 커밋만** 카운트한다(문서·.claude만 바뀐 커밋은 제외). 모듈 터치 판정 = `git diff --cached --name-only` 경로 첫 세그먼트 매핑.
-> 프로젝트 특화: `<제품 코드 모듈명 목록 — 부채 카운트 대상. 예: 모듈 A/B/C. 그중 "양쪽 회귀 필요" 격상 트리거 모듈 명시>`
+마지막 전체회귀 PASS 이후 쌓인 미검 회귀 위험의 누적량. state 파일 `~/.gstack/projects/{slug}/regression-debt.json`에 영속(기존 체크포인트 패턴 재사용, repo 밖이라 비공유). 스키마 = { last_full_regression: {sha, ts}, commits_since: [{sha, modules, ts}] }. 부채 누적은 **제품 코드 모듈을 터친 커밋만** 카운트한다(문서·.claude만 바뀐 커밋은 제외).
+
+**모든 계산·state I/O는 `.claude/scripts/regression-debt.sh`가 SSOT다** — slug 산정(`gstack-slug`, 리뷰모드 체크포인트와 동일 메커니즘)·모듈 매핑(경로 첫 세그먼트)·트리거 판정·렌더·append·reset을 한 곳에 둔다. finalizer는 `render`/`update`, tester-runtime은 `reset`을 호출할 뿐 절차를 재현하지 않는다(양쪽이 같은 스크립트 → slug 불일치로 리셋이 영구 실패하던 축 제거). 스크립트는 어떤 실패에서도 stdout을 비우고 exit 0 — 커밋을 막지 않는다.
+
+프로젝트 특화 설정은 **state 파일의 선택 필드**로 둔다(repo 밖 = 하네스 미오염): `escalation_modules`(트리거② 격상 모듈 목록, 미설정이면 트리거② 항상 false) / `module_depth`(모듈명으로 쓸 경로 세그먼트 수, 기본 1).
+> 프로젝트 특화: `<제품 코드 모듈명 목록 — 부채 카운트 대상. 예: 모듈 A/B/C. 그중 "양쪽 회귀 필요" 격상 트리거 모듈을 state의 escalation_modules에 넣는다>`
 
 **2트리거 (강력권장으로 격상)**:
 1. 마지막 전체회귀 후 커밋 ≥ 5 (N=5, 느슨 — 전체회귀가 무거워 자주 돌리지 않으려는 의도)

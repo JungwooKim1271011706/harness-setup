@@ -32,13 +32,10 @@ tester-backend/tester-frontend는 변경검증(단위+변경스코프)만 본다
 
 ### 전체회귀 PASS 시 부채 리셋 (state 갱신)
 
-전체회귀가 PASS하면 마지막 전체회귀 기준점을 갱신하고 누적 부채를 비운다.
+전체회귀가 **PASS**하면 `bash .claude/scripts/regression-debt.sh reset` 1회 실행한다. 끝이다 — slug 산정·state 생성·`last_full_regression` 갱신·`commits_since` 비우기·`escalation_modules` 보존은 전부 스크립트가 한다(finalizer의 render/update와 **같은 스크립트** → slug 불일치로 리셋이 실패하던 축이 구조적으로 없다).
 
-- 대상 파일: `~/.gstack/projects/{slug}/regression-debt.json` (repo 밖 비공유)
-- **{slug} 산정 (finalizer와 반드시 동일 메커니즘)**: `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`로 `$SLUG`를 도출한다. 이는 리뷰모드 체크포인트(`~/.gstack/projects/{slug}/checkpoints/review-WI{N}.json`)가 쓰는 기존 메커니즘과 동일하다. finalizer(흐름10)도 같은 명령으로 산정하므로 양쪽 경로가 일치한다(다르면 부채가 영구 리셋 실패).
-- 갱신 내용: `last_full_regression` = {sha: 현재 HEAD sha, ts: 현재 시각}, `commits_since` = [] (빈 배열로 리셋)
-- FAIL 시에는 리셋하지 않는다(부채 유지). 실패 도메인 판정 후 해당 developer로 반환.
-- 파일/디렉터리가 없으면 생성한다. 파싱 실패 시 새 스키마로 초기화.
+- **FAIL 시에는 실행하지 않는다**(부채 유지). 실패 도메인(backend/frontend) 판정 후 해당 developer로 반환.
+- 스크립트는 어떤 실패에서도 exit 0이다. exit code로 분기하지 말고, 출력 `✅ 전체회귀 부채 리셋 — 기준 sha=…` 1줄을 리포트에 그대로 옮긴다.
 
 ### JUnit 통합/전체회귀 실행 (skipTests 임시 오버라이드)
 

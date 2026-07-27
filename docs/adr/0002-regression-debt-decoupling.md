@@ -60,6 +60,8 @@ finalizer가 커밋 직전 완료 리포트에 텍스트 1블록 출력 후 그�
 ### D7. state 파일
 `~/.gstack/projects/{slug}/regression-debt.json` (기존 체크포인트 패턴, repo 밖 비공유). finalizer가 커밋 시 갱신, tester-runtime이 전체회귀 PASS 시 리셋. **{slug} 산정은 `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`으로 도출한 `$SLUG`(리뷰모드 체크포인트와 동일 메커니즘)**. finalizer·tester-runtime 양쪽이 같은 명령을 쓰므로 slug가 일치한다(다르면 부채 리셋 실패).
 
+> **갱신 (v4.2.0)** — 결정 D7 자체는 유효하고 **구현 위치만 이동**했다. slug 산정·부채 계산·렌더·append·reset은 `.claude/scripts/regression-debt.sh` 한 곳으로 옮겼고 agent md는 그 스크립트를 호출만 한다(finalizer=`render`/`update`, tester-runtime=`reset`). "양쪽이 같은 명령을 써야 slug가 일치한다"는 **규율 의존**이었으나 이제 호출 지점이 하나라 **구조적으로 보장**된다. 프로젝트 특화 격상 모듈은 state의 선택 필드 `escalation_modules`로 이동(하네스 repo 미오염).
+
 ---
 
 ## 결과

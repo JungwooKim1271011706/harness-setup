@@ -138,34 +138,17 @@ memory: project
 - state 읽기/쓰기 실패(파일 없음·JSON 파싱 실패 등)는 안내를 생략할지언정 커밋을 막지 않는다.
 - git 훅이 아니라 완료 리포트 안의 텍스트 1블록이다(제품 repo·서브모듈 미변경).
 
-### 절차 (커밋 직전)
-1. {slug} 산정 (tester-runtime 흐름8과 반드시 동일 메커니즘): `eval "$(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)"`로 `$SLUG`를 도출. 리뷰모드 체크포인트(`review-WI{N}.json`)가 쓰는 기존 메커니즘과 동일. 양쪽이 같은 slug를 써야 부채가 정상 리셋된다.
-2. state 읽기: `~/.gstack/projects/$SLUG/regression-debt.json`. **파일이 없거나 JSON 파싱에 실패하면 빈 부채(N=0)로 간주하고 그대로 진행한다. 절대 커밋을 차단하거나 에러로 중단하지 않는다.**
-3. 부채 계산:
-   - `commits_since` 길이 = N (마지막 전체회귀 후 코드 모듈 터친 커밋 수)
-   - `commits_since`의 modules 합집합에 **공용 프레임워크 모듈**(다른 모듈이 의존하는 최하위 모듈 — CLAUDE.md `modules`의 의존 관계로 판정. 예: tocFramework) 포함 여부 = framework 격상 플래그. 단일 모듈 프로젝트처럼 공용 모듈이 없으면 이 플래그는 항상 false.
-4. 트리거 판정 (2트리거, 강력권장으로 격상):
-   - ① N ≥ 5 (N=5)
-   - ② 공용 프레임워크 모듈 변경 감지 (리셋 전까지 유지)
-5. 렌더:
-   - 트리거 hit 아님 + N=0(마지막 전체회귀 후 코드 모듈 터친 커밋 0개): **📊 정보줄도 출력 생략**(노이즈 방지).
-   - 트리거 hit 아님 + N≥1(정보): `📊 전체회귀 부채: 후 N커밋 / M모듈(모듈명). 임계 미만 — 참고.`
-   - 트리거 hit(강력권장):
-     ```
-     ⚠ 전체회귀 강력 권장
-       - (framework 터치 시) <공용 모듈명> 변경 감지 (의존 모듈 전체 영향)
-       - 마지막 전체회귀 후: N커밋
-       - 권장: "회귀 돌려"로 tester-runtime 전체회귀 1회
-       (소프트 — 차단 안 함)
-     ```
-6. 출력 후 멈추지 않고 커밋 진행(6단계).
+### 절차 (커밋 직전 / 직후 — 계산·state I/O는 전부 스크립트)
 
-### 커밋 후 state 갱신 (코드 모듈 터친 커밋만 카운트)
-1. 이번 커밋이 제품 코드 모듈을 터쳤는지 판정: `git diff --cached --name-only`(또는 커밋 직후 `git show --name-only`)에 **`.claude/`·`docs/`·루트 문서 밖 경로**가 있으면 코드 모듈. 모듈명 = 그 경로의 첫 세그먼트(CLAUDE.md `modules` 규약을 따른다 — 다중 모듈이면 `tocServer` 같은 모듈 디렉터리, 단일 앱이면 `src` 등. 프로젝트가 CLAUDE.md에 카운트 세그먼트를 명시했으면 그 값이 우선).
-2. 문서·.claude만 바뀐 커밋은 카운트 제외(state 미변경).
-3. 코드 모듈 터쳤으면 `commits_since`에 `{sha: 커밋 sha, modules: [터친 모듈 첫세그먼트 목록], ts: 시각}` append.
-4. 파일/디렉터리 없으면 생성. 스키마 = `{last_full_regression:{sha,ts}, commits_since:[{sha,modules,ts}]}`.
-   - state 쓰기 실패 시에도 커밋은 이미 완료된 상태이므로 그대로 진행한다(불변식: state I/O는 커밋을 막지 않는다).
+slug 산정·N 계산·모듈 합집합·트리거 판정·렌더·append는 **`.claude/scripts/regression-debt.sh`가 SSOT**다. finalizer가 산문 절차를 손으로 재현하지 않는다(오계산 축 제거 + 턴 절감).
+
+1. **커밋 직전**: `bash .claude/scripts/regression-debt.sh render` → **stdout을 완료 리포트에 그대로 붙인다**(가공·요약·재작성 금지). 출력이 비면 "부채 0 또는 임계 미만 무출력" = **정상**이니 아무것도 쓰지 않는다.
+2. 출력 후 멈추지 않고 **커밋 진행**(6단계).
+3. **커밋 직후**: `bash .claude/scripts/regression-debt.sh update`. 코드 모듈 터친 커밋만 카운트되고 문서·`.claude/` 전용 커밋은 스크립트가 제외한다. 같은 sha 재실행은 멱등(중복 append 없음).
+
+- 스크립트는 **어떤 실패에서도 stdout을 비우고 exit 0**이다(jq·gstack 부재, state 부재·파손, 쓰기 실패). **exit code로 분기 금지**, stderr 진단은 완료 리포트로 옮기지 않는다 — 불변식 "state I/O는 커밋을 막지 않는다"가 스크립트 안에 박혀 있다.
+- 트리거②(공용 프레임워크 모듈)는 프로젝트 특화라 state 파일의 선택 필드 `escalation_modules`로 설정한다(repo 밖 = 하네스 미오염). 시딩은 프로젝트당 1회 `bash .claude/scripts/regression-debt.sh set-escalation "<공용모듈>"`. **미설정이면 트리거②는 항상 false** — 공용 모듈 없는 프로젝트면 정상이지만, 다중 모듈 프로젝트에서 미시딩이면 격상 트리거가 조용히 죽는다. 부채 안내에 공용 모듈 변경이 안 잡히면 시딩 여부를 먼저 의심한다.
+- 전체회귀 PASS 시 리셋은 tester-runtime이 같은 스크립트의 `reset`으로 수행한다. 양쪽이 한 스크립트를 쓰므로 **slug 불일치로 부채가 영구 리셋 실패하던 축이 구조적으로 사라진다**.
 
 ## 사람 E2E 점검 안내 (커밋 직전, 비차단 통지)
 
