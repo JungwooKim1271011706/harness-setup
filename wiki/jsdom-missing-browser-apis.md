@@ -1,7 +1,7 @@
 ---
 title: renderer가 jsdom 미구현 브라우저 전역 API를 쓰면 단위테스트서 전수 폭발
 type: gotcha
-links: [[vite-stale-served-source-windows]], [[vue-immediate-watch-template-ref]]
+links: [[vite-stale-served-source-windows]], [[vue-immediate-watch-template-ref]], [[vue-vmodel-select-jsdom-artifact]], [[vtu-teleport-spec-native-dom]]
 sources:
   - ~/.claude/harness-retro-inbox/applied/20260624T120100Z__DEVUNIT-repostitch__wiki-css-escape-jsdom.md
   - DEVUNIT-repostitch PR-S2 (submodule-ff-import) 실측

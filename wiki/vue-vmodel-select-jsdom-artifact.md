@@ -1,7 +1,7 @@
 ---
 title: Vue v-model/select 리셋 검증 RED는 DOM .value 단언 금지 (jsdom 아티팩트)
 type: gotcha
-links: [[jsdom-missing-browser-apis]], [[vitest-vimock-partial-throws]], [[vitest-mockresolvedvalue-microtask-flush]]
+links: [[jsdom-missing-browser-apis]], [[vtu-teleport-spec-native-dom]], [[vitest-vimock-partial-throws]], [[vitest-mockresolvedvalue-microtask-flush]]
 sources:
   - 발생세션: export-range-direction-guard 프론트 (DEVUNIT-authpatch_draft, 2026-07-16)
   - agent-memory project_export-trigger-modal-select-reset-jsdom-artifact.md

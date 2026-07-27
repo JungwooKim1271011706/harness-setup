@@ -3,6 +3,13 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 3.83.0 — 2026-07-27
+- **inbox 드레인 1건(medium) — VTU Teleport spec 함정 wiki화 + 허브 규칙 정밀화 — MINOR, 거버넌스 무영향. inbox pending 0.**
+  - **`wiki/vtu-teleport-spec-native-dom.md` 신설**: `<Teleport to="body">` 컴포넌트 RED spec이 3라운드 소모한 함정. 원인 두 겹 — ① `wrapper.find()`는 마운트 서브트리만 뒤지는데 Teleport는 노드를 `document.body`로 옮긴다 ② 흔한 회피책 `global.stubs.teleport:true`가 **더 나쁜 오답**(제자리 렌더 → 클리핑·리페어런팅 검증 대상 자체가 소멸 + remount/재열림 아티팩트로 단언 흔들림 = 라운드마다 실패 양상이 달랐던 정체). 회피 = stub 제거 + `document.body.querySelectorAll` + `dispatchEvent`(`trigger()`도 같은 이유로 무효) + body 잔여노드 cleanup. 애초 판단기준도 명시 — 클리핑 회피 목적이면 **재배치가 Teleport보다 우선**(프로젝트 rule의 기존 취지와 정합).
+  - **`_schema.md` 허브 규칙 정밀화 (v3.80.0 규칙의 첫 적용에서 부정확 발각)**: 종전 문구는 "같은 엔티티 3개 이상이면 무조건 허브로 통합"이었는데, 이번 케이스에 적용하면 **구체성이 파괴**된다. 분기 추가 — **같은 근본원인**이면 기존 페이지에 통합(codex 7페이지 파편화 사례), **같은 표면·다른 근본원인**이면 각자 유지 + 상호링크·"같은 계열" 절·index 인접 배치로 **클러스터**. VTU/jsdom DOM 단언 함정 3종(`vue-vmodel-select-jsdom-artifact` · `jsdom-missing-browser-apis` · 신규 Teleport)은 후자라 클러스터로 처리하고 상호 `links:` 연결.
+  - **Layer1 근거 고정 2번째 적용**: inbox 원문을 `wiki/sources/20260724T134253Z__DEVUNIT-authpatch_draft.md`로 복사 고정(diff 무결성 확인) 후 상대경로 인용.
+  - **보류(하네스 밖)**: 회고의 2순위 제안(프로젝트 `rules/package/*/frontend.md`에 Teleport spec 관용구 1항)은 dev clone에서 처리 불가 — `rules/`는 양쪽 gitignore라 커밋되지 않는다([[claude-rules-gitignore-local-only]]). **소비자 세션 작업으로 남긴다.** 하네스 규칙(agents/*.md) 변경은 불요(회고 자체 판단과 일치 — Vue+VTU 스택 국한 지식이라 wiki가 맞는 자리).
+
 ## 3.82.0 — 2026-07-27
 - **inbox 드레인 1건(high) — fable 무음 강등으로 최고위험 게이트가 소리 없이 기준 미달이던 것 수정 — MINOR. 재시작 권장.**
   - ⚠ **MAJOR 여지**: 승인화면 진입 전 **차단 조건이 하나 늘었다**(모델 실측 실패 시 재실행 강제). 불변식("최고위험 게이트 = fable∥codex 2소스")은 그대로고 그동안 거짓이던 것을 참으로 만든 것이라 MINOR로 잡았으나, "게이트 구조 변경"으로 보면 MAJOR도 타당. v3.81.0의 편집차단 반전과 함께 **누적 2건** — 묶어서 4.0.0으로 올릴지는 사람 판단.

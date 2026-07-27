@@ -40,6 +40,7 @@
 - [[mockito-strictstubs-removal-wi]] — 제거 WI가 호출 라인 지우면 그 메서드 stub이 UnnecessaryStubbingException(STRICT_STUBS). 호출제거+stub제거 같은 커밋. 부재 검증은 sentinel-stub 말고 @JsonInclude 부재+null 직렬화
 - [[vitest-vimock-partial-throws]] — vitest `vi.mock` 부분대체서 factory 미반환 named export는 undefined 아닌 throw → script setup 전량 死. 모든 export를 factory에, 프로덕션 `?? fallback` 금지(테스트커플링)
 - [[vue-vmodel-select-jsdom-artifact]] — Vue v-model/select 리셋 RED에 DOM `.value` 단언 금지(jsdom `_assigning`+`wrapper.find` 정적캡처 이중 아티팩트). 리액티브 귀결로 단언+구별력 자가검증+픽스처 ≥3
+- [[vtu-teleport-spec-native-dom]] — `<Teleport to="body">` 노드는 마운트 서브트리 밖이라 `wrapper.find()`가 못 찾고, `stubs.teleport:true`는 제자리 렌더라 검증 대상 소멸+remount 아티팩트(spec 3라운드 소모). `document.body.querySelectorAll`+`dispatchEvent`로. 클리핑 목적이면 Teleport보다 재배치 우선
 - [[codex-workspace-write-vitest-sandbox]] — codex workspace-write가 깊은 워크트리서 vitest 자기검증 전건 실패(샌드박스 상위 read 차단+PS 실행정책). 산출은 미검증 전제, 실행검증은 tester 라운드로 분리
 - [[grep-binary-misdetect-touch-surface]] — ripgrep이 비-UTF8 바이트 섞인 파일을 binary 오탐→무음 제외 → 시그니처 변경 회귀범위 grep 카운트에 무음 누락(WI-C 11≠12파일). 카운트=하한, mvn test-compile이 진실
 - [[java-unicode-escape-compile-trap]] — javac \u 치환은 렉싱 전 전처리(JLS 3.3) — 주석·문자열 어디든 \u+비hex면 컴파일 에러. mvn compile(main만)은 test 소스 못 잡음 → test-compile로 확인
