@@ -430,6 +430,15 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 
 **orchestrator가 한다 (워크플로 반환 후 — dedup + 코드대조 판정):**
 > **입력 = 패널 findings + codex 형제 findings 합집합**(아래 `### codex 형제`). 패널(claude)과 codex(cross-model)의 criticals·majors·minors를 한 풀로 합쳐 아래 dedup·코드대조를 1회 돌린다. 출처(패널 페르소나 / codex) 태그는 보존하되 판정 로직은 동일하다.
+0-a. **계측 기록 (비차단, 판정 전)**: 패널 산출 수령 직후 1회.
+   ```
+   echo '{"round":<이번 패널이 몇번째>,"reGate":<반환 reGate>,"priorPersonas":[<직전 생존 critical을 낸 페르소나>],"perPersona":<반환 perPersona>,"failures":<반환 failures>}' \
+     | bash .claude/scripts/panel-metrics.sh log
+   ```
+   - **왜**: 재게이트마다 페르소나 **전원**이 도는 설계의 근거(파급 축 — 1회차 수정이 *다른 렌즈* 영역에 결함을 만든다)는 관측이 **n=1**이다(백로그 2026-07-01). n=1로 스폰 비중을 정당화하는 건 과한 추론이라 실데이터를 쌓는다.
+   - `priorPersonas`는 **코드대조를 통과한 생존 critical**의 출처만 넣는다(기각된 건 제외 — 안 그러면 파급 판정이 오염된다).
+   - 어떤 실패에서도 exit 0이고 stdout을 안 쓴다. **게이트 판정에 영향 없음** — 기록만.
+   - 누적 판단은 `bash .claude/scripts/panel-metrics.sh report`. ⚠ 이 스크립트는 **판정하지 않는다** — 게이트 구조 변경(페르소나 축소 등)은 사람 승인 사항이고 report는 숫자만 낸다.
 0. **완전성 검사 (재런치 트리거)**: 반환의 `failures[]`가 非空이거나, `perPersona[]`에 요청한 페르소나가 **누락**됐거나, 필수 페르소나(eng 항상·cso 보안태그 시)가 passEvidence<2면 → **그 페르소나만** 부분집합으로 1회 자동 재런치(동일 scriptPath + 실패 페르소나만 personas). 정상 완주분은 보존. 재런치도 실패면 사용자 에스컬레이션(criticals=0을 권위있게 받지 않는다). transient API 오류로 필수 페르소나가 죽은 1차 패널이 빈 criticals로 통과되는 것을 막는다. (codex 형제 실패는 별도 폴백 — `### codex 형제` 참조, 패널 재런치 트리거 아님.)
    - ⚠ **`personas[]` ↔ `perPersona[]` 개수 대조는 `failures[]`와 별개로 항상 한다.** v4.6.0 전까지 워크플로가 죽은 페르소나를 `.filter(Boolean)`으로 **조용히 버렸고** `failures[]` 필드 자체가 없었다 — eng가 죽으면 그 findings가 통째로 사라진 채 `criticals: []`가 반환돼 **빈 criticals가 권위있게 게이트를 통과**했다. 필드가 생긴 지금도 개수 대조는 이중 그물로 유지한다(부재를 통과로 읽지 않는 원칙 — [[gates-verify-present-code-only]]).
 1. **dedup**: `criticals`를 근본원인별로 묶는다(여러 페르소나 + codex가 같은 버그를 다르게 표현 → 1건으로).
