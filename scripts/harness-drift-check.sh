@@ -16,6 +16,7 @@
 #   bash .claude/scripts/harness-drift-check.sh HEAD       # 직전 커밋 사후 점검
 #   bash .claude/scripts/harness-drift-check.sh <sha>      # 임의 커밋
 #   bash .claude/scripts/harness-drift-check.sh --audit    # 누적 drift 전수 점검
+#   bash .claude/scripts/harness-drift-check.sh --contract # 문서↔워크플로 args/반환 계약 대조
 #
 # ⚠ **왜 --audit이 따로 필요한가**: 위 세 모드는 전부 **커밋 delta**를 본다. 그래서
 #   *"애초에 한 번도 실린 적 없는 단계"*는 어떤 delta에도 안 나타나 영원히 안 잡힌다.
@@ -51,6 +52,76 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { note "git repo 아님 �
 cd "$(git rev-parse --show-toplevel)" 2>/dev/null || exit 0
 
 REF="${1:-}"
+
+# ── --contract: 문서가 지시하는 args/반환 ↔ 워크플로가 실제로 읽는/내는 필드 ──
+#
+# 왜: v4.6.0에서 **같은 클래스 버그를 두 개** 잡았다.
+#   ① orchestrator.md가 "재실행 프롬프트에 직전 critical + rework diff를 넣어라"라고
+#      명시했는데 `design-panel.js` args에 그걸 받는 자리가 **없었다** → LOOP 2가
+#      LOOP 1과 동일 프롬프트로 돌았다(초점 0).
+#   ② orchestrator.md가 "반환의 `failures[]`가 非空이면 재런치"를 지시했는데
+#      반환에 그 필드가 **없었다** → 죽은 페르소나가 조용히 버려지고 빈 criticals가
+#      권위있게 게이트를 통과했다.
+#   둘 다 문법 오류가 아니라 **문서와 코드의 계약 불일치**다. 사람 눈으로만 잡혔다.
+#
+# ⚠ 한계(정직히): 워크플로가 2개뿐이라 필드를 **합집합**으로 대조한다. 워크플로 A의
+#   필드를 문서 B가 선언한 교차배선은 못 잡는다. 워크플로가 늘면 파일별 스코핑 필요.
+if [ "$REF" = "--contract" ]; then
+  DOCS="$SRC $PLAYBOOKS"
+  # 문서에 나오지만 args 필드가 아닌 것들 (Workflow 도구 파라미터·산문 토큰)
+  IGNORE='^(args|scriptPath|name|resumeFromRunId|schema|label|phase|model|effort|isolation|agentType)$'
+
+  # (1) 워크플로가 실제로 읽는 args / 내는 반환 키
+  READS="$(grep -ohE '_a\.[A-Za-z_]+' workflows/*.js 2>/dev/null | sed 's/^_a\.//' | sort -u)"
+  RETS="$(for f in workflows/*.js; do
+            awk '/^return \{/,/^\}/' "$f" 2>/dev/null | grep -oE '^  [a-zA-Z_]+' | tr -d ' '
+          done | sort -u)"
+
+  # (2) 문서가 선언한 식별자
+  #
+  # ⚠ **오탐이 나면 이 검사는 죽는다** — 초기안은 백틱 안의 모든 단어를 긁어
+  #   값(`'normal'|'high'`)·중첩키(`[{persona, location, description}]`)·경로조각
+  #   (`docs/features`, `repo 상대`)까지 args 필드로 잡아 9건 오탐을 냈다.
+  #   (v3.77.1 heading-이름 필터가 죽은 것과 같은 실패 — 노이즈 = 무시되는 게이트.)
+  #   → args는 **`이름:` 콜론 형태만** 인정한다. 중첩·값·플레이스홀더를 먼저 제거한다.
+  #   `personas`처럼 콜론 없는 bare 키는 놓치지만, 놓침은 오탐보다 낫다(보수적 선택).
+
+  strip_noise() {   # 중첩 배열/객체·<플레이스홀더>·따옴표 값 제거
+    sed -e 's/\[[^]]*\]//g' -e 's/<[^>]*>//g' -e "s/'[^']*'//g"
+  }
+  DECL_ARGS="$(grep -hE 'args 구성|추가 필수' $DOCS 2>/dev/null \
+    | grep -oE '`[^`]*`' | tr -d '`' | strip_noise \
+    | grep -oE '\b[a-z][a-zA-Z]{3,}[[:space:]]*:' | tr -d ' :' \
+    | sort -u | grep -vE "$IGNORE")"
+
+  # 반환은 `{ a, b, c }` 형태(콜론 없음) → 중괄호 안 콤마 목록으로 파싱
+  DECL_RETS="$(grep -hE '반환: `\{' $DOCS 2>/dev/null \
+    | grep -oE '`\{[^`]*\}`' | tr -d '`{}' | strip_noise \
+    | tr ',' '\n' | tr -d ' ' \
+    | grep -E '^[a-z][a-zA-Z]{3,}$' \
+    | sort -u | grep -vE "$IGNORE")"
+
+  MISS=""
+  while IFS= read -r k; do
+    [ -z "$k" ] && continue
+    printf '%s\n' "$READS" | grep -Fxq -- "$k" || MISS="$MISS  args  문서가 전달 지시 → 워크플로가 안 읽음: $k"$'\n'
+  done <<< "$DECL_ARGS"
+  while IFS= read -r k; do
+    [ -z "$k" ] && continue
+    printf '%s\n' "$RETS" | grep -Fxq -- "$k" || MISS="$MISS  반환  문서가 소비 지시 → 워크플로가 안 내보냄: $k"$'\n'
+  done <<< "$DECL_RETS"
+
+  if [ -z "$MISS" ]; then
+    A="$(printf '%s\n' "$DECL_ARGS" | grep -c . || true)"
+    R="$(printf '%s\n' "$DECL_RETS" | grep -c . || true)"
+    printf '%s\n' "✅ 문서↔워크플로 계약 일치 — args ${A}개 / 반환 ${R}개 전부 실행 경로 있음"
+    exit 0
+  fi
+  printf '%s\n' "⚠ 계약 불일치 — 문서가 지시하는데 실행 경로가 없다(규칙만 있고 메커니즘 없음)"
+  printf '%s' "$MISS"
+  printf '%s\n' "→ 워크플로에 필드를 추가하거나, 문서에서 그 지시를 걷어낸다."
+  exit 0
+fi
 
 # ── --audit: 현재 상태 전수 대조 (delta 무관) ────────────────────────────
 if [ "$REF" = "--audit" ]; then

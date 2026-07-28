@@ -117,6 +117,10 @@ memory: project
    - `⚠ 분리 문서 drift 의심` 출력 시 → 나열된 단계마다 **흐름 다이어그램에 실려야 하는지 판정**한다. 실려야 하면 `docs/routing-map.md`를 **같은 커밋에서** 갱신. 아니면 무시하고 진행(차단 아님).
    - 매핑(수동 판단용): 메타운영 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`. 분리 문서만 바뀐 커밋도 bump 대상.
    - 근거: 이 점검은 v4.4.0 전까지 **산문 소프트룰**이었고 졌다 — v3.76.0 이후 orchestrator.md 8커밋 중 routing-map 동반 갱신 1회, 실제 누락 게이트 3개(8.0 위임 커버리지 대조 / 모델 실측 / 워크스루 3.5). 스크립트는 exit 0이라 커밋을 막지 않는다.
+1.6. **문서↔워크플로 계약 점검 (`workflows/` 또는 그걸 서술한 문서를 건드린 커밋만)**: `bash .claude/scripts/harness-drift-check.sh --contract`.
+   - **무출력 아님 — `✅`가 정상**이다. `⚠ 계약 불일치`면 문서가 "args로 넘겨라"·"반환의 X를 봐라"라고 지시하는데 워크플로에 **그 필드가 없다**는 뜻 = 규칙이 실행 불가능한 상태.
+   - 조치: 워크플로에 필드를 추가하거나 문서에서 그 지시를 걷어낸다. **둘 중 하나를 하기 전엔 커밋하지 않는다**(문법 오류가 아니라 조용히 무력화되는 계약이라 아무도 못 잡는다).
+   - 근거: v4.6.0에서 이 클래스를 **한 커밋에 2건** 잡았다 — 재게이트 초점 args 부재(LOOP 2가 LOOP 1과 동일 프롬프트로 돎) + `failures[]` 반환 부재(죽은 페르소나가 조용히 버려져 빈 criticals가 게이트 통과). 둘 다 사람 눈으로만 발각됐다.
 2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(외부 스킬 글로벌→로컬 미러, 네트워크 0). sync 대상은 외부 제3자 스킬뿐(현재 grill-with-docs). 자체 스킬은 repo SSOT라 미동기화(v3.11.0).
    - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/grill-with-docs`.
    - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(planner 3종 + orchestrator가 grill 포맷을 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
