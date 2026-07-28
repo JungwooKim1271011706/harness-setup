@@ -15,6 +15,13 @@
 #   bash .claude/scripts/harness-drift-check.sh            # staged (커밋 직전 — 기본)
 #   bash .claude/scripts/harness-drift-check.sh HEAD       # 직전 커밋 사후 점검
 #   bash .claude/scripts/harness-drift-check.sh <sha>      # 임의 커밋
+#   bash .claude/scripts/harness-drift-check.sh --audit    # 누적 drift 전수 점검
+#
+# ⚠ **왜 --audit이 따로 필요한가**: 위 세 모드는 전부 **커밋 delta**를 본다. 그래서
+#   *"애초에 한 번도 실린 적 없는 단계"*는 어떤 delta에도 안 나타나 영원히 안 잡힌다.
+#   실제로 모드 판정·설계모드 트랙이 2026-06-05 도입 후 53일간 미반영이었고,
+#   delta 모드로는 못 찾아 수동 전수 대조로 발견했다(2026-07-28).
+#   부재는 delta에 나타나지 않는다 — wiki/gates-verify-present-code-only.md와 같은 축.
 #
 # ── 불변식 ───────────────────────────────────────────────────────────────
 #   - 차단하지 않는다. exit 항상 0. 판정 신호는 stdout 텍스트로만.
@@ -44,6 +51,39 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || { note "git repo 아님 �
 cd "$(git rev-parse --show-toplevel)" 2>/dev/null || exit 0
 
 REF="${1:-}"
+
+# ── --audit: 현재 상태 전수 대조 (delta 무관) ────────────────────────────
+if [ "$REF" = "--audit" ]; then
+  [ -f "$MAP" ] || { note "$MAP 없음 — 생략"; exit 0; }
+  MAPTXT="$(cat "$MAP" 2>/dev/null)"
+  MISSING=""
+
+  # 대상 = 번호 붙은 단계/게이트 heading (흐름 축). 산문 규칙 섹션은 제외.
+  for f in $SRC $PLAYBOOKS; do
+    [ -f "$f" ] || continue
+    while IFS= read -r h; do
+      [ -z "$h" ] && continue
+      # heading에서 단계 키(선두 번호 또는 첫 명사구) 추출
+      key="$(printf '%s' "$h" | sed 's/^#\{1,6\}[[:space:]]*//; s/[[:space:]]*(.*//; s/[*_`]//g; s/[[:space:]]*$//')"
+      [ -z "$key" ] && continue
+      # 번호 키(0-1단계·7c.1·8.0b 등)면 번호만, 아니면 앞 6자로 대조
+      num="$(printf '%s' "$key" | sed -n 's/^\([0-9][0-9.a-z-]*\).*/\1/p')"
+      probe="${num:-$(printf '%s' "$key" | cut -c1-6)}"
+      printf '%s' "$MAPTXT" | grep -qF -- "$probe" || MISSING="$MISSING  ${f##*/} → $key"$'\n'
+    done <<< "$(grep -E '^#{2,3} *[0-9]' "$f" 2>/dev/null)"
+  done
+
+  if [ -z "$MISSING" ]; then
+    printf '%s\n' "✅ 번호 단계 전수 대조 — ${MAP##*/}에 전부 반영됨"
+    exit 0
+  fi
+  printf '%s\n' "⚠ 누적 drift: ${MAP##*/}에 없는 번호 단계"
+  printf '%s' "$MISSING"
+  printf '%s\n' "→ 판정 필요(LLM): 흐름 축이면 다이어그램에 반영. 세부 하위규칙이면 무시."
+  printf '%s\n' "   (이 모드는 '한눈에' 가치를 지키려 일부러 과탐지한다 — 전부 넣으라는 뜻 아님)"
+  exit 0
+fi
+
 if [ -z "$REF" ]; then
   DIFF_ARGS="--cached"; LABEL="staged"
 else
