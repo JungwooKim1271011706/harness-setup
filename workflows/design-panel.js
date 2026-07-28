@@ -16,6 +16,20 @@ export const meta = {
 //   topModel   : 최고위험 슬롯(eng·cso) 모델. 생략 시 'fable'.
 //                ⚠ orchestrator가 직전 라운드 transcript 실측으로 fable 무음강등을 확인했으면
 //                'opus'를 명시 주입한다 — 스크립트는 강등을 스스로 감지할 수 없다(아래 주석).
+//   priorCriticals : [{persona, location, description}]  직전 라운드 생존 critical (재게이트 시)
+//   reworkDiff     : planner가 이번에 고친 내용(diff 또는 변경 요약 텍스트)
+//
+// ⚠ **재게이트 초점 (v4.6.0 신설 — 그 전까지 규칙만 있고 메커니즘이 없었다)**:
+//   `orchestrator.md ## 설계 패널 게이트`가 *"재실행 프롬프트에 직전 critical + rework diff를
+//   넣어 ①해소됐나 ②새 결함 유발했나에 집중하게 한다"* 로 **명시**하는데, 종전 args에는
+//   그 둘을 받는 자리가 **없었다**. 즉 LOOP 2가 LOOP 1과 **글자 그대로 동일한 프롬프트**로
+//   돌았다(초점 0). 게다가 아래 `round > 1` 분기는 eng 내부 loop-until-dry 전용이라
+//   재게이트(워크플로 재호출 → round 리셋)에는 붙지도 않았다.
+//   → 규칙은 있는데 실행 경로가 없는 상태. (같은 클래스: wiki/gates-verify-present-code-only.md)
+//
+//   **커버리지는 불변이다** — 재게이트에도 페르소나 전원이 돈다. 줄이는 건 '무엇을 볼지'지
+//   '누가 볼지'가 아니다. 페르소나 축소(직전 critical을 찾은 렌즈만 재실행)는 **기각된 설계**다:
+//   1라운드 수정이 *다른 렌즈* 영역에 결함을 만든 사례가 관측됐다(백로그 2026-07-01).
 // ─────────────────────────────────────────────────────────────
 // args는 객체 기대. 일부 호출 경로에서 JSON 문자열로 도착할 수 있어 방어적 파싱.
 let _a = args
@@ -28,6 +42,11 @@ const rulePaths  = _a.rulePaths  ?? []
 const complexity = _a.complexity ?? 'normal'
 const personas   = _a.personas   ?? []
 const topModel   = _a.topModel   ?? 'fable'
+const priorCriticals = Array.isArray(_a.priorCriticals) ? _a.priorCriticals : []
+const reworkDiff     = _a.reworkDiff ?? ''
+// 재게이트 판정 = 직전 critical이 하나라도 주어짐. (rework diff만 있고 critical이 없으면
+// 차단 사유가 없었다는 뜻이므로 재게이트가 아니다 — 초점 블록을 붙이지 않는다.)
+const isReGate = priorCriticals.length > 0
 
 if ((!planPath && !planText) || personas.length === 0) {
   return { error: 'planPath/planText 또는 personas 누락 — orchestrator args 확인', criticals: [], majors: [], minors: [], perPersona: [] }
@@ -78,6 +97,26 @@ function reviewPrompt(persona, round) {
   - 무시: AskUserQuestion·STOP 게이트·plan-mode·office-hours·design-doc 체크·telemetry 등 인터랙티브 머신러리. 너는 사람과 대화하지 않는다. findings JSON만 낸다.`
     : CSO_LENS
 
+  // 재게이트 초점 블록 — 커버리지가 아니라 '무엇을 먼저 볼지'를 지시한다.
+  //   mine  = 이 페르소나가 직전에 잡은 critical → 실제 해소됐는지 검증
+  //   others= 다른 렌즈가 잡은 critical → 그 수정이 **내 렌즈 영역**에 부작용을 냈는지
+  // 후자가 핵심이다. 기각된 '페르소나 축소'가 놓치는 게 정확히 이 축이다.
+  const mine   = priorCriticals.filter(c => c.persona === persona.key)
+  const others = priorCriticals.filter(c => c.persona !== persona.key)
+  const fmt = (c) => `- [${c.persona ?? '?'}] ${c.location ?? '(위치미상)'} — ${c.description ?? ''}`
+  const reGateBlock = !isReGate ? '' : `
+
+[⚠ 재게이트 — 이건 재작업된 계획서다. 아래 두 축을 **먼저** 보라]
+① **직전 critical 해소 검증**${mine.length ? `(네가 잡은 것)\n${mine.map(fmt).join('\n')}` : ' — 네가 잡은 critical은 없다.'}
+   각 항목이 **실제로** 해소됐는지 계획서에서 확인한다. 말로만 반영됐고 설계가 그대로면 여전히 critical이다.
+② **수정의 부작용 (네 렌즈로)**${others.length ? `\n다른 렌즈가 잡아 이번에 고쳐진 것:\n${others.map(fmt).join('\n')}` : ''}
+   이 수정들이 **네 관점에서** 새 결함을 만들지 않았는지 본다. 다른 렌즈의 수정이 네 영역을 깨는 건 흔하다
+   (예: 동기→비동기 전환이 인증 경계를 우회시킴). 이 축이 네가 도는 이유다.
+${reworkDiff ? `\n[이번 rework 내용]\n${reworkDiff}` : ''}
+> 직전 라운드에 네가 이미 PASS 판정한 부분은 **재검토하지 않는다** — 위 수정의 영향권만 본다.
+> 단, 수정이 그 부분의 전제를 바꿨다면 그건 영향권이다(파급을 보라).
+> 이미 해소된 critical을 다시 보고하지 마라(중복 dedup 비용).`
+
   return `너는 설계패널의 '${persona.key}' 페르소나 리뷰어다. planner가 작성한 계획서를 너의 관점으로 비평한다.
 
 ${lensBlock}
@@ -85,7 +124,7 @@ ${lensBlock}
 [준수 규칙] 다음 rule 파일을 Read하고 위반을 findings로 잡아라: ${rulePaths.join(', ') || '(없음)'}
 
 [검토 대상 계획서]
-${planPath ? `${planPath} 를 Read하라(전문 필독 — 안 읽고 비평 금지).` : planText}
+${planPath ? `${planPath} 를 Read하라(전문 필독 — 안 읽고 비평 금지).` : planText}${reGateBlock}
 
 [출력] FINDINGS_SCHEMA(JSON). 규칙:
   - severity: critical(설계결함·게이트 차단감) / major(통과허용·승인화면 노출) / minor(기록만)
@@ -138,7 +177,18 @@ async function runPersona(persona) {
 
 // ── 페르소나 병렬 리뷰만 (적대검증 제거 — orchestrator가 dedup+코드대조 판정) ──
 phase('Review')
-const results = (await parallel(personas.map(p => () => runPersona(p)))).filter(Boolean)
+// ⚠ **`failures[]`는 orchestrator 완전성 검사의 입력이다** (v4.6.0 신설 — 그 전까지 없었다).
+//   `orchestrator.md` 패널 반환 후 절차 0번이 *"반환의 `failures[]`가 非空이면 그 페르소나만
+//   1회 자동 재런치"* 를 지시하는데 종전 반환에 그 필드가 **없었다**. 게다가 종전 코드는
+//   `.filter(Boolean)`으로 죽은 페르소나를 **조용히 버렸다** — eng가 터미널 API 에러로
+//   죽으면 그 findings가 통째로 사라진 채 `criticals: []`가 반환되고, 완전성 검사는
+//   근거 필드가 없어 못 잡는다 → **빈 criticals가 권위있게 게이트를 통과**한다.
+//   이건 비용 문제가 아니라 안전 문제다(무음 실패 — wiki/gates-verify-present-code-only.md).
+const raw = await parallel(personas.map(p => () => runPersona(p)))
+const results  = raw.filter(Boolean)
+const failures = personas
+  .map((p, i) => (raw[i] ? null : p.key))
+  .filter(Boolean)
 
 // 집계 (dedup·판정 없음 — orchestrator 책임). 페르소나 태그만 부착해 raw 반환.
 const tag = (sev) => results.flatMap(r =>
@@ -148,6 +198,8 @@ return {
   criticals: tag('critical'), // orchestrator: dedup by root → 인용라인 코드대조 → 생존>0면 차단
   majors:    tag('major'),    // 통과허용, 승인화면 노출
   minors:    tag('minor'),    // 기록만
+  failures,                   // 스폰 실패·사망 페르소나 key[]. 非空이면 orchestrator가 그 페르소나만 1회 재런치
+  reGate: isReGate,           // 이번 실행이 재게이트였나(초점 블록 적용 여부 — 산출 해석용)
   perPersona: results.map(r => ({
     persona: r.persona,
     model: r.model, // 'fable' | 'opus(fable 폴백)' | 'sonnet' — 폴백 시 orchestrator가 승인화면 정보 태그

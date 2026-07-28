@@ -419,15 +419,19 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
    - cso: `{ key: 'cso', skillPath: null }` (null이면 워크플로가 임베드 `CSO_LENS` 사용)
 3. args 구성: `{ planPath: <계획서 파일 경로 — docs/features 기능 문서, repo 상대>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
    - **planPath 우선**: 페르소나가 자기 컨텍스트에서 Read — 계획 전문이 메인에 복제되지 않는다. 파일이 없을 때만 폴백으로 `planText: <계획서 전문>` 전달(워크플로가 둘 다 수용).
+   - **재게이트(LOOP≥1)면 추가 필수**: `priorCriticals: [{persona, location, description}]`(직전 **생존** critical — 코드대조로 기각된 건 제외) + `reworkDiff: <planner가 이번에 고친 내용>`. 워크플로가 이걸 받아 페르소나별 초점 블록(①내가 잡은 것 해소검증 ②남이 잡은 것의 수정이 **내 렌즈**에 낸 부작용)을 프롬프트에 붙인다.
+     - ⚠ **미전달 시 재게이트가 최초 라운드와 글자 그대로 동일한 프롬프트로 돈다**(초점 0 + 이미 고쳐진 critical 재보고 → dedup 낭비). v4.6.0 전까지 args에 이 필드가 없어 **구조적으로 그 상태였다**.
+     - `priorCriticals`가 비면 워크플로는 재게이트로 보지 않는다(초점 블록 미부착). 차단 사유가 없었으면 재게이트가 아니기 때문.
 
 **워크플로가 한다 (findings 생산만):**
 - 페르소나 N 병렬 리뷰(eng는 complexity='high'면 loop-until-dry 최대 3라운드).
 - critical 적대검증 안 함(제거됨 — 검증자 코드 미독+refute편향으로 신뢰 불가, 실측 음수가치).
-- 반환: `{ criticals, majors, minors, perPersona }` (criticals는 페르소나 태그 부착 raw).
+- 반환: `{ criticals, majors, minors, failures, reGate, perPersona }` (criticals는 페르소나 태그 부착 raw). `failures[]` = 스폰 실패·사망 페르소나 key(완전성 검사 0번 입력), `reGate` = 초점 블록 적용 여부.
 
 **orchestrator가 한다 (워크플로 반환 후 — dedup + 코드대조 판정):**
 > **입력 = 패널 findings + codex 형제 findings 합집합**(아래 `### codex 형제`). 패널(claude)과 codex(cross-model)의 criticals·majors·minors를 한 풀로 합쳐 아래 dedup·코드대조를 1회 돌린다. 출처(패널 페르소나 / codex) 태그는 보존하되 판정 로직은 동일하다.
-0. **완전성 검사 (재런치 트리거)**: 반환의 `failures[]`가 非空이거나 필수 페르소나(eng 항상·cso 보안태그 시)가 passEvidence<2면 → **그 페르소나만** 부분집합으로 1회 자동 재런치(동일 scriptPath + 실패 페르소나만 personas). 정상 완주분은 보존. 재런치도 실패면 사용자 에스컬레이션(criticals=0을 권위있게 받지 않는다). transient API 오류로 필수 페르소나가 죽은 1차 패널이 빈 criticals로 통과되는 것을 막는다. (codex 형제 실패는 별도 폴백 — `### codex 형제` 참조, 패널 재런치 트리거 아님.)
+0. **완전성 검사 (재런치 트리거)**: 반환의 `failures[]`가 非空이거나, `perPersona[]`에 요청한 페르소나가 **누락**됐거나, 필수 페르소나(eng 항상·cso 보안태그 시)가 passEvidence<2면 → **그 페르소나만** 부분집합으로 1회 자동 재런치(동일 scriptPath + 실패 페르소나만 personas). 정상 완주분은 보존. 재런치도 실패면 사용자 에스컬레이션(criticals=0을 권위있게 받지 않는다). transient API 오류로 필수 페르소나가 죽은 1차 패널이 빈 criticals로 통과되는 것을 막는다. (codex 형제 실패는 별도 폴백 — `### codex 형제` 참조, 패널 재런치 트리거 아님.)
+   - ⚠ **`personas[]` ↔ `perPersona[]` 개수 대조는 `failures[]`와 별개로 항상 한다.** v4.6.0 전까지 워크플로가 죽은 페르소나를 `.filter(Boolean)`으로 **조용히 버렸고** `failures[]` 필드 자체가 없었다 — eng가 죽으면 그 findings가 통째로 사라진 채 `criticals: []`가 반환돼 **빈 criticals가 권위있게 게이트를 통과**했다. 필드가 생긴 지금도 개수 대조는 이중 그물로 유지한다(부재를 통과로 읽지 않는 원칙 — [[gates-verify-present-code-only]]).
 1. **dedup**: `criticals`를 근본원인별로 묶는다(여러 페르소나 + codex가 같은 버그를 다르게 표현 → 1건으로).
 2. **코드대조 게이트 (receiving-code-review, critical마다)**: 각 dedup critical의 인용 라인(file:line)을 **실제 Read해서 대조**한다.
    ① 전제가 실재하나(인용 라인이 정말 그러한가) ② 기존 코드/룰/프레임워크가 이미 막나 ③ YAGNI.
@@ -437,7 +441,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
    - 위임 프롬프트 강제: "코드 안 읽으면 uncertain, refute-default 금지" + 반환 = critical별 `{판정: 실재|불일치|이미차단|YAGNI, 근거 인용 ≤3줄(file:line)}`. **게이트 차단 확정은 orchestrator**(대조 노동의 위임이지 판정 권한 위임 아님). 투표 금지(단일 에이전트) 불변.
 3. **생존 critical > 0** → 게이트 차단, planner 재작업 [LOOP n/3].
    **생존 critical == 0** → 사용자 승인 단계로. `majors` 승인화면 노출, `minors` 기록.
-   - **재게이트(LOOP≥1) 입력 명시**: 재실행 workflow 프롬프트에 **직전 critical 목록 + 이번 rework diff**를 넣어 각 페르소나가 "① 직전 critical이 실제 해소됐나 ② 이 수정이 새 결함을 유발했나(downstream 부작용)"에 집중하게 한다. 재실행 **범위·페르소나는 그대로**(cold 전체재실행 — 게이트 완결성 유지: 1회차 수정이 무관 섹션에 부작용 낼 수 있어 스코프 축소 금지). 초점만 강화, 커버리지 불변.
+   - **재게이트(LOOP≥1) 입력 명시 (기계 전달 — args)**: 재실행 시 `priorCriticals`(직전 **생존** critical) + `reworkDiff`를 **args로** 넘긴다(위 `### 패널 실행` 3번). 워크플로가 페르소나별로 "① 내가 잡은 critical이 실제 해소됐나 ② **남이 잡은 것의 수정**이 내 렌즈에 부작용을 냈나"로 초점 블록을 조립한다. 재실행 **범위·페르소나는 그대로**(cold 전체재실행 — 게이트 완결성 유지: 1회차 수정이 무관 섹션에 부작용 낼 수 있어 스코프 축소 금지). 초점만 강화, **커버리지 불변**.
+     - ⚠ **"직전 critical을 찾은 페르소나만 재실행"은 기각된 설계다**(백로그 2026-07-01). 위 ②가 그 이유다 — 1회차 수정이 *다른 렌즈* 영역에 결함을 만든 사례가 관측됐고(예: 동기→비동기 전환이 인증 경계 우회 유발), 페르소나를 줄이면 그 축을 **아무도 안 본다**. 줄이는 대상은 "누가 보나"가 아니라 "무엇을 먼저 보나"다.
    - **파생 문서 동기화 (패널 major/critical로 결정 번복 시)**: 패널 지적으로 grill 단계 결정이 뒤집히면(예: 502→500), 그 결정이 기재된 **프로젝트 지식 문서(`CONTEXT.md` 용어·`docs/adr/`)를 같은 라운드에서 갱신**한다. 계획·ADR만 고치고 CONTEXT 용어집을 빠뜨리면 틀린 용어가 커밋된다.
 - 워크플로 산출은 **보조 입력**이다. dedup·코드대조·차단 판정은 orchestrator가 내린다.
 - 워크플로 **전부 실패**/도구 미가용 시 폴백: 기존 수동 페르소나 합성(fire-and-forget 금지, orchestrator 검토). **부분 실패는 위 0번 자동 재런치로 처리**(수동 합성 전 재런치 우선).
