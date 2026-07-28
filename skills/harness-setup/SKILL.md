@@ -1,6 +1,6 @@
 ---
 name: harness-setup
-description: 새 프로젝트에서 claude harness를 설정하는 스킬. CLAUDE.md의 프로젝트 개요와 Harness Configuration 섹션을 자동으로 생성한다. 프로젝트 구조를 분석해서 기술스택/빌드명령어/DB/아키텍처 개요와 projectName/memoryDir/frontendRoot/backendRoot/modules/backendExamples/frontendExamples 7개 변수를 자동 감지하고, 사용자 확인 후 CLAUDE.md에 기록한다. "harness 설정", "새 프로젝트에 harness 적용", "harness-setup", "claude 에이전트 설정", "Harness Configuration 추가" 등의 요청 시 반드시 이 스킬을 사용한다.
+description: 새 프로젝트에서 claude harness를 설정하는 스킬. CLAUDE.md의 프로젝트 개요와 Harness Configuration 섹션을 자동으로 생성한다. 프로젝트 구조를 분석해서 기술스택/빌드명령어/DB/아키텍처 개요와 projectName/memoryDir/frontendRoot/backendRoot/modules/backendExamples/frontendExamples/contextPath 8개 변수를 자동 감지하고, 사용자 확인 후 CLAUDE.md에 기록한다. "harness 설정", "새 프로젝트에 harness 적용", "harness-setup", "claude 에이전트 설정", "Harness Configuration 추가" 등의 요청 시 반드시 이 스킬을 사용한다.
 ---
 
 # harness-setup

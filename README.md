@@ -86,7 +86,7 @@ git clone -b <브랜치명> https://github.com/JungwooKim1271011706/harness-setu
 
 미지정 시 기본 브랜치(main, 안정 버전)를 받는다. 개발/실험 브랜치를 쓸 때만 `-b`로 지정.
 
-## 클론 후 셋업 (필수 3단계)
+## 클론 후 셋업 (1~4 필수 · 5 선택)
 
 ### 1. 프로젝트 루트가 `.claude`를 추적하지 않게
 `.claude`는 자체 git 레포다. 상위 프로젝트 레포가 중복 추적하지 않도록 루트 `.gitignore`에 추가:
@@ -95,15 +95,35 @@ git clone -b <브랜치명> https://github.com/JungwooKim1271011706/harness-setu
 echo "/.claude/" >> .gitignore
 ```
 
-### 2. 프로젝트 코딩 규칙 생성
+### 2. 프로젝트 설정값 생성 — `Harness Configuration`
+`agents/`는 프로젝트별 값을 **전부 이 섹션에서만** 읽는다(하드코딩 없음). 섹션이 없으면 에이전트가 경로를 못 찾아 오동작한다.
+
+```
+/harness-setup
+```
+
+프로젝트 구조를 분석해 **product repo 루트의 `CLAUDE.md`**에 기술스택·빌드명령어와 함께 아래 8개 변수를 생성한다(기존 파일이 있으면 섹션 병합 — 덮어쓰지 않음). 값 스키마 SSOT는 `skills/harness-setup/SKILL.md` "CLAUDE.md 전체 구조".
+
+| 변수 | 쓰는 곳 |
+|------|--------|
+| `projectName` | orchestrator 자기소개 |
+| `memoryDir` | 실패 패턴·학습 기록 저장 위치 (finalizer·orchestrator) |
+| `backendRoot` / `frontendRoot` | developer 수정금지 경계 (교차 편집 차단) |
+| `modules` | 0단계 모듈 판정 → rule 경로 확정 (orchestrator·developer) |
+| `backendExamples` / `frontendExamples` | tester-runtime 전체회귀 대표 검증 대상 |
+| `contextPath` | 도메인 용어집 경로 (grill·co-plan·planner 3종의 쓰기 대상) |
+
+> ⚠ `contextPath`와 보안 SSOT(`claude-security-guidance.md`)는 **product repo 추적 경로**에 둔다. `.claude/` 안에 두면 공유 하네스가 오염돼 타 프로젝트로 전파된다. 하네스는 template만 커밋한다.
+> ⚠ 이 섹션이 잘못되면 **전 에이전트가 조용히 오동작**한다. `session-check.sh`가 세션 시작 시 경로 실존을 best-effort로 점검해 drift를 알린다.
+
+### 3. 프로젝트 코딩 규칙 생성
 `rules/`는 프로젝트별 산출물이라 클론 시 비어 있다. 프로젝트 소스를 분석해 생성:
 
 ```
 /rule-maker
 ```
 
-### 3. 프로젝트 설정값 교체
-`CLAUDE.md`의 `Harness Configuration` 섹션 값(projectName, frontendRoot/backendRoot, modules, examples, contextPath 등)을 새 프로젝트에 맞게 수정한다. `agents/`는 이 변수만 참조하므로 직접 수정하지 않는다. `contextPath`(도메인 용어집)와 보안 SSOT는 프로젝트별 산출물이라 template만 커밋되며, product 추적 경로로 복사·현지화한다(`.claude/` 금지 — 공유 하네스 오염 방지).
+모듈을 직접 탐지해 `rules/package/<모듈>/{backend,frontend}.md`를 만든다(2단계 값에 의존하지 않음). 미생성 상태면 orchestrator 0단계가 "rule 미생성 — rule-maker 실행 권장" 경고 후 rule 주입을 생략한다.
 
 ### 4. gstack 설치 (글로벌 의존 — plan-*-review·계획리뷰·context-save 등)
 하네스는 gstack 스킬을 repo에 vendoring하지 않고 글로벌 설치에 의존한다. 미설치 시 설계패널 plan-*-review 렌즈·`/office-hours`·`/cso`·`/context-save` 등이 동작하지 않는다(세션 시작 시 `session-check.sh`가 안내).

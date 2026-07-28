@@ -28,14 +28,18 @@ echo ""
 AUTO_UPDATED=()
 CRITICAL_CHANGED=()
 NO_CHANGE=()
+SKIPPED=()      # 소스 부재로 대조를 못 한 스킬 = "이상 없음"이 아니라 "미검증"
 
 for skill in "${!SOURCES[@]}"; do
   src="${SOURCES[$skill]}"
   dst="$SCRIPT_DIR/$skill"
 
-  # 소스 없으면 스킵
+  # 소스 없으면 스킵 — repo 미러로 동작은 유지되나 **상류 대조는 못 한 상태**다.
+  # ⚠ 이걸 "변경 없음"과 합치면 안 된다. finalizer bump 의식 step 2가
+  #   "critical diff 없음 → 커밋 진행"으로 읽는데, 소스가 없으면 diff는 영구 0이라
+  #   게이트가 구조적으로 항상 PASS가 된다(무음 실패 — wiki/gates-verify-present-code-only.md).
   if [ ! -f "$src/SKILL.md" ]; then
-    echo "⚠  소스 없음: $skill"
+    SKIPPED+=("$skill|$src")
     continue
   fi
 
@@ -86,17 +90,37 @@ if [ ${#CRITICAL_CHANGED[@]} -gt 0 ]; then
         echo "   확인 위치: orchestrator.md → CONTEXT.md 업데이트 포맷 / planner 3종 참조"
         ;;
     esac
-    echo "   수동 적용: cp $HOME/.claude/skills/$skill/SKILL.md $SCRIPT_DIR/$skill/SKILL.md"
+    # 수동 적용 경로는 반드시 위에서 **실제로 대조한 소스**(SOURCES 맵)여야 한다.
+    # 다른 경로를 안내하면 대조한 것과 다른 파일을 복사하게 된다.
+    echo "   수동 적용: cp \"${SOURCES[$skill]}/SKILL.md\" \"$SCRIPT_DIR/$skill/SKILL.md\""
   done
 fi
 
-# 변경 없음
-if [ ${#AUTO_UPDATED[@]} -eq 0 ] && [ ${#CRITICAL_CHANGED[@]} -eq 0 ]; then
-  echo "✅ 모든 스킬이 최신 상태입니다."
+# 소스 부재 = 미검증 (✅ 금지)
+if [ ${#SKIPPED[@]} -gt 0 ]; then
+  echo ""
+  echo "--- ⚠ 상류 대조 못 함 (미검증) ---"
+  for entry in "${SKIPPED[@]}"; do
+    echo "⚠  [${entry%%|*}] 소스 없음: ${entry#*|}"
+  done
+  echo "   repo 미러로 **동작은 유지**되나 상류 변경 여부는 알 수 없다."
+  echo "   → 이 스킬들에 대해 \"critical diff 없음\"은 성립하지 않는다(대조 자체를 안 했다)."
+  echo "   → 소스를 설치하거나, 더 이상 추적하지 않을 스킬이면 SOURCES 맵에서 제거한다."
 fi
 
-# versions.md 날짜 갱신
-if [ ${#AUTO_UPDATED[@]} -gt 0 ] || [ ${#CRITICAL_CHANGED[@]} -eq 0 ]; then
+# 변경 없음 — 실제로 대조가 1건이라도 일어났을 때만 ✅
+VERIFIED=$(( ${#AUTO_UPDATED[@]} + ${#CRITICAL_CHANGED[@]} + ${#NO_CHANGE[@]} ))
+if [ ${#AUTO_UPDATED[@]} -eq 0 ] && [ ${#CRITICAL_CHANGED[@]} -eq 0 ]; then
+  if [ "$VERIFIED" -gt 0 ]; then
+    echo "✅ 대조한 스킬 ${VERIFIED}개 모두 최신 상태입니다."
+  else
+    echo "⛔ 대조된 스킬 0개 — 이 실행은 **아무것도 검증하지 않았다**(✅ 아님)."
+  fi
+fi
+
+# versions.md 날짜 갱신 — **실제 대조가 있었을 때만**.
+# 대조 0건인데 날짜를 밀면 versions.md가 거짓 신선도를 판다(표 안쪽 스킬별 날짜와 어긋남).
+if [ "$VERIFIED" -gt 0 ] && [ ${#CRITICAL_CHANGED[@]} -eq 0 ]; then
   VERSIONS_FILE="$SCRIPT_DIR/versions.md"
   # [BUG FIX] sed 대상 = versions.md 실제 스탬프 줄 '**마지막 동기화**: YYYY-MM-DD'.
   #           (이전 패턴 '마지막 전체 동기화'는 versions.md에 없어 sed가 no-op이었음.)

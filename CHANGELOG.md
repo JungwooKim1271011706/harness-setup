@@ -3,6 +3,25 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 4.4.0 — 2026-07-28
+- **구조 감사 3건 조치 (온보딩 순서 / sync 무음 ✅ / 분리 문서 drift) — MINOR. 재시작 권장.**
+- **[A] README 온보딩이 존재하지 않는 파일을 "수정하라"고 지시했다.** 셋업 순서가 ①gitignore ②`/rule-maker` ③"CLAUDE.md `Harness Configuration` 섹션 값을 수정" 인데, **그 파일을 만드는 `/harness-setup`이 순서 어디에도 없었다**. 신규 소비자는 없는 파일을 수정하라는 지시를 받는다.
+  - 정정: **2단계 = `/harness-setup`(생성)** → 3단계 = `/rule-maker`. 8개 변수를 **쓰는 곳과 함께** 표로 명시(`projectName` / `memoryDir` / `backendRoot`·`frontendRoot` / `modules` / `backendExamples`·`frontendExamples` / `contextPath`). 종전 산문 목록은 `memoryDir` 누락 + 실제 키(`backendExamples`/`frontendExamples`)를 `examples`로 뭉갰다.
+  - 헤더 `필수 3단계` → `1~4 필수 · 5 선택`(실제 5절인데 3이라 적혀 있었다. gstack은 미설치 시 설계패널·office-hours가 안 도는 사실상 필수).
+  - ⚠ **초기 진단은 "템플릿이 아예 없다"였으나 오진** — `skills/harness-setup/SKILL.md:250`에 8키 전체 구조가 SSOT로 존재한다(`.template` 파일만 찾고 스킬 본문을 안 봤다). 실제 결함은 **템플릿 부재가 아니라 온보딩 순서에서 그 스킬이 빠진 것**. 부수로 스킬 `description`의 키 목록이 7개(→8개, `contextPath` 누락)라 정정.
+- **[B] `sync-skills.sh`가 아무것도 검증 안 하고 `✅`를 출력했다 — bump 의식 step 2가 빈 게이트였다.**
+  - 유일한 sync 대상 `grill-with-docs`의 소스(`~/.agents/skills/grill-with-docs`)가 부재 → `⚠ 소스 없음` 직후 **`✅ 모든 스킬이 최신 상태입니다`**. finalizer step 2는 *"critical diff 없으면 커밋 진행"* 인데, 소스가 없으면 diff는 **영구 0** → 게이트가 구조적으로 항상 PASS. [[gates-verify-present-code-only]] 클래스의 무음 실패.
+  - `versions.md` **`마지막 동기화` 스탬프가 실행할 때마다 오늘 날짜로 갱신**돼 거짓 신선도를 팔았다(표 안쪽 스킬별 날짜 `2026-05-09`와 모순). 누적된 거짓 스탬프를 실제 마지막 동기화일(`2026-05-09`)로 되돌림.
+  - 수정: 소스 부재를 `SKIPPED`로 분리 집계 → `⛔ 대조된 스킬 0개 — 이 실행은 아무것도 검증하지 않았다(✅ 아님)` + 조치 안내. 스탬프는 **실제 대조 ≥1건일 때만** 갱신. exit 0 유지(비차단).
+  - 부수 버그: critical 변경 시 안내하던 수동 적용 경로가 `$HOME/.claude/skills/…`로 **실제 대조 소스(`SOURCES` 맵)와 다른 경로**를 가리켰다 → 대조한 파일과 다른 걸 복사할 뻔. `${SOURCES[$skill]}` 참조로 교정.
+- **[C] `scripts/harness-drift-check.sh` 신설 — 분리 문서 drift가 소프트룰로 7연속 패배 중이었다.**
+  - 실측: v3.76.0 이후 `orchestrator.md` 8커밋 중 `routing-map.md` 동반 갱신 **1회**. 누락 게이트 3개 = **8.0 위임 커버리지 대조**(v4.1.0) / **모델 실측**(v3.82.0) / **워크스루 3.5 RED 기준선**(v4.3.0). 규칙(`## 분리 문서` "한 몸" + finalizer step 1.5)은 있었고 매번 졌다.
+  - **누락 3건 전부 `routing-map.md`에 반영**(TDD 박스에 8.0·8.0b, 설계패널 박스에 모델 실측, 워크스루에 3·3.5).
+  - `finalizer.md` step 1.5를 산문 → 스크립트 호출로 교체. 탐지=결정론, "다이어그램에 실려야 하나" 판정=LLM.
+  - **오탐 억제가 설계의 핵심**: 초기안은 heading 이름을 `게이트|단계|라우팅|…`로 필터했으나 **무용지물**이었다 — orchestrator 헤딩이 거의 전부 그 단어를 달고 있어 코스메틱 커밋(v3.77.1 토큰 다이어트)이 9건 오탐. 판별식을 **구조 변화**로 교체: ⓐ heading 집합의 추가·삭제 ⓑ 번호 하위단계 신설(`3.5.`처럼 heading 아닌 항목). 추가로 **개명 상쇄**(괄호 부제만 바뀐 `… (컨텍스트 절감 — v3.69.0)` → `… (컨텍스트 절감)` 쌍을 정규화 키로 소거) — 이게 없으면 v3.77.1이 계속 짖는다.
+  - 과거 커밋 7건 회귀 검증 **7/7**: 경고 3(v4.3.0·v4.1.0·v3.82.0 — 각각 정확한 단계명 지목) / 침묵 4(v3.77.1 개명만·v3.81.0 훅수정·v4.2.0 orchestrator 미변경·v3.76.0 map 동반갱신).
+- **검증**: staged 모드(가짜 `### 9.9` 주입 → 경고, 원복 → 침묵) · 실패 3종(잘못된 ref·git repo 아님·대상 미변경) 전부 exit 0 · `sync-skills.sh` 4경로(소스부재 / 소스=미러 동일 → ✅+스탬프 갱신 / 소스 변경 → critical 감지+스탬프 유지+미러 무변경 / 스탬프 비갱신) · wiki 정합성 45p OK · 자기적용(이번 커밋에 drift-check 실행 → 침묵).
+
 ## 4.3.0 — 2026-07-28
 - **시맨틱 reward-hack 그물 신설 — RED 기준선 ↔ 최종 테스트 대조. 백로그 feature-scan HIGH #1 적용 — MINOR. 재시작 권장.**
   - **갭 실측**: 테스트 **약화**를 보는 기계 게이트가 하나도 없었다. ① 7.7 tester-quality는 **GREEN 전**에 돌아 구조상 최종본을 못 본다 ② `/review`는 핵심규칙이 *"7.5 RED 테스트 자체는 대상 아님"*(`code-reviewer.md`)으로 **명시적 제외** ③ `block-developer-test-edit.sh`는 developer의 **편집 행위**만 막는데(구문 경로), 약화는 GREEN FAIL → 3분기 → **작성자 재작성 루프**라는 **정당 경로**로도 온다. → RED 단언이 최종본까지 살아있는지 확인하는 지점이 부재.

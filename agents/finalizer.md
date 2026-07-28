@@ -112,13 +112,15 @@ memory: project
 
 ### 절차
 1. **bump 레벨 확인**: orchestrator가 위임 시 지정한 레벨(MAJOR/MINOR/PATCH)을 따른다. 미지정이면 보수적으로 판정 후 orchestrator에 확인(MAJOR=거버넌스/게이트 구조, MINOR=agent md 규칙 추가·스킬 갱신, PATCH=오타·문서·주석). **bump 전 `git fetch origin` + `git rev-list --count HEAD..origin/main` 확인 필수** — origin이 이미 발행한 번호를 fetch 없이 재사용하면 push 시 버전 충돌이 난다(2026-07-15 사고: 로컬 v3.63.0 기준으로 3.64.0 bump했으나 origin이 이미 3.64.0 발행 → 같은 번호 두 커밋, rebase로 사후 해소. fetch 1회면 안 났다).
-1.5. **분리 문서 정합성 점검 (drift 방지 — orchestrator.md 변경 커밋 시 필수)**: orchestrator.md는 트리거-조건부 절차를 `docs/playbook-*.md` + `docs/routing-map.md`로 분리한다(목록·매핑: `orchestrator.md ## 분리 문서`). 이 커밋이 orchestrator.md의 **라우팅·게이트·시퀀스·WI 템플릿**을 건드렸으면, 대응 playbook이 같은 변경을 반영했는지 대조한다.
-   - 매핑: 메타운영 절차 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`.
-   - 한쪽만 바뀌어 stale하면 **자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(분리 문서는 orchestrator.md와 한 몸). 분리 문서만 바뀐 커밋도 bump 대상(추적 범위 포함).
-   - orchestrator.md를 안 건드린 커밋이면 이 단계 스킵.
+1.5. **분리 문서 정합성 점검 (drift 방지 — 스크립트 강제)**: `bash .claude/scripts/harness-drift-check.sh` 실행(staged 대상). **탐지는 스크립트, 판정은 여기.**
+   - **무출력 = 통과.** 신설/삭제된 단계·게이트가 없거나 `routing-map.md`를 이미 갱신했으면 침묵한다(개명·문구 수정엔 안 짖는다).
+   - `⚠ 분리 문서 drift 의심` 출력 시 → 나열된 단계마다 **흐름 다이어그램에 실려야 하는지 판정**한다. 실려야 하면 `docs/routing-map.md`를 **같은 커밋에서** 갱신. 아니면 무시하고 진행(차단 아님).
+   - 매핑(수동 판단용): 메타운영 → `playbook-harness-ops.md` / 설계모드·WI → `playbook-design-mode.md` / TDD 7a~8 → `playbook-tdd.md` / 흐름 다이어그램 → `routing-map.md`. 분리 문서만 바뀐 커밋도 bump 대상.
+   - 근거: 이 점검은 v4.4.0 전까지 **산문 소프트룰**이었고 졌다 — v3.76.0 이후 orchestrator.md 8커밋 중 routing-map 동반 갱신 1회, 실제 누락 게이트 3개(8.0 위임 커버리지 대조 / 모델 실측 / 워크스루 3.5). 스크립트는 exit 0이라 커밋을 막지 않는다.
 2. **스킬 스냅샷 refresh**: `bash .claude/skills/sync-skills.sh` 실행(외부 스킬 글로벌→로컬 미러, 네트워크 0). sync 대상은 외부 제3자 스킬뿐(현재 grill-with-docs). 자체 스킬은 repo SSOT라 미동기화(v3.11.0).
    - 실행 후 critical 스킬 diff 확인: `git -C <.claude> diff --stat -- skills/grill-with-docs`.
    - **critical diff 있으면 → 자동 커밋 금지. 멈추고 orchestrator/사용자에 보고**(planner 3종 + orchestrator가 grill 포맷을 하드코딩 참조 → 계약 깨질 수 있음). non-critical 스킬 변경만 자동 포함.
+   - ⚠ **`⛔ 대조된 스킬 0개` 또는 `⚠ 상류 대조 못 함`이 뜨면 "critical diff 없음"으로 읽지 마라** — 소스 부재라 **대조 자체를 안 한** 상태다. 커밋은 진행하되(비차단) 그 사실을 WARN에 1줄 남긴다. 소스가 없으면 diff는 영구 0이라 이 게이트가 구조적으로 항상 PASS가 된다(v4.4.0 전까지 실제로 `✅ 모든 스킬이 최신 상태입니다`를 출력해 무음 통과시켰다 — [[gates-verify-present-code-only]] 클래스).
 3. **VERSION bump**: `.claude/VERSION` 첫 줄 X.Y.Z를 레벨에 맞게 증가.
 4. **CHANGELOG 갱신**: `.claude/CHANGELOG.md`를 **Read(limit: 20)로 상단만** 읽고 최상단에 `## X.Y.Z — YYYY-MM-DD` + 변경 요약 1~3줄을 prepend(Edit)한다. 전문 Read 금지(prepend 앵커는 상단 몇 줄로 충분 — 파일 전체 수만 토큰).
 5. **한 커밋**: 하네스 변경분 + VERSION + CHANGELOG + (non-critical) 스킬 미러 갱신을 한 커밋으로. push는 기존 규칙(사내 products main 직접 push 금지 등).
