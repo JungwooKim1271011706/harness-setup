@@ -64,7 +64,11 @@ if [ -f "$STATE" ]; then
   fi
 fi
 
-jqs() { printf '%s' "$STATE_JSON" | jq -r "$1" 2>/dev/null; }
+# ⚠ Windows 네이티브 jq(winget 등)는 stdout에 CRLF를 쓴다. MSYS 도구가 대개 CR을 걸러주지만
+#   중간 파이프(`jq | sort` 등)를 끼우면 살아남아 문자열 비교가 조용히 어긋난다 —
+#   `grep -Fxq "$esc"`가 `tocFramework\r`에 안 걸려 격상 트리거가 무음 false가 되는 식.
+#   실측으로 물린 클래스라(2026-07-27, red-baseline.sh) jq 출력은 전부 CR을 벗겨 받는다.
+jqs() { printf '%s' "$STATE_JSON" | jq -r "$1" 2>/dev/null | tr -d '\r'; }
 
 write_state() {
   mkdir -p "$STATE_DIR" 2>/dev/null || { note "state 디렉터리 생성 실패 — 갱신 생략"; exit 0; }
@@ -86,7 +90,7 @@ derive_modules() {
     case "$p" in
       .claude/*|docs/*) continue ;;
       */*)  printf '%s\n' "$p" | cut -d/ -f1-"$depth" ;;
-      *.md|VERSION|LICENSE|LICENSE.*|*.txt) continue ;;
+      *.md|*.md.template|*.template|VERSION|LICENSE|LICENSE.*|*.txt) continue ;;
       *)    printf '%s\n' "<root>" ;;
     esac
   done | sort -u
@@ -188,7 +192,7 @@ update)
   [ -z "$OUT" ] && { note "state 갱신 계산 실패 — 생략"; exit 0; }
 
   BEFORE="$(jqs '.commits_since | length')"
-  AFTER="$(printf '%s' "$OUT" | jq -r '.commits_since | length' 2>/dev/null)"
+  AFTER="$(printf '%s' "$OUT" | jq -r '.commits_since | length' 2>/dev/null | tr -d '\r')"
   write_state "$OUT"
   if [ "$BEFORE" = "$AFTER" ]; then
     note "이미 카운트된 sha=${SHA:0:7} — 중복 append 스킵"

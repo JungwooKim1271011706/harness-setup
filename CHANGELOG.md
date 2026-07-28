@@ -3,6 +3,21 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 4.3.0 — 2026-07-28
+- **시맨틱 reward-hack 그물 신설 — RED 기준선 ↔ 최종 테스트 대조. 백로그 feature-scan HIGH #1 적용 — MINOR. 재시작 권장.**
+  - **갭 실측**: 테스트 **약화**를 보는 기계 게이트가 하나도 없었다. ① 7.7 tester-quality는 **GREEN 전**에 돌아 구조상 최종본을 못 본다 ② `/review`는 핵심규칙이 *"7.5 RED 테스트 자체는 대상 아님"*(`code-reviewer.md`)으로 **명시적 제외** ③ `block-developer-test-edit.sh`는 developer의 **편집 행위**만 막는데(구문 경로), 약화는 GREEN FAIL → 3분기 → **작성자 재작성 루프**라는 **정당 경로**로도 온다. → RED 단언이 최종본까지 살아있는지 확인하는 지점이 부재.
+  - **`scripts/red-baseline.sh` 신설** — `snapshot`(테스트 파일 전부 git blob 고정) / `diff`(해시 대조 + 삭제단언·skip마커 추출) / `show`. **탐지=스크립트(결정론), 판정=LLM**으로 분리 — "약화인가 정당한 교정인가"는 판단이라 스크립트가 하지 않는다.
+  - **배선 2점**: `playbook-tdd.md` **§8.0b**(커버리지 대조 직후·GREEN 발사 전 = 7.6/7.7 통과 시점이 유일한 RED 기준선) ↔ `orchestrator.md` **워크스루 3.5단계**(finalizer 직전 대조·판정). 3단계는 **부재**를, 3.5는 **약화**를 본다.
+  - **무음 통과 구조적 차단**: 스냅샷이 없으면 "이상 없음"이 아니라 `⚠ 미검증`을 출력하고 `⚠ 미검증 전제` 태깅을 지시한다. 부재를 통과로 읽는 게 [[gates-verify-present-code-only]]의 교훈 그 자체라 그 실패를 되풀이하지 않게 박았다.
+  - **`wiki/gates-verify-present-code-only.md` 확장**: "사각의 셋째 얼굴 = 부재 말고 **약화**" 절 + 게이트별 "왜 못 보나" 표 추가(2겹 → 3겹).
+- **[gotcha] `wiki/jq-crlf-stdout-windows.md` 신설 + 두 스크립트 하드닝 — 구현 중 실측으로 물린 무음 오판.**
+  - Windows 네이티브 jq(winget `jq-1.8.1`)가 **stdout에 CRLF**를 쓴다. MSYS 도구 대부분이 CR을 걸러줘서 `V="$(jq -r …)"`·`jq … | grep -Fxq`는 **운좋게 통과**하지만, `jq … | sort` 처럼 **중간 파이프가 끼면** CR이 살아남아 `[ -f "$f" ]`가 **실재 파일을 "삭제됨"으로 오판**한다. 에러 0·exit 0.
+  - 실제 피해: `red-baseline.sh` 최초 구현이 백엔드 테스트 파일을 "삭제됨"으로 잘못 분류 — **게이트를 통과시키는 방향으로** 틀렸다. 실측 안 했으면 그대로 shipped.
+  - 조치: 두 스크립트 모두 jq 출력을 `| tr -d '\r'` 래퍼로 받게 통일. `regression-debt.sh`(v4.2.0)도 같은 클래스라 **선제 하드닝**(현재는 우연히 동작 중이었다 — 다른 jq 빌드나 파이프 추가 시 깨질 자리).
+  - 같은 커밋 부수 수정: `regression-debt.sh` 루트 문서 제외 목록에 `*.template` 추가(`CONTEXT.md.template`이 `<root>` 코드모듈로 오분류돼 부채 카운트에 섞였다 — 실측 발견).
+- **[fix] `red-baseline.sh` 테스트 경로 정규식 앵커** — `block-developer-test-edit.sh`의 `[/\\]src[/\\]test[/\\]`를 그대로 쓰면 안 된다. 훅은 hook payload의 **절대경로**를 보지만 이쪽은 `git ls-files`의 **repo-상대 경로**라 선두 `src/test/…`가 앞 구분자 없이 온다 → 백엔드 테스트가 통째로 스냅샷에서 빠져 "이탈 없음"이 조용히 오출력됐다. `(^|[/\\])`로 교정(실측 발견).
+- **검증(격리 repo·격리 HOME, 수동)**: 스냅샷 2파일 고정 · 무변경 `✅` · 단언삭제+`@Disabled` 주입 시 파일별 `+N -M`/삭제단언/skip마커 정확 집계 · 테스트 파일 삭제 = 최고위험 별도 절 · **신규 테스트만 추가 = 약화 아님으로 정상 분류** · 테스트 0개 repo 생략 · 스냅샷 없이 `diff` → `⚠ 미검증`(무음 통과 아님) · git repo 아님 → 생략 exit 0. `regression-debt.sh` 전 분기 회귀 재실행 PASS.
+
 ## 4.2.0 — 2026-07-27
 - **전체회귀 부채 계산을 산문 절차 → `scripts/regression-debt.sh`로 이관 — MINOR. 재시작 권장.**
   - **동기**: 부채 안내는 매 커밋 도는데 계산이 전부 **결정론**인데도 agent md 산문 38줄로 LLM에게 시키고 있었다(slug 산정 → JSON Read → 배열 길이 → modules 합집합 → 2트리거 비교 → 3분기 렌더 → 커밋 후 append). LLM 판단은 0인데 **커밋당 5~6턴 + JSON 본문이 컨텍스트에 상주**. 판단 없는 절차를 산문으로 두면 토큰과 오계산 축을 동시에 문다.
