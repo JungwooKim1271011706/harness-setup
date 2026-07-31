@@ -104,12 +104,23 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
   - 불통과 → **작성자(codex/tester-design)에게 반환해 재작성** [LOOP n/3, 7.7과 루프 카운트 공유]. 컴파일/셋업 결함 종류를 명시해 반환.
 - codex 미가용 폴백(claude 단일 소스)이어도 7.6은 동일 수행(오히려 단일 소스라 더 필요).
 - **greenfield(신설 클래스 — prod 미존재) 처리**: 신설 클래스는 prod stub이 없어 RED가 GREEN 전 컴파일 불가 → 7.6 선검증이 구조적으로 막힌다. 이때 **developer가 GREEN 전 최소 prod stub(public 시그니처만, 미구현)을 먼저 생성**한다(2단계: stub → 7.6 → GREEN). ⚠ **엔티티 @Column 추가(스키마 변경)가 있으면 stub 단계에 DDL(신규설치 스키마 + 증분 마이그레이션)도 함께 반영** — `ddl-auto=validate` 환경서 @SpringBootTest RED가 context 로드하려면 컬럼 선존 필요(stub=시그니처+DDL). 미반영 시 `Schema-validation: missing column`으로 "잘못된 이유" FAIL 1왕복. 근거: CI joblog 세션 7.6 백엔드 DDL 갭(2026-07-21).
-  - stub은 **benign 기본값 반환**(null/빈 컬렉션/false 등). `UnsupportedOperationException`·throw 금지 — 그건 7.6 ②의 "잘못된 이유 FAIL"이 된다. RED가 stub의 benign 반환에 대해 **단언 실패(올바른 이유)**로 FAIL해야 7.6 통과.
+  - stub은 **benign 기본값 반환**. `UnsupportedOperationException`·throw 금지 — 그건 7.6 ②의 "잘못된 이유 FAIL"이 된다. RED가 stub의 benign 반환에 대해 **단언 실패(올바른 이유)**로 FAIL해야 7.6 통과.
+    - ⚠ **반환 타입별로 갈린다 — 객체 반환에 `null`은 금지다.** 종전 문면("null/빈 컬렉션/false 등")이 null을 명시 허용해 developer가 객체 반환 메서드에도 null을 넣었고, 테스트가 즉시 `.getX()`로 역참조해 **NPE로 죽었다**. 실패가 `AssertionError`가 아니라 NPE면 **단언이 실행조차 안 된다** = "이 단언이 잘못된 구현을 잡아낼 수 있나"가 미검증. 규칙의 의도와 문자가 어긋나 있던 자리다.
+
+      | 반환 타입 | stub 값 |
+      |---|---|
+      | 객체·DTO | **`null` 금지 → 중립 최소 인스턴스**(문자열 `""`, 숫자 0, boolean false, 컬렉션 빈 리스트) |
+      | enum 포함 결과 객체 | **"실패/미구현"을 뜻하는 값** (성공값 금지 — 성공경로 케이스가 거짓 통과) |
+      | `Optional` | 테스트가 `.get()`/`.orElseThrow()`로 값 구조를 검사하면 `Optional.of(중립)`. "부재"가 정상 시맨틱이면 `empty()` |
+      | 원시·컬렉션 | 종전대로 0/false/빈 컬렉션 |
+
+    - **트레이드오프(수용)**: 중립값과 우연히 일치해 거짓 PASS하는 케이스가 생긴다 → 7.7 "RED인데 PASS" 목록으로 추적한다(실측상 이 처리로 잘 수렴).
+    - 근거: 7.6 1차 366케이스 중 **wrong-reason FAIL 100건이 전부 NPE**. stub 모양 교정 배치 1라운드 + 7.6 재실행 1회 추가 소모. 교정 후 41E → 최종 13E(잔존은 `UnnecessaryStubbing`으로 waive). 2026-07-30.
   - 경계 유지: stub=prod라 developer 소유(작성자≠구현자 불변 — 테스트는 여전히 codex/tester-design). developer는 7.6 통과용 시그니처만 만들고 실제 로직은 8(GREEN)에서 채운다.
   - 7c 합의서 freeze된 public 시그니처를 그대로 stub에 쓴다(추측 금지). prod가 일부 존재하면 그 시그니처를 Grep해 정합(시그니처 불일치 컴파일에러 사전차단).
   - 근거: greenfield서 7.6 생략 시 setup 결함(시그니처·픽스처·stub)이 병합 후 tester-backend서 라운드당 1건씩 노출(2026-06-22 authpatch 6+회전 × run 3~13분). stub 선생성으로 컴파일·구조 결함을 GREEN 전 1회에 수렴.
 - **프론트(vitest) RED sanity는 backend 대칭 게이트 단계다** — 프론트 spec 변경/신설이 있으면 **tester-frontend가 vitest RED 1회 실행**(컴파일 + "올바른 이유" FAIL 확인)을 backend `mvn test-compile`+RED와 동일하게 수행한다. 생략하고 7.7→GREEN→변경검증 직행 금지(컴포넌트 의존 mock 누락이 늦게 터짐). 실행은 **파일 전체를 describe 순서대로**(단일 describe·`-t` 격리 단독 금지) — cross-describe 누출(`vi.doMock`·모듈 내부상태·DOM 잔존)은 순서 실행서만 FAIL. 상세는 `tester-frontend.md`.
-  - **모달/오버레이 spec 선점검 체크리스트**(greenfield 모달 공통 재발): ① 마운트 대상이 `<Teleport>`/BaseModal 래핑이면 `mount(..., { global: { stubs: { teleport: true } } })` — 아니면 `wrapper.find()`가 empty. ② 자식 컴포넌트가 `onMounted`에 실 API 호출하면 그 api를 mock — 아니면 loadError alert 충돌로 RED가 "잘못된 이유" FAIL. 근거: BaseModal teleport·IgnoreRuleSection ignoreApi 변경검증 2라운드(2026-06-30).
+  - **모달/오버레이 spec 선점검 체크리스트**(greenfield 모달 공통 재발): ① 마운트 대상이 `<Teleport>`/BaseModal 래핑이면 `mount(..., { global: { stubs: { teleport: true } } })` — 아니면 `wrapper.find()`가 empty. ② 자식 컴포넌트가 `onMounted`에 실 API 호출하면 그 api를 mock — 아니면 loadError alert 충돌로 RED가 "잘못된 이유" FAIL. 근거: BaseModal teleport·IgnoreRuleSection ignoreApi 변경검증 2라운드(2026-06-30). ③ **`attachTo: document.body`를 쓰면 파일 전역 cleanup 안전망이 있는지 확인 — 없으면 7.6 불통과**(`tester-design.md` R19). 개별 `it()` 말미의 수동 `unmount()`는 RED에서 **구조적으로 도달하지 않는다**. ④ **상태전이 이후의 DOM 단언이 전이 전 캡처한 참조를 재사용하지 않는지** 확인(R20 — VTU teleport 스텁은 리렌더마다 서브트리를 교체한다).
 
 ## 7.7 — 테스트 품질 게이트 (tester-quality)
 
@@ -159,10 +170,21 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 - **7.7과 다른 축**: 7.7은 **작성된 RED의 품질**을 본다(GREEN 전이라 구조상 최종본을 못 본다). 8.0b는 그 판정을 **최종본까지 운반**하는 장치다. 대조는 워크스루 3단계에서 한다(`orchestrator.md`).
 - 실패해도 발사를 막지 않는다. 단 스냅샷이 없으면 워크스루 대조가 `⚠ 미검증`을 출력하므로 그 축은 **미검증으로 남는다**(무음 통과 아님).
 
+**스냅샷 없이 워크스루까지 간 경우 — 보상 절차 (즉흥 금지)**
+
+8.0b를 못 돌린 채(세션 끊김·구버전 하네스로 진행 등) 워크스루 3.5가 `⚠ 미검증`을 뱉으면, 아래 2건을 수행하고 결과를 브리핑에 인용한다. **`⚠ 미검증 전제` 태그는 그대로 유지**한다 — 보상은 스냅샷 대조와 동급이 아니다.
+
+1. **mtime 대조**: 테스트 파일 mtime < 구현 파일 mtime 이면 GREEN 이후 테스트 미변경. 역전되면 그 파일을 개별 조사.
+2. **핵심 단언 원형 grep**: 7.7 통과 시점에 인용됐던 단언 표현(비교 연산자·기대값·`toHaveLength`·정규식 등)이 최종본에 그대로 있는지 grep으로 확인.
+
+- 여기에 `block-developer-test-edit.sh`가 developer의 테스트 편집을 구문 경로로 차단하고 있다는 사실을 **보조 근거**로 함께 기록한다(단독으로는 불충분 — 약화는 작성자 재작성 루프라는 정당한 경로로도 온다).
+- 근거: 실제로 이 3건을 즉석 조합해 메운 라운드가 있었고 약화 정황은 0이었으나, **재현 가능한 절차가 아니라 그때그때 즉흥**이었다(2026-07-29). 즉흥은 다음 사람이 반복하지 못하고, 안 하면 그냥 미검증으로 통과한다. 절차로 승격시킨다.
+
 ### 8.1 구현
 
 - **GREEN 위임은 파일-disjoint 단위로 쪼갠다**: 한 developer 태스크에 코어 알고리즘 + kit 함수 + 다수 어댑터 함수 + 훅을 몰아넣지 마라 — 대형 단일 태스크는 탐색만으로 토큰 소진해 산출 0으로 죽는다. 파일이 겹치지 않는 배치로 나눠 위임하면 각 태스크가 완주한다. 근거: trackA developer-backend가 9함수 코어 + 2 kit + 22 어댑터 + 2 훅을 한 태스크로 받아 243k 소진·산출 0으로 사망 → 4개 파일-disjoint 배치로 쪼개니 전부 완주(재작업 0).
 - developer가 7.5 RED 테스트를 통과시키는 구현 작성
+- ⚠ **위임 프롬프트에 "자가검증 실행"을 넣지 마라** — developer는 어느 트랙에서도 실행하지 않는다(검증 주체 분리 불변식). `developer-frontend`는 **Bash 자체가 없어** 물리적으로 불가능하기까지 하다(`developer-backend`만 보유 — 도메인별로 다름). 기대 기준선(`vitest N/N`·`vue-tsc 0건`)은 **참고 정보로 전달**하되 "실행해서 확인하라"는 요구는 금지. 요구하면 에이전트가 자기 md의 "빌드/실행 금지"와 충돌해 거부하고, 그 공백을 손계산 같은 **우회 노동**으로 메운다(2026-07-29 실측, 2026-07-30 단순수정 트랙에서 재발). 상세·근거: `playbook-delegation.md ③ 대상 에이전트 도구셋 확인`.
 - **테스트 파일 편집 금지 (기계강제)**: developer는 `<module>/src/test/**`를 수정·삭제할 수 없다. PreToolUse 훅 `block-developer-test-edit.sh`가 agent_type=developer-* + 테스트경로 Edit/Write/MultiEdit를 차단(exit 2). 테스트 약화=reward-hacking 방어(백로그 #8, 근거 ImpossibleBench GPT-5 76%). 테스트가 틀렸다고 판단되면 구현 멈추고 **설계결함(DESIGN_MISMATCH)으로 보고** → FAIL 3분기의 설계결함 경로. (알려진 구멍: Bash sed -i 우회는 v1 미차단 — 백로그 #13)
 - **public 계약 준수** (co-plan/7c에서 freeze된 시그니처 변경 불가)
 - **public 계약 소변경** (파라미터명·반환타입 등 마이너 조정): planner 경량 갱신 후 설계패널 스킵하고 진행

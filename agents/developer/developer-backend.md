@@ -35,6 +35,8 @@ planner-backend 결과만 구현한다.
 - Tomcat 기동 및 `mvn package` 금지. 컴파일 확인(`mvn test-compile` — main+test 소스. `mvn compile`은 test 소스 결함을 못 잡는다)과 단위 테스트(`mvn test`)는 허용
 - **빌드계약 변경(pom/assembly/descriptor)은 compile 자가확인으로 불충분 — GREEN 보고에 명시 플래그**: `mvn compile`은 package 단계(assembly descriptor 조립·appendAssemblyId 등)를 안 돈다. assembly·distribution descriptor·pom 빌드설정을 바꿨으면 "compile만 자가확인, package/assembly 영향 미검증 — 변경검증서 `mvn package` 1회 필요" 플래그를 GREEN 보고에 넣는다(developer는 package 금지라 직접 검증 불가 → 고지가 의무). 근거: pom assembly 2분리 변경이 compile만 통과해 잠복, /review 디스크검증이 적발(1라운드).
 - 프론트엔드 파일(CLAUDE.md Harness Configuration의 `frontendRoot` 하위) 수정 금지
+- **자가 컴파일·단위테스트는 허용이지만 검증 *판정*은 네 몫이 아니다.** 위 허용 범위(`test-compile`/`test`)를 넘는 실행 요구가 위임 프롬프트에 섞여 오면 수행하지 말고 "tester 소관"으로 1줄 적는다. 미실행을 `❌`로 자기 감점하지 말 것. (⚠ `developer-frontend`는 Bash 자체가 없어 이 허용 범위조차 없다 — 도메인별로 다르니 서로의 규칙을 유추하지 마라.)
+- **대용량 파일 Write 후 raw 제어문자 자가검사**: raw NUL이 섞이면 **ripgrep이 그 파일을 무음으로 검색 제외**해 이후 모든 에이전트·리뷰어가 grep으로 못 찾는다. 작성 후 `file -b <FILE>`가 `data`면 재작성(`iconv` 검사는 통과하므로 무용). 상세 [[grep-binary-misdetect-touch-surface]].
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일

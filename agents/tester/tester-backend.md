@@ -33,6 +33,12 @@ memory: project
 - 기동 검증은 L1 컨텍스트 기동(Spring ApplicationContext 로드 = bean/config wiring)까지만 담당. 변경 스코프에 context 로드 테스트가 있으면 실행해 보고, 없으면 컴파일까지만 확인하고 "L1 공백" 명시(공백 인정). 단 **변경 표면이 빈 배선(@Component 등록)·설정 바인딩·auth·컨트롤러 계약을 건드리면 L1 컨텍스트 기동을 변경검증 초반에 실행**하고, context 로드 테스트 부재를 "L1 공백"으로 넘기지 말고 통합계약 갭 신호로 7c.3 락(playbook-tdd 정책/설정 런타임 배선+스프링 통합계약)을 요구한다(늦은 통합 발견 LOOP 차단). L2 풀 런타임 기동(Tomcat WAR+HTTP)은 전체회귀 부채 또는 사람 검증으로 위임.
 - **변경검증 전체실행 금지.** 실행이 수십 분/수백 클래스 징후면 스코프 미한정을 의심하고 중단→스코프 재산정. 전체회귀는 tester-runtime 전담.
 - **폭주 테스트 fail-fast (타임아웃 강제).** mvn 호출에 `-Dsurefire.timeout=600`(per-fork 백스톱, surefire가 600s 초과 포크 JVM을 강제 종료 → BUILD FAILURE) + `-Djunit.jupiter.execution.timeout.default=120s`(Jupiter per-test 기본 타임아웃, 단일 테스트 무한루프를 120s에 끊음; JUnit4면 무시)을 항상 붙인다. 위 스코프가드(수백 클래스)는 **단일 테스트 무한루프**를 못 잡는다(폭주 1개 ≠ 수백 클래스). 무한루프는 GC 죽음나선으로 포크 JVM이 수 GB를 점유하며 머신을 무한 점유 → 타임아웃이 없으면 fail-fast가 안 된다. surefire가 포크를 죽이면 부모 maven은 정상 종료 → trap이 pom 원복(고아·잔재 없음). 힙 캡(-Xmx)은 프로젝트 argLine을 덮을 위험이 있어 강제하지 않는다(폭주 힙은 루프의 증상이라 타임아웃 종료 시 회수됨). 배경: `.claude/wiki/surefire-runaway-test-timeout.md`.
+- **`@SpringBootTest` 스코프면 JLine dumb-terminal 플래그 필수 (없으면 무한대기).** 실행 스코프에 `@SpringBootTest` 계열이 포함되면 mvn 호출에 아래를 **항상** 붙인다:
+  ```
+  -DargLine="-Dorg.jline.terminal.provider=dumb -Dorg.jline.terminal.dumb=true"
+  ```
+  Spring Shell 계열 앱은 컨텍스트 로드 시 JLine Terminal 빈을 만드는데, surefire fork처럼 **tty가 없는 비대화형 환경에서 블로킹**한다. 타임아웃으로 죽을 뿐 원인이 안 보여 매 세션 재발견하게 된다. 실측: 우회 없이 **600s 타임아웃 ×2로 20분 소모**(컨텍스트 부팅 중 342.9s·349s 대기) → 플래그 부착 후 **42.6초에 12클래스 완주**(2026-07-30). 프로젝트가 Spring Shell을 안 쓰면 이 플래그는 무해한 no-op이다. 배경: `.claude/wiki/springboottest-jline-terminal-hang.md`.
+- **신규 회귀가드는 판별력 증명을 확인한다 (수신측 검증).** tester-design이 낸 신규 가드에 "어떤 buggy 가정이면 RED가 되나"(값 포함) 1줄이 없으면 **감점**하고 반환한다. 증명 없는 가드는 tautology일 수 있고, 그 경우 "회귀가드 있음"으로 오인된 채 영구 GREEN이 된다(`tester-design.md` R21의 수신측 짝).
 - **판정(verdict) 없이 종료 금지.** 무거우면 스코프부터 줄인다. PASS/FAIL/ESCALATION 중 하나를 반드시 반환. 근거: harness_pain 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
 
 ## 단위테스트 실행 (skipTests 임시 오버라이드)

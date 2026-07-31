@@ -33,6 +33,7 @@ memory: project
 - 테스트 레이어 분담: tester-backend/tester-frontend = 변경검증(단위 + 변경 스코프: 직접 호출자 1홉 + planner 회귀범위) + L1 컨텍스트 기동. tester-runtime = 전체회귀 전담(부채 트리거 또는 "회귀 돌려" 수동 호출 시에만). 자세한 정의는 CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 참조.
 - 변경검증 회귀 스코프는 산문("*Test 전체")이 아니라 **명시 클래스 목록**으로 위임하고, tester 보고의 실행 클래스 집계와 대조한다(지시 vs 실행 갭 = 무음 부분실행 → tester-backend 영역2 대조표).
 - **편집 위임 후 디스크 반영 검증 (claimed-but-not-applied 차단)**: tester-design 테스트파일뿐 아니라 **developer의 빌드계약 변경(pom/assembly/descriptor)**도 동급 — 작성·재작업 산출을 받으면 **다음 단계(7.6/변경검증) 진입 전에** 보고된 핵심 변경 1~2개를 orchestrator가 직접 `Grep`로 디스크 확인한다. 보고 텍스트("BUILD SUCCESS"·"적용함")만 믿고 진행 금지 — Edit/Write 누락·실패·오위치로 보고≠디스크 재발 이력. ⚠ developer가 **compile 자가확인만** 한 빌드계약 변경(assembly descriptor 등)은 `mvn compile`이 안 잡는다(package 영향) → 변경검증서 실 `mvn package` 1회 또는 핵심 라인 grep. 불일치면 즉시 재발행(산출에 grep 자가증명 포함됐으면 갈음). 비용 grep 1회 << 변경검증 1라운드.
+- **접점계약을 freeze하거나 서브에이전트가 무보고 사망하면 → `.claude/docs/playbook-delegation.md` Read.** 계약의 대칭·경계 축 검산 / rule 함정 선례 grep / 대상 에이전트 도구셋 확인(⚠ **developer-\*에는 실행·검증을 요구하지 않는다** — 트랙 불문, `developer-frontend`는 Bash 자체가 없다) / 사망 시 디스크 완주 판정 3단계(재발사 전 필수).
 - **상호의존 작업 병렬위임 금지 (의미적 의존 ≠ 파일 충돌)**: Agent 도구로 두 작업을 **한 메시지에 동시 발사**하기 전, "**한쪽 산출이 다른쪽 입력 가정을 바꾸나?**" 1문 자가체크. 바꾸면 **순차**다. 특히 **구현 계약 변경 ↔ 픽스처/테스트 모사**는 상호의존 — developer가 정하는 접점계약(argv 형태·`-C` 부착·메서드 선택)을 tester-design 픽스처가 모사하므로, **구현 먼저 확정 → 접점계약 SSOT 못박고 → 픽스처 정합** 순. "developer=src·tester=test라 파일 비충돌 → 병렬 가능"은 함정(파일 비충돌이 의미 독립을 뜻하지 않음). 병렬은 산출이 서로의 전제를 안 바꾸는 독립 작업만(예: 무관 모듈 2개, 패널 ∥ codex). **신규 공유 타입/DTO도 동일**: 2저자 병렬 저작(tester-design ∥ codex 등) 발사 전 orchestrator가 **필드명 + 스텁 형태를 1회 freeze해 양 저자에 주입**한다(접점계약 freeze의 타입판) — 미확정 병렬 시 필드명 divergence·고아 케이스·스텁 불균일.
 - JUnit 실행: 프로젝트 pom의 skipTests 리터럴 때문에 tester는 실행 직전 pom을 임시로 오버라이드(sed)하고 trap으로 원복한다. 프로덕트 pom은 영구변경·커밋하지 않으며, tester는 실행 후 git clean을 검증한다. (자가치유 = harnessbak 복원 또는 skipTests 줄만 sed 원복 + EXIT/INT/TERM trap 원복. **`git checkout pom.xml` 무차별 원복 금지** — developer 미커밋 pom/assembly 변경 소실 → 거짓 BUILD FAILURE.)
 - tester-backend/tester-frontend PASS 후 /verify-implementation(verify-* 스킬 등록 시) → /review(code-reviewer) ∥ /codex review → /cso(인증/권한/암호화 변경 시 필수) → finalizer 위임
@@ -46,6 +47,7 @@ orchestrator.md 비대화 방지를 위해 트리거-조건부 절차/시각자�
 | `.claude/docs/playbook-harness-ops.md` | 기능 스캔·회고 반영·버전 관리 | 메타 운영 트리거 발동 시 |
 | `.claude/docs/playbook-design-mode.md` | 설계모드 흐름·WI 출력 게이트·WI 템플릿 | `설계모드:`/`/design-mode` 진입 시 |
 | `.claude/docs/playbook-tdd.md` | TDD 합의 7a~8 상세 | 신규기능·고복잡도 트랙 진입 후 |
+| `.claude/docs/playbook-delegation.md` | 계약 저술 자가체크(대칭·경계 축 / rule 함정 grep / 도구셋) · 서브에이전트 사망 산출 판정 | 접점계약 freeze 전 · 서브에이전트 무보고 사망 시 |
 | `.claude/docs/routing-map.md` | 전체 흐름 ASCII 다이어그램 | 흐름 시각화 필요 시 |
 
 > **drift 방지 (필수)**: 이 4개 파일은 orchestrator.md와 **한 몸**이다. orchestrator 라우팅·게이트·시퀀스를 바꾸면 해당 playbook도 같은 커밋에서 갱신한다. **finalizer bump 의식의 "분리 문서 정합성 점검"이 이를 기계 체크리스트로 강제**(`finalizer.md ## 하네스 버전 bump 의식`). 분리분만 바꿔도(예: WI 템플릿) bump 대상 — 추적 범위에 포함된다.
@@ -417,8 +419,9 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
 2. 패널 멤버 선정 (최소3/최대4, 연관기반). → `personas[]` 구성.
    - 스킬 3종(eng/design/devex): `{ key, skillPath: '~/.claude/skills/gstack/plan-*-review/SKILL.md' }` (gstack 글로벌 설치 경로 — gstack/ 한 단계 아래)
    - cso: `{ key: 'cso', skillPath: null }` (null이면 워크플로가 임베드 `CSO_LENS` 사용)
-3. args 구성: `{ planPath: <계획서 파일 경로 — docs/features 기능 문서, repo 상대>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
+3. args 구성: `{ planPath: <계획서 파일 경로 — docs/features 기능 문서, repo 상대>, repoRoot: <작업 repo 절대경로>, rulePaths: <0단계 확정 rule 경로[]>, complexity: 'normal'|'high', personas }`
    - **planPath 우선**: 페르소나가 자기 컨텍스트에서 Read — 계획 전문이 메인에 복제되지 않는다. 파일이 없을 때만 폴백으로 `planText: <계획서 전문>` 전달(워크플로가 둘 다 수용).
+   - ⚠ **`repoRoot`는 세션 cwd ≠ 작업 repo면 필수**(병렬 워크트리 개발이 대표 케이스). 페르소나가 *소스*를 읽을 때의 기준점이다 — 없으면 각자 cwd로 떨어져 **stale 워크트리 소스를 읽고 "계획이 실제 코드와 불일치"를 오진**한다. 실사고(2026-07-27): confidence 10 critical 1건 + minor 2건이 전부 오독 산물 → 코드대조 5회로 전면 기각, 반증 실패 시 틀린 baseline 재작업 1라운드였다. `git rev-parse --show-toplevel`로 확정해 넣는다.
    - **재게이트(LOOP≥1)면 추가 필수**: `priorCriticals: [{persona, location, description}]`(직전 **생존** critical — 코드대조로 기각된 건 제외) + `reworkDiff: <planner가 이번에 고친 내용>`. 워크플로가 이걸 받아 페르소나별 초점 블록(①내가 잡은 것 해소검증 ②남이 잡은 것의 수정이 **내 렌즈**에 낸 부작용)을 프롬프트에 붙인다.
      - ⚠ **미전달 시 재게이트가 최초 라운드와 글자 그대로 동일한 프롬프트로 돈다**(초점 0 + 이미 고쳐진 critical 재보고 → dedup 낭비). v4.6.0 전까지 args에 이 필드가 없어 **구조적으로 그 상태였다**.
      - `priorCriticals`가 비면 워크플로는 재게이트로 보지 않는다(초점 블록 미부착). 차단 사유가 없었으면 재게이트가 아니기 때문.
@@ -440,6 +443,8 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
    - 어떤 실패에서도 exit 0이고 stdout을 안 쓴다. **게이트 판정에 영향 없음** — 기록만.
    - 누적 판단은 `bash .claude/scripts/panel-metrics.sh report`. ⚠ 이 스크립트는 **판정하지 않는다** — 게이트 구조 변경(페르소나 축소 등)은 사람 승인 사항이고 report는 숫자만 낸다.
 0. **완전성 검사 (재런치 트리거)**: 반환의 `failures[]`가 非空이거나, `perPersona[]`에 요청한 페르소나가 **누락**됐거나, 필수 페르소나(eng 항상·cso 보안태그 시)가 passEvidence<2면 → **그 페르소나만** 부분집합으로 1회 자동 재런치(동일 scriptPath + 실패 페르소나만 personas). 정상 완주분은 보존. 재런치도 실패면 사용자 에스컬레이션(criticals=0을 권위있게 받지 않는다). transient API 오류로 필수 페르소나가 죽은 1차 패널이 빈 criticals로 통과되는 것을 막는다. (codex 형제 실패는 별도 폴백 — `### codex 형제` 참조, 패널 재런치 트리거 아님.)
+   - ⚠ **재런치 전 사망 사유 1회 확인 — 한도면 자동 재런치 금지**: 워크플로 진행 로그·`journal.jsonl`의 실패 문자열에 `session limit`/`hit your ... limit`/`resets` 패턴이 있으면 **계정 자원 고갈**이다. transient(네트워크·API 5xx)와 달리 **즉시 재시도 가치가 0**이고 남은 한도만 태운다. → 재런치하지 말고 **사용자에게 계정 전환 / 리셋 대기 선택지를 올린다**(형식: `## 사용자 의사결정 요청 형식`). 완주 페르소나 산출은 **보존**했다가 복귀 후 **미완 페르소나만** 부분집합으로 돌린다(전체 재실행 금지 — 실측상 완주분이 재게이트 초점 검증에 그대로 쓰였다). 그 외(사유 불명·transient)는 기존 1회 자동 재런치 유지. `## codex 호출 가드`가 codex 쪽에 이미 두고 있는 비-재시도 신호 구분의 claude측 대칭이다.
+   - 스크립트 층에도 짝이 있다: `design-panel.js`는 사유를 볼 수 없어(`agent()`가 null만 반환) **페르소나 2명 폴백까지 전멸 = 계정 고갈**로 보고 이후 폴백 재호출을 생략한다(서킷브레이커). 사유 기반 판정은 여기, 패턴 기반 차단은 거기 — 이중 그물.
    - ⚠ **`personas[]` ↔ `perPersona[]` 개수 대조는 `failures[]`와 별개로 항상 한다.** v4.6.0 전까지 워크플로가 죽은 페르소나를 `.filter(Boolean)`으로 **조용히 버렸고** `failures[]` 필드 자체가 없었다 — eng가 죽으면 그 findings가 통째로 사라진 채 `criticals: []`가 반환돼 **빈 criticals가 권위있게 게이트를 통과**했다. 필드가 생긴 지금도 개수 대조는 이중 그물로 유지한다(부재를 통과로 읽지 않는 원칙 — [[gates-verify-present-code-only]]).
 1. **dedup**: `criticals`를 근본원인별로 묶는다(여러 페르소나 + codex가 같은 버그를 다르게 표현 → 1건으로).
 2. **코드대조 게이트 (receiving-code-review, critical마다)**: 각 dedup critical의 인용 라인(file:line)을 **실제 Read해서 대조**한다.
@@ -495,8 +500,15 @@ tester-design 호출 시 아래 정보를 프롬프트에 포함한다:
   ```
   - 일반 Agent는 `agent-<id>.meta.json`에 **요청** 모델이, `.jsonl`에 **실제** 모델이 남는다 → 두 값 대조.
   - 워크플로 슬롯의 meta는 `{"agentType":"workflow-subagent"}`뿐이라 **실제값만** 나온다 → `claude-fable-*` 건수로 판정.
-- **판정**: 최고위험 슬롯에 `claude-fable-*`가 **0건**이면 강등이다(요청은 fable이었는데 실행이 아님).
-- **조치 (차단)**: 사용자 승인화면에 올리기 **전에** 막고 재실행한다. 강등 산출로 게이트를 통과시키지 않는다.
+- **판정 — `fable 0건`이 아니라 `실제 모델이 무엇인가`로 본다**:
+  | 실측 모델 | 판정 | 조치 |
+  |---|---|---|
+  | `claude-fable-*` | 정상 | 없음 |
+  | `claude-opus-*` | **정상 폴백** | `⚠ fable 폴백(opus)` 태그만. **재실행 안 함** |
+  | `claude-sonnet-*` | **무음 강등 확정** | 아래 차단·재실행 |
+  - ⚠ 종전 판정식(`fable 0건이면 강등`)은 **opus 폴백 성공까지 강등으로 오탐**했다. 이 계정은 fable이 `Fable 5 requires usage credits`로 **명시 실패**해 폴백이 정상 작동하는데, 그걸 강등으로 읽어 **이미 opus로 돈 게이트를 opus로 재실행**하라고 지시한다 = 순수 낭비(2026-07-28 실측, orchestrator가 수동 예외판단으로 회피). 방어 대상은 **sonnet 무음 강등**이지 opus 폴백이 아니다.
+  - **완화 아니라 정밀화다**: sonnet 강등은 종전과 동일하게 전부 차단된다. 오탐만 제거.
+- **조치 (차단 — 위 표의 sonnet 행)**: 사용자 승인화면에 올리기 **전에** 막고 재실행한다. 강등 산출로 게이트를 통과시키지 않는다.
   - 설계패널: args에 `topModel: 'opus'`를 **명시 주입**해 재호출.
   - 7.7: Agent `model: 'opus'` 오버라이드로 재스폰.
   - 재실행분에 `⚠ fable 폴백(opus)` 태그(판정 기준·게이트 구조 불변).
@@ -680,6 +692,7 @@ wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다:
 ```
 ~/.claude/skills/gstack/bin/gstack-decision-log '{"decision":"<승인 설계 1줄>","rationale":"<핵심 근거·트레이드오프>","scope":"<feature slug>","source":"user"}'
 ```
+- ⚠ **`scope` 허용값은 `repo`|`branch`|`issue` 뿐이다** — feature slug 같은 자유 문자열을 넣으면 거부된다(벤더 스킬 제약, 수정 대상 아님). slug는 `decision` 본문에 적고 `scope`는 셋 중에서 고른다.
 - 효과: 다음 세션 **시작 시** gstack Context Recovery(context-save SKILL)가 `decisions.active.json`을 자동 surface(welcome-back 요약) → 수동 `/context-restore` 없이 이전 결정 인지. checkpoint 파일(수동 restore 경로)과 **별개 자동 경로**.
 - 반전(설계 재게이트로 승인 뒤집힘)이면 `--supersede <id>`로 로그. 턴레벨·사소한 선택은 로그 금지(durable=아키텍처·스코프·도구선택·반전만).
 - **호출 실패·미설치 시 폴백**: 그 결정을 feature 문서(`docs/features/…`)의 결정 기록 절에 남긴다(세션시작 자동복원은 못 받지만 SSOT 문서에 남아 다음 세션이 grep으로 찾음). 조용한 스킵 금지 — 특히 **승인 반전**은 가장 durable해야 할 기록이다.
@@ -794,7 +807,7 @@ codex 호출 산출에 아래 신호 중 하나라도 보이면 **즉시 실패�
    - ⚠ 이 대조는 **최종 그물**이다. 1차 그물은 8단계 진입 전 위임 커버리지 대조(`playbook-tdd.md` 8 — 여기서 잡으면 구현 전에 잡힌다).
 3.5. **RED 기준선 대조 (테스트 약화 = 시맨틱 reward-hack)**: `bash .claude/scripts/red-baseline.sh diff` 실행 → 출력을 그대로 받는다. **탐지는 스크립트, 판정은 여기.**
    - `✅ 이탈 없음` → 통과. 브리핑에 1줄 인용.
-   - `⚠ 미검증`(스냅샷 없음) → **"이상 없음"으로 읽지 말 것**. `⚠ 미검증 전제: RED 기준선 대조`를 브리핑·기능문서에 태깅한다.
+   - `⚠ 미검증`(스냅샷 없음 = 8.0b 미실행) → **"이상 없음"으로 읽지 말 것**. `⚠ 미검증 전제: RED 기준선 대조`를 브리핑·기능문서에 태깅하고, **보상 절차**(mtime 대조 + 핵심 단언 grep)를 `playbook-tdd.md 8.0b`대로 1회 수행한다 — 즉흥 금지. 생산 지점은 8.0b(developer 위임 전 `snapshot`), 소비 지점이 여기다.
    - `⚠ 이탈` → 변경 하나하나를 **약화 vs 정당한 교정**으로 판정한다. 정당(설계결함 교정·오라클 수정 등)이면 사유를 기능문서에 1줄 기록하고 통과. **약화면 finalizer 진입 금지** → 작성자(codex/tester-design)에게 반환.
    - **왜 필요한가**: `block-developer-test-edit.sh`는 developer의 테스트 편집을 **구문 경로**로만 막는다. 약화는 **정당한 경로**로도 온다 — GREEN FAIL → 3분기 → 작성자 재작성 루프. 게다가 `/review`는 테스트를 **명시적으로 대상에서 제외**한다(`code-reviewer.md` 핵심규칙: "7.5 RED 테스트 자체는 대상 아님"). 7.7은 GREEN 전이라 최종본을 못 본다. → **RED 단언이 최종본까지 살아있는지 보는 그물이 어디에도 없었다.**
    - 3단계(**부재**를 본다)와 짝: 3.5는 **약화**를 본다. 둘 다 "있는 코드만 보는" 기계 게이트의 사각이다(`wiki/gates-verify-present-code-only.md`).
@@ -915,7 +928,8 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
 >
 > **▸ /review 실행주체 (SSOT)**: `/review`(claude 소스)는 **code-reviewer 서브에이전트에 위임**한다(`agents/reviewer/code-reviewer.md`). orchestrator가 직접 `/code-review`를 인라인 실행하지 않는다 — orchestrator는 개발 전 과정을 본 컨텍스트라 자기검토가 되어 `/codex review`와의 **독립 2소스가 깨진다**. code-reviewer는 개발을 안 본 fresh 컨텍스트에서 기존 `/code-review` 스킬을 실행(0에서 루브릭 신설 안 함) → codex(타모델)와 상관없는 둘째 의견 확보. 병렬 = `Agent(code-reviewer)` ∥ codex(Bash). codex 미가용 폴백은 아래 `## codex 호출 가드` 참조(단일소스 태그).
 >
-> **findings 타당성 1차 게이트 (항상, 경량 — receiving-code-review)**: developer 위임 전, 각 blocking finding을 코드베이스 현실과 대조한다. ① 전제가 실재하나(인용 라인 확인) ② 기존 코드/룰/프레임워크가 이미 막고 있지 않나 ③ YAGNI(grep해서 미사용이면 "구현" 요구는 기각) ④ **이 finding을 적용하면 승인된 RED 테스트·7c 합의·설계패널 승인 major와 충돌하나** — 충돌하면 기각한다(외부 리뷰는 승인 계약보다 **하위 권위**: developer가 테스트 못 고치는 hook 불변식과 같은 정신). 단 테스트가 진짜 틀렸다고 판단되면 자의로 적용 말고 **DESIGN_MISMATCH로 사용자 재승인** 경유. 명백히 틀렸거나 YAGNI면 기각하고 근거를 기록한다(맹종 금지). 외부 리뷰는 명령이 아니라 검증 대상 제안이다. 불확실하면 기각 말고 developer에 "검증 필요" 플래그와 함께 전달.
+> **findings 타당성 1차 게이트 (항상, 경량 — receiving-code-review)**: developer 위임 전, 각 blocking finding을 코드베이스 현실과 대조한다. ① 전제가 실재하나(인용 라인 확인) ② 기존 코드/룰/프레임워크가 이미 막고 있지 않나 ③ YAGNI(grep해서 미사용이면 "구현" 요구는 기각) ④ **이 finding을 적용하면 승인된 RED 테스트·7c 합의·설계패널 승인 major와 충돌하나** — 충돌하면 기각한다(외부 리뷰는 승인 계약보다 **하위 권위**: developer가 테스트 못 고치는 hook 불변식과 같은 정신). ⑤ **이 수정이 다른 호출부를 깨나** — finding이 **공용 헬퍼·시그니처의 시맨틱**을 바꾸라고 하면, 위임 전에 호출부 용례가 단일한지 `grep`으로 확인한다. 용례가 갈리면 "전 호출부 일괄 변경"이 아니라 **분기별 분리**를 지시한다. 비용은 grep 1회, 안 하면 라운드 1회. 근거: `call()` 헬퍼에 예외 가드를 심으라는 major를 그대로 위임 → 같은 헬퍼를 **예외를 기대하지 않는** 케이스(`ex==null`을 명시 기대하는 경계 케이스 포함)가 재사용 중이라 4건 파손 → `call()`/`callExpectingError()` 분리 라운드 추가. 27개 호출부가 **애초에 2종류**였다(2026-07-30).
+단 테스트가 진짜 틀렸다고 판단되면 자의로 적용 말고 **DESIGN_MISMATCH로 사용자 재승인** 경유. 명백히 틀렸거나 YAGNI면 기각하고 근거를 기록한다(맹종 금지). 외부 리뷰는 명령이 아니라 검증 대상 제안이다. 불확실하면 기각 말고 developer에 "검증 필요" 플래그와 함께 전달.
 >
 > **tester 감점에도 동일 적용**: 이 타당성 게이트는 리뷰/패널 findings뿐 아니라 **tester 감점 항목에도 적용한다**. tester critical/high 감점이 YAGNI(미사용 경계값)·과방어면 orchestrator가 기각할 수 있다(근거 기록). tester 지적 ≠ 무조건 수정. (tester는 1차로 minor/low를 점수 차감 없이 권고 섹션에 분리하지만, critical/high로 올라온 항목도 이 게이트로 한 번 더 거른다.)
 >

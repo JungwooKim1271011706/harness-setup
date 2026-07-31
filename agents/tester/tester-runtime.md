@@ -21,6 +21,7 @@ memory: project
 - 근거 부족 시 "미확정"
 - 전체회귀 전담 agent. 매 구현 강제 체인에 들어가지 않고, "회귀 돌려" 수동 트리거 또는 전체회귀 부채 권장 수락 시에만 호출된다.
 - 통합 테스트 + 전체 회귀를 1회 수행하고, 전체회귀 PASS 시 regression-debt.json을 리셋한다.
+- **`@SpringBootTest` 포함 스코프면 JLine dumb-terminal 플래그 필수**: `-DargLine="-Dorg.jline.terminal.provider=dumb -Dorg.jline.terminal.dumb=true"`. Spring Shell 계열은 컨텍스트 로드 시 JLine Terminal 빈을 만드는데 tty 없는 surefire fork에서 **블로킹**한다(원인 불명 타임아웃으로만 보인다). 실측 600s×2 낭비 → 부착 후 42.6s 완주. 전체회귀는 @SpringBootTest 비중이 커 특히 크게 물린다. 배경: `.claude/wiki/springboottest-jline-terminal-hang.md`.
 
 ## 통합 + 전체회귀 책임
 

@@ -10,6 +10,7 @@ export const meta = {
 // args (orchestrator가 전달 — D2: 페르소나 선정·보안재스캔은 orchestrator 책임)
 //   planPath   : 계획서 파일 경로 (docs/features 기능 문서, repo 상대) — 우선. 페르소나가 자기 컨텍스트에서 Read(메인 무복제)
 //   planText   : planner 산출물 텍스트 (계획서 전문) — planPath 부재 시 폴백
+//   repoRoot   : 작업 repo 절대경로 (선택). **세션 cwd ≠ 작업 repo면 필수** — 아래 ⚠ 참조
 //   rulePaths  : ["...rules/package/tocServer/backend.md", ...]  0단계 확정 rule 경로
 //   complexity : 'normal' | 'high'
 //   personas   : [{ key, skillPath|null }]  skillPath 있으면 C(스킬 Read), null이면 임베드(cso)
@@ -30,6 +31,16 @@ export const meta = {
 //   **커버리지는 불변이다** — 재게이트에도 페르소나 전원이 돈다. 줄이는 건 '무엇을 볼지'지
 //   '누가 볼지'가 아니다. 페르소나 축소(직전 critical을 찾은 렌즈만 재실행)는 **기각된 설계**다:
 //   1라운드 수정이 *다른 렌즈* 영역에 결함을 만든 사례가 관측됐다(백로그 2026-07-01).
+//
+// ⚠ **`repoRoot` — 페르소나는 소스를 cwd 기준으로 읽는다 (v4.9.0 신설)**:
+//   종전 args에는 소스 읽기의 **기준점이 없었다**. orchestrator가 planPath·rulePaths를 절대경로로
+//   줘도 페르소나가 *소스*(계획서가 인용하는 코드)를 읽을 땐 기준이 없어 각자 cwd로 떨어진다.
+//   워크플로 서브에이전트의 cwd = 세션 cwd이므로, **세션 cwd가 stale 워크트리**면 페르소나가
+//   2커밋 뒤진 소스를 읽고 "계획이 실제 코드와 불일치"라는 **confidence 10 critical을 오진**한다.
+//   실사고(2026-07-27): eng critical 1건 + minor 2건이 전부 오독 산물 → orchestrator가 코드대조
+//   5회로 전면 기각. 반증 못 했으면 계획서를 틀린 baseline으로 되돌리는 재작업 1라운드였다.
+//   orchestrator.md가 "모든 위임에 절대경로 명시"를 요구하는데 Workflow 경유엔 **명시할 필드가
+//   없던** 상태 — 규칙은 있고 배선이 없는 클래스(wiki/gates-verify-present-code-only.md).
 // ─────────────────────────────────────────────────────────────
 // args는 객체 기대. 일부 호출 경로에서 JSON 문자열로 도착할 수 있어 방어적 파싱.
 let _a = args
@@ -38,6 +49,7 @@ _a = _a ?? {}
 
 const planPath   = _a.planPath   ?? ''
 const planText   = _a.planText   ?? ''
+const repoRoot   = _a.repoRoot   ?? ''
 const rulePaths  = _a.rulePaths  ?? []
 const complexity = _a.complexity ?? 'normal'
 const personas   = _a.personas   ?? []
@@ -117,10 +129,19 @@ ${reworkDiff ? `\n[이번 rework 내용]\n${reworkDiff}` : ''}
 > 단, 수정이 그 부분의 전제를 바꿨다면 그건 영향권이다(파급을 보라).
 > 이미 해소된 critical을 다시 보고하지 마라(중복 dedup 비용).`
 
+  // 소스 읽기 기준점. 미전달 시 종전 동작(하위호환) — 단 그 경우 cwd 오독 위험은 남는다.
+  const rootBlock = !repoRoot ? '' : `
+[⚠ repo 절대경로 — 소스를 읽기 전 필독]
+이 계획서가 인용하는 **모든 파일 경로는 \`${repoRoot}\` 기준**이다.
+소스·테스트·룰을 Read/Grep할 때 반드시 이 절대경로를 prefix하라. **cwd 기준 상대경로로 읽지 마라** —
+네 cwd는 stale 워크트리일 수 있고, 그러면 뒤진 소스를 근거로 "계획이 실제 코드와 불일치"를 오진한다.
+경로 확인 없이 낸 불일치 지적은 confidence 4 이하로 강등하라.
+`
+
   return `너는 설계패널의 '${persona.key}' 페르소나 리뷰어다. planner가 작성한 계획서를 너의 관점으로 비평한다.
 
 ${lensBlock}
-
+${rootBlock}
 [준수 규칙] 다음 rule 파일을 Read하고 위반을 findings로 잡아라: ${rulePaths.join(', ') || '(없음)'}
 
 [검토 대상 계획서]
@@ -131,6 +152,19 @@ ${planPath ? `${planPath} 를 Read하라(전문 필독 — 안 읽고 비평 금
   - confidence 1~10. quote(계획서/코드의 동기 라인)를 못 달면 confidence를 4 이하로 강등하라.
   - critical 0건이면 passEvidence에 '무엇을 점검했고 왜 critical이 없는지' ≥2 항목을 반드시 채워라.${round > 1 ? `\n  - [다라운드 ${round}] 이전 라운드가 놓친 결함만 새로 찾아라. 중복 금지. 없으면 빈 findings.` : ''}`
 }
+
+// ── 계정 고갈 서킷브레이커 (v4.9.0 신설) ──
+//   문제: 사망 원인이 **계정 세션 한도**면 폴백 재호출은 100% 재실패가 예정된 호출이다.
+//   같은 계정이라 모델을 바꿔도 안 산다. 실사고(2026-07-27): eng·cso·devex가 한도로 죽고
+//   워크플로가 재시도해 **5 failure 누적**(agent_count 6 / done 1 / error 5) — 재시도분이
+//   한도를 더 태워 리셋 대기를 앞당겼다.
+//   ⚠ 사유 문자열로는 판정할 수 없다: `agent()`는 실패 시 **null만** 반환하고 사유를 안 준다.
+//     (회고 원안의 "failures 문자열에 한도 패턴 매칭"은 이 계약상 스크립트 층에서 불가능.)
+//     → 사유 대신 **패턴**으로 판정한다: 서로 다른 페르소나 2명이 폴백까지 전멸 = 계정 층 고갈.
+//     transient(단발 API 5xx)는 2명 연속 전멸로 잘 나타나지 않는다.
+//   사유 기반 판정(한도 vs transient)은 journal 문자열이 보이는 **orchestrator 몫**
+//   (orchestrator.md `### 패널 실행` 반환 후 0번).
+let systemicDown = 0
 
 // ── 페르소나 1명 실행 (C: eng+고복잡도면 loop-until-dry 최대 3라운드) ──
 async function runPersona(persona) {
@@ -150,6 +184,7 @@ async function runPersona(persona) {
   //   res === null 은 fable 미가용 신호가 아니라 진짜 사망(터미널 API 에러·사용자 skip)이다.
   const isTop = persona.key === 'eng' || persona.key === 'cso'
   let died = false
+  let everRan = false // 한 번이라도 산출을 받았나 (전무 = 사망 → failures[] 대상)
   const all = []
   const evidence = [] // PASS 근거 누적 (다라운드 병합). orchestrator의 PASS 근거 기계검증 소스
   for (let r = 1; r <= maxRounds; r++) {
@@ -164,12 +199,24 @@ async function runPersona(persona) {
       res = await agent(reviewPrompt(persona, r), opts(topModel))
       if (res === null) died = true   // 진짜 사망만 여기 걸린다(강등은 안 걸림 — 위 주석)
     }
+    // 서킷브레이커: 계정 층이 이미 고갈로 보이면 폴백을 쏘지 않는다(재실패 예정 호출 = 한도 낭비).
+    // 미실행 페르소나는 아래 everRan=false로 failures[]에 실려 orchestrator가 재런치 판정한다.
+    if (res === null && systemicDown >= 2) break
     if (res === null) res = await agent(reviewPrompt(persona, r), opts(isTop ? 'opus' : 'sonnet'))
+    if (res === null) { systemicDown++; break }  // 폴백까지 전멸 = 이 페르소나 사망
+    everRan = true
     if (Array.isArray(res?.passEvidence)) evidence.push(...res.passEvidence)
     const found = res?.findings ?? []
     if (found.length === 0) break // dry → 다라운드 중단 (단 passEvidence는 위에서 이미 수집)
     all.push(...found)
   }
+  // ⚠ **산출 전무 = null 반환** (v4.9.0 — 종전 failures[] 탐지가 죽어 있었다):
+  //   종전엔 두 agent 호출이 모두 null이어도 `{findings: [], passEvidence: []}` **객체**를 반환했다.
+  //   아래 failures 계산은 `raw[i] ? null : p.key`라 truthy 객체는 실패로 안 잡힌다 →
+  //   **사망 페르소나가 "findings 0건 정상완주"로 둔갑**하고 failures[]는 빈 채로 왔다.
+  //   v4.6.0이 필드를 만들었지만 채우는 경로가 없던 셈. 이제 진짜 사망은 null로 내려보낸다.
+  //   (passEvidence<2 완전성 검사가 2차 그물이었으나 부재를 통과로 읽지 않는 원칙상 1차가 필요하다.)
+  if (!everRan) return null
   // model = **요청값**이지 실행값이 아니다. orchestrator가 transcript로 대조하기 전엔 신뢰 금지.
   return { persona: persona.key, findings: all, passEvidence: evidence,
            model: isTop ? (died ? 'opus(사망 폴백)' : `${topModel}(요청·미검증)`) : 'sonnet' }

@@ -16,6 +16,7 @@
 - [[windows-node-execfile-tar-msys]] — Node `execFile('tar')`가 Git Bash서 MSYS GNU tar를 잡아 `-C C:\...`를 SSH 호스트로 오인(`Cannot connect to C:`). cmd/PS는 정상 = 셸 의존 파손. System32\tar.exe 절대경로로 bsdtar 강제
 - [[device-guard-blocks-jdk-javac]] — Windows Device Guard(WDAC)가 서명 안 된 OpenJDK javac.exe 실행 차단 → maven fork 컴파일이 `.java` 에러 0줄로 무음 실패. cmd서 `javac -version` 직접 실행해 진단, 통과 JDK로 `-Djdk-1.8-home` 오버라이드
 - [[surefire-runaway-test-timeout]] — 폭주(무한루프) 테스트가 surefire 포크 JVM을 무한 점유(수 GB·GC 죽음나선) → 머신 메모리 고갈. mvn에 per-fork(`-Dsurefire.timeout`)+Jupiter per-test 타임아웃 강제로 fail-fast. jps/jstack 응급대응
+- [[springboottest-jline-terminal-hang]] — `@SpringBootTest`가 tty 없는 surefire fork에서 JLine Terminal 빈 생성 중 **블로킹**(느린 테스트와 구별 안 됨). 실측 600s×2 낭비 → `-DargLine="-Dorg.jline.terminal.provider=dumb -Dorg.jline.terminal.dumb=true"` 부착 후 42.6s 완주
 - [[codex-tmp-windows-path]] — codex 호출 시 gstack-paths TMP_ROOT가 `C:Users`(슬래시 누락) → mktemp 실패 → /tmp 폴백 1회 재시도 지연
 - [[codex-python-shim-windows]] — codex --json 파서가 Windows Store python shim을 골라 broken pipe(exit 101) → PYTHON_CMD로 실제 인터프리터 명시. 차단훅 mvn 오탐 회피 노트 포함
 - [[codex-model-stall-windows]] — codex smoke ping은 exit0 통과하나 실프롬프트가 모델 stall로 exit124 hang → probe false-positive로 20분 낭비. probe를 대표프롬프트+60s 타임아웃으로 강화, 타임아웃=불가
@@ -34,6 +35,7 @@
 - [[information-schema-table-name-ci-collation]] — `information_schema.*.TABLE_NAME`은 ci collation → `'Users'`가 snake `users`에 매칭(LCTN=0이어도). "메타조회 통과=스키마 사실" 추론 금지, 리터럴도 snake 일치 + 속성(NON_UNIQUE)까지 단언
 - [[vue-immediate-watch-template-ref]] — Vue `watch(...,{immediate:true})`가 mount 전 동기 실행→template ref null→차트 조용히 미렌더. flush:'post'로도 안 고쳐짐. 첫 렌더는 `onMounted(renderChart)`로
 - [[vite-stale-served-source-windows]] — Windows에서 Vite dev server 워처가 편집 miss→stale transform 서빙. 디스크≠서빙. `curl localhost:PORT/src/...`로 서빙 소스 확인 후 재시작
+- [[npm-ci-esbuild-lock-devserver]] — `npm ci`의 node_modules 선삭제가 실행 중 dev server 자식 `esbuild.exe` 점유와 충돌 → `EPERM unlink -4048` BUILD FAILURE. 부모 PID 추적으로 **어느 체크아웃**의 vite인지 특정(병렬 워크트리면 남의 것일 수 있다)
 - [[jsdom-missing-browser-apis]] — renderer가 jsdom 미구현 브라우저 전역(CSS.escape·matchMedia 등) 쓰면 프로덕션 OK·단위테스트 TypeError 전수 폭발. 환경 가드 헬퍼로 회피
 - [[electron-before-quit-window-close-order]] — Electron 창 X경로 순서(close→파괴→window-all-closed→before-quit)라 before-quit 단일게이트 종료확인은 창 파괴 후라 취소 불성립. window `close` preventDefault에서 dialog, before-quit는 app/ipc quit 전용
 - [[electron-builder-config-precedence]] — electron-builder read-config-file은 package.json `build` 키 있으면 electron-builder.yml 완전무시(병합 아님) → 배포계약(target/productName) 조용변경. build 설정 한 곳에만, 신규 필드 전 동종 config 존재 스캔
@@ -42,9 +44,9 @@
 - [[mockito-strictstubs-removal-wi]] — 제거 WI가 호출 라인 지우면 그 메서드 stub이 UnnecessaryStubbingException(STRICT_STUBS). 호출제거+stub제거 같은 커밋. 부재 검증은 sentinel-stub 말고 @JsonInclude 부재+null 직렬화
 - [[vitest-vimock-partial-throws]] — vitest `vi.mock` 부분대체서 factory 미반환 named export는 undefined 아닌 throw → script setup 전량 死. 모든 export를 factory에, 프로덕션 `?? fallback` 금지(테스트커플링)
 - [[vue-vmodel-select-jsdom-artifact]] — Vue v-model/select 리셋 RED에 DOM `.value` 단언 금지(jsdom `_assigning`+`wrapper.find` 정적캡처 이중 아티팩트). 리액티브 귀결로 단언+구별력 자가검증+픽스처 ≥3
-- [[vtu-teleport-spec-native-dom]] — `<Teleport to="body">` 노드는 마운트 서브트리 밖이라 `wrapper.find()`가 못 찾고, `stubs.teleport:true`는 제자리 렌더라 검증 대상 소멸+remount 아티팩트(spec 3라운드 소모). `document.body.querySelectorAll`+`dispatchEvent`로. 클리핑 목적이면 Teleport보다 재배치 우선
+- [[vtu-teleport-spec-native-dom]] — `<Teleport to="body">` 노드는 마운트 서브트리 밖이라 `wrapper.find()`가 못 찾고, `stubs.teleport:true`는 제자리 렌더라 검증 대상 소멸+remount 아티팩트(spec 3라운드 소모). `document.body.querySelectorAll`+`dispatchEvent`로. 클리핑 목적이면 Teleport보다 재배치 우선. **stub 쓸 땐 리렌더마다 서브트리 교체 → 전이 전 캡처한 `DOMWrapper`는 stale**(재클릭 시 disabled 게이트 우회 = 검증력 0) → fresh re-query
 - [[codex-workspace-write-vitest-sandbox]] — codex workspace-write가 깊은 워크트리서 vitest 자기검증 전건 실패(샌드박스 상위 read 차단+PS 실행정책). 산출은 미검증 전제, 실행검증은 tester 라운드로 분리
-- [[grep-binary-misdetect-touch-surface]] — ripgrep이 비-UTF8 바이트 섞인 파일을 binary 오탐→무음 제외 → 시그니처 변경 회귀범위 grep 카운트에 무음 누락(WI-C 11≠12파일). 카운트=하한, mvn test-compile이 진실
+- [[grep-binary-misdetect-touch-surface]] — ripgrep이 raw NUL 섞인 파일을 binary 오탐→무음 제외 → 시그니처 변경 회귀범위 grep 카운트 무음 누락(WI-C 11≠12파일) + **계획서 md 오염 시 developer가 오라클을 못 읽음**. 원인=대용량 Write의 NUL 주입(2026-07-30 규명). 판별=`file -b`(≠`iconv`), 카운트=하한·test-compile이 진실
 - [[java-unicode-escape-compile-trap]] — javac \u 치환은 렉싱 전 전처리(JLS 3.3) — 주석·문자열 어디든 \u+비hex면 컴파일 에러. mvn compile(main만)은 test 소스 못 잡음 → test-compile로 확인
 - [[codex-cjk-mojibake]] — codex가 CJK 소스·문서를 전반 mojibake로 읽음(라인병합 오독과 별개 모드) → 파일쓰기·문서독해 배제, 비평/consult만. 7.5는 tester-design 폴백+단일소스 태그
 - [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)

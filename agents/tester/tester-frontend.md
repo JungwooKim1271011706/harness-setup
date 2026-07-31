@@ -37,7 +37,9 @@ memory: project
 - **변경검증 전체실행 금지.** 실행이 수십 분/수백 클래스 징후면 스코프 미한정을 의심하고 중단→스코프 재산정. 전체회귀는 tester-runtime 전담.
 - **변경 스코프 파일은 파일 전체를 describe 순서대로 실행해 판정**(단일 describe·`-t` 필터 격리 PASS 단독 금지). cross-describe 누출(앞 describe의 `vi.doMock`·모듈 내부상태 `_running` 등·DOM 잔존)은 격리실행서 안 보이고 전체파일 순서실행서만 FAIL한다. (backend `@Nested`/surefire 무음스킵과 같은 클래스 — 격리 PASS = 거짓 GREEN. RED sanity·변경검증 모두 적용.)
 - **판정(verdict) 없이 종료 금지.** 무거우면 스코프부터 줄인다. PASS/FAIL/ESCALATION 중 하나를 반드시 반환. 근거: harness_pain 신호2 — 42분 전체실행 + verdict 없이 종료 → 재spawn.
-- **모달/오버레이 spec RED sanity 선점검**(`playbook-tdd.md` 7.6 정본): ① `<Teleport>`/BaseModal 래핑이면 `stubs:{teleport:true}`(아니면 `wrapper.find()` empty) ② 자식 `onMounted` 실 API 호출 있으면 그 api mock(아니면 loadError alert 충돌 "잘못된 이유" FAIL). 근거: teleport·ignoreApi 변경검증 2라운드(2026-06-30).
+- **모달/오버레이 spec RED sanity 선점검**(`playbook-tdd.md` 7.6 정본): ① `<Teleport>`/BaseModal 래핑이면 `stubs:{teleport:true}`(아니면 `wrapper.find()` empty) ② 자식 `onMounted` 실 API 호출 있으면 그 api mock(아니면 loadError alert 충돌 "잘못된 이유" FAIL). 근거: teleport·ignoreApi 변경검증 2라운드(2026-06-30). ③ `attachTo: document.body`면 파일 전역 `afterEach` cleanup 안전망 확인 — **없으면 7.6 불통과**(tester-design R19) ④ 상태전이 후 DOM 단언이 전이 전 캡처 참조를 재사용하지 않는지(R20).
+- **cross-test 오염은 `-t` 이분탐색으로 오염원을 특정한다.** 격리 실행 시 PASS·전체 실행 시 FAIL이면 오염이다. "오염원 = 방금 추가한 신규 케이스"라고 **가정하지 마라** — 실측에서 오염원은 `afterEach`가 없던 **다른 describe의 기존 케이스**였고, 신규 케이스에 로컬 안전망을 단 1차 수정이 통째로 무효화됐다(스코프 오판 1라운드, 2026-07-28).
+- **신규 회귀가드는 판별력 증명을 확인한다 (수신측 검증).** tester-design이 낸 신규 가드에 "어떤 buggy 가정이면 RED가 되나"(값 포함) 1줄이 없으면 **감점**하고 반환한다(`tester-design.md` R21의 수신측 짝). 증명 없는 가드는 tautology일 수 있다 — 실측 사례에서 buggy/fixed 양쪽이 동일값을 반환해 영구 GREEN이었다.
 
 ## 브라우저 자동화 ($B)
 gstack browse 바이너리를 사용해 실제 브라우저로 검증한다.
