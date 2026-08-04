@@ -98,6 +98,15 @@ codex가 7c 합의 케이스를 기반으로 RED 테스트를 작성한다.
 
 - 실행 주체: **tester-backend**(Bash 보유 + 테스트 파일 미편집 — 작성자≠검증자 유지). `mvn test-compile` + RED 1회 실행.
 - 통과 기준: **① 컴파일 OK** + **② RED가 "올바른 이유로" FAIL**(미구현 도메인 동작에 의한 단언 실패/도메인 예외). 컴파일 에러, 매처 오용(primitive에 `any()`), `@BeforeEach` 팩토리 seam 미사용, `UnsupportedOperationException` 같은 "잘못된 이유"의 FAIL은 **불통과**.
+  - ⚠ **FAIL 사유를 분류한다 — exit code(FAIL 여부) 단일 축으로 판정하지 않는다.** RED는 *올바른 이유로* 실패해야 한다. 케이스별 실패 메시지 + 스택 최상단을 보고 2분류:
+
+    | 신호 | 판정 |
+    |---|---|
+    | `AssertionError`·`expected:<X> but was:<Y>`·도메인 예외이고, 실패 지점이 **대상 단언 라인** | ① 정상 RED |
+    | NPE·`NoSuchFileException`/`FileNotFound`·Mockito `UnnecessaryStubbing`/`wanted but not invoked` 등 **인프라 계열**, 또는 실패 지점이 **단언 라인 이전**(setup·픽스처·스텁) | ② 픽스처 의심 → **불통과** |
+
+    - ②는 "대상 단언에 **도달조차 못 했다**"는 뜻이라 그 단언이 잘못된 구현을 잡아내는지가 미검증이다. **스텁 반환값이 대상 코드 진입을 막는 형태도 ②다** — `thenReturn(List.of())`로 루프가 0회 돌면 그 안의 호출은 영원히 미검증인데 예외는 안 난다(메시지만 봐선 안 잡힌다 — 스택·도달 여부를 본다).
+    - ②가 1건이라도 있으면 7.6 불통과 → 작성자 반환. GREEN에서 발각되면 developer는 `src/test/**` 훅 차단이라 못 고쳐 **tester-design 왕복 1라운드가 통째로 추가**되고, 정상 GREEN 구현이 "구현 결함"으로 오분류된다. 근거: batch C 2건(픽스처가 `Files.writeString(tocServerPom, …)` 누락 → 대상 파일 부재 / `thenReturn(List.of())`로 `createHubSettingsXml()` 도달 불가) 둘 다 8 GREEN서 발각. 2026-08-04.
 - ⚠ **(A)류 컴파일에러가 (B)류를 가린다**: 미구현 심볼 부재(A류, greenfield 정상)가 **module-wide test-compile을 멈추면**, 같은 파일의 테스트 자체 결함(B류: `throws` 누락·잘못된 import·문법)이 **애초에 리포트되지 않는다**. A류로 컴파일이 멈추면 → **신규 테스트 파일을 미구현 심볼 미참조 부분부터 단독/부분 컴파일**하거나 **javac 문법검사(체크예외·import)를 별도 수행**해 B류를 노출한다. 정적 검토만으론 놓친다. 근거: trackA LOOP2 `throws Exception` 누락이 A류에 가려져 GREEN 단계서야 발견(test-compile 전체 차단).
 - 처리:
   - 통과 → 7.7 진행.

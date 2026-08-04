@@ -80,6 +80,7 @@ mvn test -DskipTests=false -Dsurefire.timeout=600 -Djunit.jupiter.execution.time
 - 통과 기준 2가지 **모두**:
   1. **컴파일 OK** — 매처 오용(primitive에 `any()`), `@BeforeEach`가 자기가 만든 팩토리 seam 미사용, 타입추론 실패 등 컴파일/셋업 결함 없음.
   2. **RED가 "올바른 이유로" FAIL** — 미구현 도메인 동작에 의한 단언 실패/도메인 예외. `UnsupportedOperationException`·컴파일에러 같은 "잘못된 이유"의 FAIL은 불통과.
+     ⚠ FAIL 사유를 **①단언 실패(정상 RED) / ②인프라 예외·단언 도달 실패(픽스처 의심)**로 분류해 보고한다. ②(NPE·`NoSuchFileException`·Mockito `UnnecessaryStubbing`/`wanted but not invoked`, 또는 실패 지점이 단언 라인 이전)는 **1건이라도 불통과**. 분류표: `docs/playbook-tdd.md` 7.6.
 - 산출: `RED sanity PASS`(→ 7.7 진행) 또는 `RED sanity FAIL`(결함 종류 명시 → 작성자 codex/tester-design 반환). 테스트 파일은 수정하지 않는다(작성자≠검증자).
 
 ## 검증 영역 (3개, 각 0-10점)

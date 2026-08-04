@@ -31,6 +31,7 @@ permissionMode: plan
 - 백엔드 계약 변경은 별도 항목으로만 표시
 - **신규/변경 IPC·RPC 경계는 반환 shape를 producer↔consumer 양끝에 명시**(예: 핸들러 `{ok,branches}` wrapper vs 소비부 raw array). 양끝 표기가 7c.3 양끝 단언/계약테스트의 입력 — mock이 한쪽만 통과시키는 거짓 GREEN 차단(`docs/playbook-tdd.md` 7c.3).
 - 구현 아이디어를 장문으로 확장하지 않는다
+- **순번 원장(`docs/backlog.md` 등 "마지막 번호+1" 관례 파일)의 실번호를 계획서에 예약하지 않는다.** 계획서·ADR에는 `BL-NEW-1` 같은 **placeholder**만 쓴다. 실번호 배정은 finalizer가 머지 후 base 브랜치에서 등재하는 시점(`finalizer.md` 핵심규칙). 예약 시점과 확정 시점 사이에 다른 브랜치가 끼어들면 충돌하고, 병렬 브랜치 개발에선 구조적으로 불가피하다.
 
 ## 탐색 규칙
 - 초기 탐색은 최대 5개 파일
