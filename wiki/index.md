@@ -21,6 +21,7 @@
 - [[codex-python-shim-windows]] — codex --json 파서가 Windows Store python shim을 골라 broken pipe(exit 101) → PYTHON_CMD로 실제 인터프리터 명시. 차단훅 mvn 오탐 회피 노트 포함
 - [[codex-model-stall-windows]] — codex smoke ping은 exit0 통과하나 실프롬프트가 모델 stall로 exit124 hang → probe false-positive로 20분 낭비. probe를 대표프롬프트+60s 타임아웃으로 강화, 타임아웃=불가
 - [[codex-bash-direct-timeout]] — codex를 Bash 도구로 직접 호출 시 Bash 기본 timeout 2분이 codex 실호출(2~9분)보다 짧아 exit143 SIGTERM. 내부 GNU timeout과 별개 레이어(짧은 쪽 승). Bash timeout param ≥585000ms 명시. /codex 스킬 경유는 무관
+- [[codex-background-polling-traps]] — 백그라운드 codex 폴링 3종: codex가 **프롬프트를 에코**해 `grep -q '^## FINDINGS'`가 polls=0 거짓 통과(→개수 ≥2 + 마지막 블록) / git-bash에 `pgrep` 없음 / foreground `sleep` 도구 거부(→bounded until). 끊김 통지 ≠ 산출 유실 — 재실행 전 로그 확인
 - [[codex-bash-heredoc-metachar]] — codex Bash직접호출 프롬프트에 셸 메타문자(백틱·`$`·`[]{}`) 있으면 double-quote 조기종료/명령치환 → EOF exit2(codex 호출조차 안 됨). single-quote heredoc 파일에 써서 `codex exec "$(cat "$PF")"`로 전달(리터럴 보존). /codex 스킬 경유는 무관
 - [[codex-review-mojibake-line-merge]] — codex review(PowerShell Get-Content)가 한글/혼합인코딩 파일서 인접 라인 병합 렌더 → 정상 코드를 "주석처리"로 오독, 거짓 P1 blocking. 출력 mojibake(`3?몄옄??`)가 신호. codex P1은 항상 디스크 직접 Read 인용라인 대조(receiving-code-review). python-shim·tmp-path와 별개 렌더축
 - [[claude-rules-gitignore-local-only]] — .claude/rules/ 는 양쪽 git서 gitignore(제품 repo .claude/ + harness-setup rules/) → rule 편집이 커밋 안 됨(로컬 전용). 편집=커밋 착각 금지, git check-ignore -v가 SSOT. 공유할 규칙은 CONTEXT/docs로

@@ -6,7 +6,8 @@ sources:
   - 발생세션 DEVUNIT/authpatch WI-C artifact-self-verify (2026-07-19), 커밋 d7964772
   - JLS 3.3 (Unicode Escapes)
   - ~/.claude/harness-retro-inbox/gotcha-java-unicode-escape-compile-trap.md (inbox 드레인 2026-07-19)
-updated: 2026-07-19
+  - sources/2026-08-02-authpatch-bl035-gotchas.md (4회째 재발 — 부분 적용 함정, 2026-08-02)
+updated: 2026-08-03
 ---
 
 ## 증상
@@ -25,6 +26,18 @@ javac의 유니코드 이스케이프 치환은 **렉싱보다 먼저 실행되�
 - 설명 텍스트에 `\u` + 비-hex 연속을 쓰지 마라. "유니코드 escape", "u+XXXX" 같은 워딩으로 우회.
 - **테스트 데이터로 실제 escape 시퀀스를 넣어야 하면** `"\\uAC00"`처럼 백슬래시를 이스케이프(짝수) — 런타임 문자열은 리터럴 `가`이 되어 파서 검증용으로 유효.
 - ⚠ **`mvn compile`(main만)은 이 결함을 못 잡는다.** test 파일 텍스트 변경 후에는 **`mvn test-compile`(또는 `mvn test`)로 테스트 소스 컴파일까지 확인**해야 발각된다.
+
+## 4회째 재발 (2026-08-02) — **부분 적용이 더 위험하다**
+
+같은 파일에서 2줄만 단일 백슬래시로 남아 `test-compile` 실패(`SubmoduleCommitDiffDtoTest.java:[14,27]`·`[23,40]`).
+**다른 줄들은 이미 `\\u200B-\\u200F`로 올바르게 쓰고 있었다** — 그래서 파일을 보고 "여긴 처리됐네"라고 착각한다.
+
+→ **회피 시엔 파일 전체를 grep으로 쓸어라.** 한 줄만 고치지 말 것:
+```bash
+grep -nE '(^|[^\\])(\\\\)*\\u[^0-9a-fA-F]' -- <파일>   # 홀수 백슬래시 + 비-hex
+```
+
+**아이러니(교훈 아님, 재발 신호)**: 그 2줄은 *"소스에 `\u` 이스케이프를 직접 쓰지 말라"* 고 경고하려던 주석이었다. **경고문이 스스로 함정에 걸렸다** — 이 함정을 *설명하는 텍스트*가 가장 밟기 쉬운 자리다.
 
 ## 이번 발생 (3회 반복 = 기록 트리거)
 WI-C에서 AnchorExtractor가 "미지원 escape(`\u`/octal) 리터럴 앵커 제외" 로직을 구현하며,

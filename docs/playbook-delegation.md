@@ -61,3 +61,4 @@ orchestrator가 developer·tester에게 내리는 **접점계약**(argv 형태·
 - 근거: 한 세션에서 서브에이전트가 **3회 사망**(프론트 GREEN=세션 한도 / 백엔드 GREEN=`Connection closed mid-response` / tester-design 픽스처=API 끊김). **셋 다 디스크에는 완료**돼 있었다(컴포저블 56→161줄 + 3파일 실구현 / Admission·엔드포인트·감사 2메서드·정규식 제거 전부). 실측 판정으로 **재실행 3회를 아꼈다** — 순진하게 재발사했으면 대규모 중복 작업 + 파일 충돌이었다. 2026-07-30.
 - 세션 한도 자체는 외부요인이라 규칙화 대상이 아니다. **판정 절차**만 하네스 몫이다.
 - 백그라운드 **Workflow**(설계패널)의 세션 끊김 복구는 별도 절차다 — `orchestrator.md ### 세션 끊김 후 복구`(`journal.jsonl` 기반). 이 절은 일반 `Agent` 위임용.
+- **백그라운드 codex도 같은 정신**: 끊김 통지(`stopped`)를 받아도 **로그 파일이 남아 산출을 회수할 수 있다** — 실측에서 통지는 `stopped`였는데 실제로는 정상 완주(`tokens used` + Stop hook 마커)해 findings를 온전히 건졌다. 재호출 전에 `.claude/tmp/codex-*.log`를 확인한다. 폴링 함정은 [[codex-background-polling-traps]].

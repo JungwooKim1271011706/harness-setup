@@ -156,6 +156,21 @@ diff)
 
   printf '%s\n' "⚠ RED 기준선 이탈: 변경 ${N_CH}파일 / 삭제 ${N_RM}파일 / 신규 ${N_AD}파일 (기준선 $BASE_TS)"
 
+  # 기준선 stale 경고: 기준선 이후 커밋이 있으면 **남의 변경**이 이탈 집합에 섞인다.
+  #   실측(2026-08-02): 이탈 3파일 중 1파일이 직전 라운드 커밋분(+8 -5). 삭제단언 0이라 오판은
+  #   면했으나, 있었다면 남의 변경을 내 약화로 판정했을 것. → 미커밋 집합을 함께 찍어 교집합을 보이게.
+  SINCE_N=0
+  if [ "$BASE_TS" != "?" ]; then
+    SINCE_N="$(git log --since="$BASE_TS" --oneline 2>/dev/null | grep -c . || true)"
+  fi
+  if [ "${SINCE_N:-0}" -gt 0 ]; then
+    printf '%s\n' "  ⚠ 기준선 이후 커밋 ${SINCE_N}건 — 이탈 집합에 **다른 라운드 산출물**이 섞였을 수 있다."
+    printf '%s\n' "     판정 전 미커밋 집합과 교집합을 내라(교집합 밖 = 내 변경 아님):"
+    UNCOMMITTED="$(git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null)"
+    UNCOMMITTED="$(printf '%s\n' "$UNCOMMITTED" | sort -u | grep -c . || true)"
+    printf '%s\n' "     미커밋 변경 파일 ${UNCOMMITTED}개 (아래 각 이탈 파일에 [미커밋]/[기커밋] 표기)"
+  fi
+
   TMPD="$(mktemp -d 2>/dev/null)" || TMPD=""
   while IFS= read -r f; do
     [ -z "$f" ] && continue
@@ -176,7 +191,17 @@ diff)
     PLUS="$(printf '%s\n' "$D" | grep -c '^+' || true)"; PLUS=$((PLUS>0?PLUS-1:0))
     MINUS="$(printf '%s\n' "$D" | grep -c '^-' || true)"; MINUS=$((MINUS>0?MINUS-1:0))
 
-    printf '%s\n' "  $f  +${PLUS} -${MINUS}   삭제단언 ${NA} / skip마커 +${NS}"
+    # 이 파일이 내 미커밋 변경인가, 기준선 이후 이미 커밋된 남의 변경인가.
+    ORIGIN=""
+    if [ "${SINCE_N:-0}" -gt 0 ]; then
+      if git diff --name-only -- "$f" 2>/dev/null | grep -Fxq -- "$f" \
+        || git diff --cached --name-only -- "$f" 2>/dev/null | grep -Fxq -- "$f"; then
+        ORIGIN=" [미커밋]"
+      else
+        ORIGIN=" [기커밋 — 내 변경 아닐 수 있음]"
+      fi
+    fi
+    printf '%s\n' "  $f  +${PLUS} -${MINUS}   삭제단언 ${NA} / skip마커 +${NS}${ORIGIN}"
     if [ "$NA" -gt 0 ]; then
       printf '%s\n' "$DEL_ASSERT" | head -"$SAMPLE_MAX" | sed 's/^/      /'
       [ "$NA" -gt "$SAMPLE_MAX" ] && printf '%s\n' "      ... 외 $((NA-SAMPLE_MAX))줄"
