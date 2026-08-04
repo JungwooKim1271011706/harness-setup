@@ -50,10 +50,26 @@
 **어디로 가나 (세션 종류 분기 — gotcha의 push 비대칭):**
 gotcha는 보통 **소비자 세션**(제품 repo에 vendoring된 `.claude`)에서 발견된다. 거기서 직접 커밋하면 제품 repo에 갇혀 harness-setup SSOT가 못 받는다(개선후보 inbox와 같은 비대칭).
 
-> **판별식 (SSOT — origin으로 판별 금지)**: `basename $(git rev-parse --show-toplevel)`가 `.claude`면 **소비자 세션**(중첩 vendoring), 아니면 **dev clone**(repo 루트가 하네스 자체 = `VERSION`이 루트에 있음).
-> ⚠ `origin=harness-setup` 판별은 **틀렸다** — 소비자의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같아 dev clone으로 **오판**한다(2026-07-15 실사고: finalizer가 소비자 세션서 하네스 직접 커밋 → 폐기·reset). 판별 기준은 origin이 아니라 **worktree가 중첩 `.claude`인가**다.
+> **판별식 (SSOT) — 3단계. 순서를 지켜야 한다. 어느 한 줄만 떼어 쓰면 틀린다.**
+> ```bash
+> ROOT=$(git rev-parse --show-toplevel)
+> if   [ "$(basename "$ROOT")" = ".claude" ];                              then echo "소비자"      # ① cwd가 중첩 .claude 안
+> elif [ -e "$ROOT/.claude/.git" ];                                        then echo "소비자"      # ② cwd가 제품 repo 루트
+> elif [ -f "$ROOT/agents/orchestrator.md" ] && [ -f "$ROOT/VERSION" ];    then echo "dev clone"   # ③ 하네스 자체가 repo
+> else                                                                          echo "하네스 무관"
+> fi
+> ```
+> **왜 3단계인가 — 소비자 세션에 cwd가 두 자리 있기 때문이다.** 제품 repo 루트(흔함)와 중첩 `.claude` 안(하네스 파일을 직접 열었을 때). ①은 후자만, ②는 전자만 잡는다. 둘 다 있어야 소비자가 빠짐없이 걸린다.
+>
+> ⚠ **종전 판별식(`basename ≠ .claude` → dev clone)은 방향이 틀린 게 아니라 ①만 있고 ②가 없었다.** 그래서 **가장 흔한 자리(제품 repo 루트)에서 소비자를 dev clone으로 오판**한다 — 그 세션에서 하네스를 직접 수정하려 들면 2026-07-15 실사고와 같은 결말이다. 문서 6곳이 ①만 인용해 함께 틀려 있었다(2026-08-04 발견·정정).
+> - ⚠ **방향을 뒤집는 건 오답이다**: `= .claude`를 dev clone으로 바꾸면 진짜 dev clone(basename=`harness-setup`)이 소비자로 오판되어 **하네스 저작 자체가 막힌다**. 빠진 건 방향이 아니라 ②다.
+> - ⚠ **③ 단독도 오답**: 소비자의 중첩 `.claude/`도 루트에 `agents/orchestrator.md`+`VERSION`을 갖는다 → ①이 앞에 없으면 dev clone으로 오판한다.
+> - ⚠ **`origin` 판별 금지**: 소비자의 중첩 `.claude/`도 자체가 harness-setup 클론이라 origin이 같다(2026-07-15 실사고: finalizer가 소비자 세션서 하네스 직접 커밋 → 폐기·reset).
+> - `hooks/harness-inbox-nudge.sh`가 ①만 쓰는 건 **origin 선행 필터(L17)와 한 쌍**이라서다 — 제품 repo는 origin이 제품이라 L17에서 이미 침묵하고 ①까지 오지 않는다. **그 훅에서 ①만 떼어 문서로 옮기면 안 된다**(이번 오류의 경로).
+> - 회귀 검증 4케이스(dev clone / 소비자 메인클론 / 소비자 워크트리 / 중첩 `.claude` 안) 전부 실측 통과.
 
-- **dev clone**(toplevel basename ≠ `.claude`): 위 절차대로 직접 wiki 커밋(승인 시).
+- **dev clone**(위 ③): 위 절차대로 직접 wiki 커밋(승인 시).
+
 - **소비자 세션**: 직접 커밋 금지. 준비한 스텁을 **회고 inbox로 드롭**(`~/.claude/harness-retro-inbox/`, 경로·형식은 `/harness-check` Step2.5 SSOT). content = gotcha 스텁(증상→원인→회피) + sources 후보(failure·CHANGELOG·발생세션). dev clone에서 `/harness-retro`가 드레인 → Step2 "운영 gotcha→wiki" 라우팅으로 페이지 생성. ⚠ 이때 **inbox 원문을 `wiki/sources/`로 복사**하고 그 repo 내부 경로를 `sources`에 쓴다 — inbox 경로를 그대로 인용하면 드레인이 `applied/`로 옮기는 순간 죽는다([근거 고정](#근거-고정-layer1)). SSOT 커밋·push 후 전 세션 git pull로 환원, 이후 읽기 트리거(orchestrator "wiki 참조" 절)가 집어준다.
 
 ## 근거 고정 (Layer1)

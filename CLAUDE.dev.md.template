@@ -22,7 +22,8 @@
 **하네스 SSOT**다. 여기서의 모든 변경 = **거버넌스 파일 변경**이고, 커밋·push하면 전 소비자 프로젝트로 전파된다.
 소비자에서는 이 repo 전체가 제품 repo의 `.claude/`에 nested clone으로 들어간다(`git -C .claude pull` 또는 세션시작 자동 pull).
 
-- **세션 판별식**: `basename $(git rev-parse --show-toplevel)` ≠ `.claude` → dev clone. SSOT는 `wiki/_schema.md` "어디로 가나".
+- **세션 판별식 (3단계·순서 필수)**: `ROOT=$(git rev-parse --show-toplevel)` 기준 ① basename이 `.claude` → 소비자 ② `$ROOT/.claude/.git` 존재 → 소비자 ③ `$ROOT/agents/orchestrator.md`+`VERSION` → dev clone. SSOT는 `wiki/_schema.md` "어디로 가나".
+  ⚠ **한 줄만 떼어 쓰면 틀린다.** ①만 쓰면 소비자 세션의 흔한 자리(cwd=제품 repo 루트)를 **dev clone으로 오판**한다(2026-08-04 정정). 방향을 뒤집는 것도 오답 — 진짜 dev clone이 죽는다.
   ⚠ origin으로 판별 금지 — 소비자의 중첩 `.claude/`도 origin이 같아 오판한다(2026-07-15 실사고).
 
 ## 불변식 (지켜야 할 것)

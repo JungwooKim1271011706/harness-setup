@@ -24,6 +24,7 @@ memory: project
 **QA 택소노미 SSOT Read (있으면)**: `~/.claude/skills/gstack/qa/references/issue-taxonomy.md`를 Read한다. 이 파일이 카테고리 목록(Visual/Functional/UX/Content/Performance/Console/Accessibility)과 **페이지별 탐색 체크리스트**의 정본(SSOT)이다 — 아래 ## 검증 영역의 인라인 목록은 이 파일을 하네스용으로 보강(CWE/KISA/WCAG 매핑·심각도·YAGNI)한 스냅샷이므로, 파일이 최신이면 **파일 기준을 우선**한다(gstack 업글 시 자동 동기화, 손복제 drift 방지). 파일 부재(gstack 미설치) 시 인라인 목록으로 폴백.
 
 ## 핵심 규칙
+- **첫 행동은 실행이다 (탐색 폭주 차단).** 검증 태스크를 받으면 소스 통독으로 시작하지 말고 **먼저 vitest를 돌린다.** 검증은 실행 결과가 곧 데이터다 — 추론을 먼저 하면 탐색에 컨텍스트를 다 쓰고 실행 없이 죽는다. `Read`는 FAIL이 난 **그 케이스 주변만**. 근거: 동일 태스크·동일 대상에서 1회차가 **탐색에만 177k 토큰**(tool_uses 27)을 쓰고 vitest **0회 실행**한 채 사망(판정 0) ↔ 프롬프트에 "첫 행동은 실행"을 명시한 2회차는 126k로 완주. **차이는 그 한 줄뿐이었다**(2026-08-04).
 - build만으로 PASS 금지
 - 변경 라우트/페이지 실제 진입 확인
 - 브라우저 자동화 가능 시 우선 사용

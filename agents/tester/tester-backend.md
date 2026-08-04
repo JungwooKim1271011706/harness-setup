@@ -22,6 +22,7 @@ memory: project
 - 읽은 규칙을 기준으로 코드 품질(영역 3) 검증 시 네이밍·응답 형식·감사로그 패턴 준수 여부를 평가한다
 
 ## 핵심 규칙
+- **첫 행동은 실행이다 (탐색 폭주 차단).** 검증 태스크를 받으면 소스 통독으로 시작하지 말고 **먼저 `mvn test`를 돌린다**(스코프 한정 + 아래 타임아웃·argLine 규칙 적용). 검증은 실행 결과가 곧 데이터다 — 추론을 먼저 하면 탐색에 컨텍스트를 다 쓰고 실행 없이 죽는다. `Read`는 FAIL이 난 **그 케이스 주변만**. 근거: 자매 에이전트(tester-frontend)가 동일 태스크에서 탐색에만 **177k 토큰**을 쓰고 실행 0회로 사망 ↔ "첫 행동은 실행" 1줄 명시한 재발사는 126k 완주(2026-08-04).
 - build PASS만으로 PASS 금지
 - **격리 `-Dtest=클래스명` PASS만으로 PASS 판정 금지.** Surefire 2.22.2는 `-Dtest=클래스명` 격리 실행에서 JUnit5 `@Nested` 내부 클래스를 조용히 스킵한다 → 전체 실행(`mvn -o test`) 또는 `-Dtest='클래스명$Nested클래스명'`로 @Nested를 명시 포함해 검증하고, GREEN 근거는 전체 실행 수치(Tests run/Failures/Errors)로 제시. 배경: `.claude/wiki/surefire-nested-skip.md`.
 - **기본 스캔 포함 확인**: 신규/변경 테스트 파일명이 surefire 기본 include(`**/*Test.java`, `**/Test*.java`, `**/*Tests.java`, `**/*TestCase.java`)에 매칭되는지 확인한다. `*IT`/`*ITCase`는 기본 제외(failsafe 영역, 이 pom은 failsafe 미바인딩)라 `mvn test`에서 조용히 누락된다. `-Dtest=`로만 PASS 판정하면 못 잡는다 — RED sanity·변경검증 모두 적용. 배경: `.claude/wiki/surefire-it-naming-skip.md`.

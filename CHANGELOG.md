@@ -3,6 +3,24 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.0.0 — 2026-08-04
+- **회고 inbox 드레인 1파일 → 6건 — MAJOR. 🔁 세션 재시작 필수.** (세션 판별식 정정 = 거버넌스 불변식의 집행 기준 변경)
+- **⭐⭐ [MAJOR] 세션 판별식이 소비자를 dev clone으로 오판하고 있었다 — 문서 6곳 + SSOT 정정.**
+  - **종전**: `basename $(git rev-parse --show-toplevel)` ≠ `.claude` → dev clone.
+  - **문제**: 소비자 세션의 cwd는 보통 **제품 repo 루트**라 basename이 `.claude`가 아니다 → **소비자가 dev clone으로 판정**된다. 그 세션에서 하네스를 직접 수정하면 2026-07-15 실사고(소비자서 하네스 직접 커밋 → 폐기·reset)와 같은 결말이다.
+  - ⚠ **회고 원안("방향이 뒤집혔으니 `= .claude`를 dev clone으로")은 오답이다** — 뒤집으면 진짜 dev clone(basename=`harness-setup`)이 소비자로 판정돼 **하네스 저작 자체가 막힌다**. 방향이 틀린 게 아니라 **소비자 cwd 두 자리 중 하나만 커버**하고 있었다.
+  - **정정 = 3단계 판별식(순서 필수)**: ① basename `.claude` → 소비자(cwd가 중첩 `.claude` 안) ② `$ROOT/.claude/.git` 존재 → 소비자(cwd가 제품 repo 루트) ③ `$ROOT/agents/orchestrator.md`+`VERSION` → dev clone. **어느 한 줄만 떼어 쓰면 틀린다** — ③ 단독도 오답(소비자의 중첩 `.claude/`도 루트에 그 두 파일을 갖는다).
+  - **왜 6곳이 함께 틀렸나**: `hooks/harness-inbox-nudge.sh`의 basename 체크(L22)는 **origin 선행 필터(L17)와 한 쌍**인데(제품 repo는 origin이 제품이라 L17에서 이미 침묵 → L22까지 오지 않는다), 문서들이 **선행 필터를 떼고 basename만 인용**했다. 훅 로직은 처음부터 정상이었다 — 인용이 틀렸다. 훅 주석에 "떼어 쓰지 마라"를 명시.
+  - **정정 범위**: `wiki/_schema.md`(SSOT) · `CLAUDE.md` · `README.md` · `agents/orchestrator.md` · `skills/harness-check/SKILL.md` · `skills/harness-retro/SKILL.md` + 훅 주석. 회고는 2곳만 지목했으나 전수 grep으로 6곳 확인.
+  - **회귀 검증 5케이스 실측 통과**: dev clone / 소비자 메인클론 / 소비자 워크트리 / 중첩 `.claude` 안 / 하네스 무관 repo.
+- **[부정 단언 단독 지시 금지]** "예외 없음"·"로그 없음"·"호출 0회"만 지시하면 작성자가 `doesNotThrowAnyException()` 단독 케이스를 만들고, 그건 **아무것도 실행 안 돼도 통과**한다. 실사고: production이 구 경로를 타는 동안 미스텁 mock의 `null` 반환으로 **우연히 통과** → 검증자가 hollow GREEN 재지목 → 수정 라운드 1회. **positive 상호작용 단언을 짝으로 요구.** `tester-design.md` R21(수신측)의 **발신측 짝** — R21만 있어서 orchestrator가 부정 단언만 지시하면 작성자는 지시를 따를 뿐이었다.
+- **[검증 태스크는 실행 우선]** tester-frontend 1회차가 **탐색에만 177k 토큰**(tool_uses 27)을 쓰고 vitest **0회 실행**한 채 사망(판정 0) ↔ "첫 행동은 실행이다. 소스 통독으로 시작하지 마라" 1줄 명시한 2회차는 126k 완주. **동일 태스크·동일 대상, 차이는 그 한 줄뿐.** tester-frontend·tester-backend 핵심규칙 최상단에 배치.
+- **[grep은 존재가 아니라 *변경*을 겨눈다]** 같은 뿌리 2건을 기존 디스크 검증 규칙에 통합([[gates-verify-present-code-only]] 클래스):
+  - 케이스 단위 수정 검증 시 **케이스 제목**을 grep했다 — 수정은 본문 단언 라인에 들어가므로 제목 매칭은 "케이스 존재"만 증명한다 → 이미 적용된 것을 "미처리"로 판정해 불필요 위임 1회.
+  - SSOT 값 정정(255→100) 후 **옛 값 전수 grep 누락** — 7곳 고치고 8번째(회귀범위 표) 놓쳐 codex 재판정이 major로 적발. 다지점 갱신은 기억으로 완료 판정하지 않는다.
+- **[병렬 발사 선언 ↔ 실제 tool_use 대조]** "리뷰 3종 병렬" 선언 후 실제로는 `/codex review`가 빠진 채 발사됐다(다음 턴 자각 → 라운드 1회 추가). `/review ∥ /codex review`는 **교차검증 2소스 불변식**이라 한쪽 누락 = 단일소스 격하인데 자동 탐지가 없다 → 발사 직후 1:1 대조.
+- ⚠ WARN: `sync-skills.sh` `⛔ 대조된 스킬 0개`(grill-with-docs 상류 부재) — 3회 연속. 정리 필요.
+
 ## 4.10.0 — 2026-08-03
 - **회고 inbox 드레인 2파일 → 7건 적용 — MINOR. 재시작 권장.** (BL-035/036 gotcha 3 + BL-039 정책번복 라운드 4)
 - **⭐ [§0④ 재발동] 패널이 "미측정"이라 라벨 붙인 전제가 무측정으로 승인 통과 → 3라운드 낭비.**

@@ -171,7 +171,7 @@ git -C .claude pull origin main
 ### 회고 inbox (transport — check 드롭 / retro 드레인)
 
 ③의 입력을 **실작업 세션 → 적용 세션**으로 복붙 없이 나르는 머신글로벌 드롭박스다. 실작업 세션의 `.claude`는 제품 repo 안에 **중첩 vendoring**된 사본이라 거기서 커밋하면 제품 repo에 갇히거나 SSOT와 갈린다 — 적용은 harness-setup **단독 clone(= dev clone)**에서만 한다.
-**판별식 SSOT = `wiki/_schema.md` "어디로 가나"**: `basename $(git rev-parse --show-toplevel)`가 `.claude`면 소비자 세션, 아니면 dev clone. ⚠ origin으로 판별하지 마라 — 중첩 `.claude`도 자체가 harness-setup 클론이라 origin이 같아 오판한다(2026-07-15 실사고).
+**판별식 SSOT = `wiki/_schema.md` "어디로 가나"** — **3단계, 순서 필수**(`ROOT=$(git rev-parse --show-toplevel)`): ① basename이 `.claude` → **소비자**(cwd가 중첩 `.claude` 안) ② `$ROOT/.claude/.git` 존재 → **소비자**(cwd가 제품 repo 루트) ③ `$ROOT/agents/orchestrator.md`+`VERSION` → **dev clone**. ⚠ **한 줄만 떼어 쓰면 틀린다** — ①만 쓰면 가장 흔한 자리(제품 repo 루트)에서 소비자를 dev clone으로 오판한다(2026-08-04 발견). 방향을 뒤집는 것도 오답(진짜 dev clone이 소비자로 오판돼 하네스 저작이 막힌다). origin 판별 금지 — 중첩 `.claude`도 origin이 harness-setup이라 오판한다(2026-07-15 실사고).
 
 - **드롭(생성)**: `/harness-check`가 후보를 `~/.claude/harness-retro-inbox/<UTC-ts>__<slug>.md`로 자동 기록(운반, 적용 아님). 두 repo 어디도 안 건드리는 중립지대.
 - **드레인(적용)**: dev clone에서 inbox pending을 전부 읽어 분류·승인·적용하고, 처리분을 `applied/`·`rejected/`로 옮긴다. ⚠ **dev clone은 `/harness-retro` 슬래시가 미등록**이다 — 클코는 슬래시 스킬을 `.claude/skills/`에서 등록하는데 dev clone은 harness가 **repo 루트**(`skills/...`)라 그 경로가 없다(슬래시는 소비자 세션의 vendored `.claude/skills/`에서만 뜸). dev clone에선 **"하네스 inbox 처리해줘"** 요청 = Claude가 `skills/harness-retro/SKILL.md` 절차를 따라 실행한다(슬래시 호출 아님, 결과 동일).

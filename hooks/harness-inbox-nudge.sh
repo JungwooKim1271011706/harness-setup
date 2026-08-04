@@ -6,10 +6,19 @@
 #   없어 repo settings.json/훅이 세션에 안 걸린다. 매 턴 발동시키려면 글로벌 훅이어야 한다.
 # 왜 매 세션 안 시끄러운가: 글로벌 훅은 모든 프로젝트 세션서 돌지만, dev clone
 #   (=적용 가능한 유일한 자리)일 때만 출력한다. 제품/worktree 세션은 침묵(적용 불가).
-# 판별식 SSOT = wiki/_schema.md "어디로 가나": toplevel basename이 .claude면 소비자(중첩 vendoring),
-#   아니면 dev clone. ⚠ origin=harness-setup 판별은 오판 — 소비자의 중첩 .claude도 자체가
-#   harness-setup 클론이라 origin이 같다(2026-07-15 실사고: 소비자서 하네스 직접 커밋 → 폐기).
-#   origin도 함께 보는 이유: 하네스와 무관한 남의 repo에서 조용히 종료(basename만으론 판정 불가).
+# 판별식 SSOT = wiki/_schema.md "어디로 가나".
+#   ⚠ 이 훅의 basename 체크(L22)는 **L17 origin 필터와 한 쌍이다. 떼어서 인용하지 마라.**
+#   L17을 통과하는 건 origin이 harness-setup일 때뿐 = cwd가 dev clone이거나 **중첩 .claude 안**일 때다.
+#   그 조건에서만 basename이 .claude면 소비자가 된다. 소비자 세션의 cwd는 보통 **제품 repo 루트**라
+#   origin이 제품 origin이고 L17에서 이미 침묵한다(실측 2026-08-04) — L22까지 오지도 않는다.
+#   → basename만 떼어 "≠ .claude면 dev clone"으로 쓰면 **소비자를 dev clone으로 오판**한다.
+#     문서 6곳이 그렇게 인용해 함께 틀려 있었다(v4.11.0에서 구조 판별로 정정).
+#   ⚠ origin 단독 판별도 오판 — 소비자의 중첩 .claude도 자체가 harness-setup 클론이라 origin이
+#     같다(2026-07-15 실사고: 소비자서 하네스 직접 커밋 → 폐기). 그래서 둘을 **함께** 본다.
+#   문서·에이전트가 쓸 판별식은 3단계다(_schema.md SSOT, 순서 필수):
+#     ① basename .claude → 소비자  ② $ROOT/.claude/.git 존재 → 소비자
+#     ③ $ROOT/agents/orchestrator.md + VERSION → dev clone
+#   이 훅은 origin 필터가 ②를 대신하므로 ①만으로 충분하다. 문서는 ②가 있어야 한다.
 # inbox = 머신글로벌 ~/.claude/harness-retro-inbox. 설계: skills/harness-retro + skills/harness-check.
 # 비차단(exit 0) — 프롬프트를 막지 않는다. 안내(additionalContext)만 주입한다.
 
