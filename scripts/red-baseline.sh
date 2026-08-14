@@ -37,7 +37,10 @@ TEST_RE="${RED_BASELINE_TEST_RE:-(^|[/\\])src[/\\]test[/\\]|(^|[/\\])__tests__[/
 # 삭제되면 약화 의심인 라인 (단언류)
 ASSERT_RE='assert|assertThat|assertEquals|assertThrows|verify\(|expect\(|\.should|toBe|toEqual|toThrow|toHaveBeen|isEqualTo|isInstanceOf|hasSize|contains'
 # 추가되면 약화 의심인 라인 (skip/비활성/무력화)
-SKIP_RE='@Disabled|@Ignore|\.skip\(|\bxit\(|\bxdescribe\(|it\.skip|describe\.skip|test\.skip|enabled[[:space:]]*=[[:space:]]*false|@Test\(enabled|todo\('
+# ⚠ 범용 `enabled\s*=\s*false`는 쓰지 않는다 — Spring/Node 설정 문자열(`spring.shell.interactive.enabled=false`,
+# `*.enabled=false`)에 구조적으로 오탐한다. 특히 @SpringBootTest 규약이 그 프로퍼티를 못박은 저장소에서는
+# 규약을 지킬수록 오탐이 늘어 진짜 @Disabled 신호가 묻힌다(2026-08-14 실측). TestNG 형태로만 좁힌다.
+SKIP_RE='@Disabled|@Ignore|\.skip\(|\bxit\(|\bxdescribe\(|it\.skip|describe\.skip|test\.skip|@Test\([^)]*enabled[[:space:]]*=[[:space:]]*false|todo\('
 SAMPLE_MAX=5   # 파일당 인용 라인 상한 (출력 폭주 방지)
 
 note() { printf '%s\n' "red-baseline: $*" >&2; }

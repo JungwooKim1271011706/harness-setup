@@ -6,7 +6,8 @@ sources:
   - 발견 세션 2026-07-01 DEVUNIT-repostitch (설계패널 codex 형제 / 7b / review)
   - 2026-07-05 DEVUNIT-authpatch_draft (dry-commands jar source TDD 7.5 workspace-write 오펀)
   - 2026-07-08 autopatch-dashboard-export-1 (Part A MavenBuilder TDD 7.5 — exit143 vs 124 판별)
-updated: 2026-07-08
+  - sources/20260813T042455Z-repostitch-wiki-mirror-sync.md (래퍼 sh만 죽는 오펀 — sentinel 부재 오독)
+updated: 2026-08-14
 ---
 
 ## 증상
@@ -23,6 +24,7 @@ codex를 Bash로 직접 부를 땐 **Bash 도구의 `timeout` param을 codex 하
 - `< /dev/null`은 stdin deadlock 회피(별개 규칙).
 - probe는 대표프롬프트+`timeout 60`으로 짧게(모델 stall 조기발각 — [[codex-model-stall-windows]]). 실호출(consult/review)만 긴 timeout.
 - **kill 후 복구 (특히 `-s workspace-write` 직접 exec)**: exit 143 후 `tasklist | grep codex.exe`(Win)로 생존 확인. **파일 편집 中(workspace-write) 오펀은 죽이지 마라 — mid-write kill은 산출 손상 위험.** bounded 폴링(10s 간격)으로 완주 대기 후 `git diff`로 최종 산출 재리뷰(SIGTERM에 유실된 codex 요약 대체). read-only/probe 오펀은 손상 없으니 정리 후 재실행 가능.
+- ⚠ **sentinel 부재를 "죽었다"로 읽지 마라 (래퍼 sh만 죽는 케이스)**: `nohup sh -c "codex exec ...; echo sentinel"` 패턴에서 세션 teardown이 **래퍼 sh만** 죽이면 codex.exe는 살아남아 리다이렉트된 fd로 **로그를 계속 쓰지만 sentinel은 영원히 안 찍힌다**. 생존 판정은 sentinel이 아니라 **`tasklist`의 프로세스 생존 + 로그 파일 size 증가** 두 축으로 한다. 실측: 한 배치가 정확히 이 상태였고 bounded 폴링으로 완주 회수했다(exit 0, 산출 온전 — 2026-08-13). 폴링 함정 일반론은 [[codex-background-polling-traps]].
 
 ## 왜 안 헷갈려야 하나
 `/codex` 스킬 경유는 스킬이 하드타임아웃을 기계강제하므로 이 문제가 없다. **Bash 직접호출 경로에서만** Bash 도구 timeout param을 사람이 챙겨야 한다. 안 챙기면 매 codex 직접호출마다 2분 낭비 후 실패로 오인 → 불필요한 폴백(단일소스 격하)까지 감.
