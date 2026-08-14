@@ -259,17 +259,33 @@ const perPersonaOut = results.map(r => ({
 // round는 워크플로가 모른다(재게이트 = 재호출이라 리셋된다) → orchestrator가 args로 주면 쓰고,
 // 없으면 스크립트 기본값 1. 핵심 파생지표 `ripplePersonas`는 priorPersonas ↔ perPersona 대조라
 // round 없이도 성립한다. priorPersonas는 priorCriticals에서 직접 유도한다(별도 args 불요).
+//
+// ⚠ **payload에 자유 텍스트를 넣지 않는다 (셸 주입·손상 차단 — 3중).**
+//   ① **필드 최소화**: `panel-metrics.sh`가 실제 소비하는 건 round/reGate/priorPersonas/
+//      perPersona{persona,model,criticals}/failures **뿐이다**(passEvidence·total 소비 0건).
+//      passEvidence는 **페르소나가 쓴 자유 텍스트**고 코드 리뷰 근거라 백틱 인용이 사실상 확실하다
+//      → 셸에 닿으면 악의 없이도 명령치환으로 터지고 계측 JSON이 깨진다. 반환값에는 그대로 두고
+//      **계측 payload에서만 뺀다**(orchestrator PASS 증거 기계검증은 반환을 쓴다).
+//   ② **식별자 sanitize**: 남는 값도 페르소나 키·모델명이라 짧은 화이트리스트로 강제한다.
+//   ③ **single-quote 인용**: bash 작은따옴표는 `$`·백틱을 통째로 무력화한다(큰따옴표는 아니다 —
+//      `JSON.stringify`가 만드는 게 큰따옴표라 그 자체로는 방어가 안 됐다).
+const sane = (v) => String(v ?? '').replace(/[^\w.\-()가-힣 ]/g, '_').slice(0, 60)
 const metricsPayload = JSON.stringify({
   round: Number.isFinite(_a.round) ? _a.round : (isReGate ? 2 : 1),
   reGate: isReGate,
-  priorPersonas: [...new Set(priorCriticals.map(c => c.persona).filter(Boolean))],
-  perPersona: perPersonaOut, failures,
+  priorPersonas: [...new Set(priorCriticals.map(c => sane(c.persona)).filter(Boolean))],
+  perPersona: perPersonaOut.map(p => ({
+    persona: sane(p.persona), model: sane(p.model), criticals: p.criticals,
+  })),
+  failures: failures.map(sane),
 })
+const metricsArg = `'${metricsPayload.replace(/'/g, `'\\''`)}'`
 try {
   await agent(
-    `아래 명령을 **그대로 1회** 실행하고 종료 코드만 보고하라. 다른 작업·파일 편집 금지.\n\n` +
+    `아래 명령을 **그대로 1회** 실행하고 종료 코드만 보고하라. 다른 작업·파일 편집 금지.\n` +
+    `⚠ 명령의 작은따옴표 인용을 **변형하지 마라**(payload를 큰따옴표로 바꾸거나 재조립 금지).\n\n` +
     "```bash\n" +
-    `printf '%s\\n' ${JSON.stringify(metricsPayload)} | bash .claude/scripts/panel-metrics.sh log\n` +
+    `printf '%s\\n' ${metricsArg} | bash .claude/scripts/panel-metrics.sh log\n` +
     "```\n\n" +
     `이 스크립트는 어떤 실패에서도 exit 0이고 stdout을 쓰지 않는다. ` +
     `실패해도 재시도하지 마라 — 계측은 비차단이다. 반환은 "logged" 또는 "failed: <사유 1줄>" 한 줄.`,

