@@ -1,20 +1,14 @@
 # Playbook — 위임 운영 (계약 저술 자가체크 / 서브에이전트 사망 판정)
 
-> **분리 문서** — `orchestrator.md`의 위임 규칙 중 **특정 상황에서만 발동**하는 두 절차를 분리(v4.9.0).
-> 상시 로드 가치가 낮아(계약 저술 시 / 사망 신호 시에만 필요) 인라인에서 뺐다. 판정 자체는 orchestrator 몫이다.
+> **분리 문서** — `orchestrator.md`의 위임 규칙 중 **특정 상황에서만 발동**하는 절차를 분리(v4.9.0, v5.4.0 확장).
+> 상시 로드 가치가 낮아(계약 저술 시 / 실행 요구 시 / 사망 신호 시에만 필요) 인라인에서 뺐다. 판정 자체는 orchestrator 몫이다.
 > **버전 동기 대상**: orchestrator 위임 규칙·FAIL 분기를 바꾸면 이 문서도 같은 커밋에서 갱신한다.
 
 **Read 시점**
 - ① 접점계약·frozen 시그니처를 **저술할 때** (`## 계약 저술 자가체크`)
-- ② 서브에이전트가 **보고 없이 죽었을 때** (`## 사망 산출 판정`)
-- ③ 서브에이전트에 **실행·검증을 요구하기 직전** (도구셋 확인 — 아래)
-
-**도구셋 확인 (③ 트리거)**
-
-프롬프트에 실행·자가검증(`mvn`/`npx vitest`/`node --check`/`git`)을 요구하기 전에 **대상 에이전트가 Bash를 갖고 있나** 1회 확인한다. 없는 에이전트에 실행을 요구하면 정직한 에이전트는 "실행 불가"를 보고하고(왕복 1회), 순종적인 에이전트는 **안 돌린 검증을 돌렸다고 보고**한다.
-- **Bash 없음**: `developer-frontend` · `tester-design`(Read/Glob/Grep/Write/Edit만). 트랙 불문 `developer-*`에는 실행·검증을 요구하지 않는다.
-- 대체: 정적 산출은 **grep 자가증명**으로 받고, 실행검증은 Bash 보유 에이전트(`tester-backend`·`tester-frontend`·`tester-runtime`)로 **분리 발사**한다.
-- 근거: `tester-design`에 `node --check` + `npx vitest run` 자가검증을 요구 → 에이전트가 실행 불가를 보고해 grep 자가증명으로 대체, 실행검증은 별도 위임(2026-08-13).
+- ② 서브에이전트에 **실행·검증을 요구하기 직전** (`### ③ 대상 에이전트 도구셋 확인`)
+- ③ 서브에이전트가 **보고 없이 죽었을 때** (`## 사망 산출 판정`)
+- ④ 백그라운드 **패널이 세션 끊김으로 미완**일 때 (`## 백그라운드 패널 세션끊김 복구`)
 
 ---
 
@@ -42,8 +36,11 @@ orchestrator가 developer·tester에게 내리는 **접점계약**(argv 형태·
 
 ### ③ 대상 에이전트 도구셋 확인 (위임 프롬프트 조립 시)
 
-> **이 에이전트의 도구셋으로 가능한 일만 요구했나?**
+> **이 에이전트의 도구셋으로 가능한 일만 요구했나?** — 계약 저술 시뿐 아니라 **실행·자가검증(`mvn`/`npx vitest`/`node --check`/`git`)을 요구하는 모든 위임 프롬프트**에서 1회. 없는 에이전트에 실행을 요구하면 정직한 에이전트는 "실행 불가"를 보고하고(왕복 1회), 순종적인 에이전트는 **안 돌린 검증을 돌렸다고 보고**한다.
 
+- **Bash 없는 에이전트**: `developer-frontend` · **`tester-design`**(Read/Glob/Grep/Write/Edit만).
+- 대체: 정적 산출은 **grep 자가증명**으로 받고, 실행검증은 Bash 보유 에이전트(`tester-backend`·`tester-frontend`·`tester-runtime`)로 **분리 발사**한다.
+- 근거(tester-design): `node --check` + `npx vitest run` 자가검증을 요구 → 에이전트가 실행 불가를 정직하게 보고해 grep 자가증명으로 대체하고 실행검증은 별도 위임으로 갔다(2026-08-13).
 - **`developer-*`에는 실행·검증을 요구하지 않는다** — 트랙 불문(TDD 8단계든 단순수정이든). 검증 주체 분리(developer=구현, tester=검증)가 하네스 불변식이고, `developer-frontend`는 **Bash 자체가 없다**(`Read/Glob/Grep/Edit/Write`). `developer-backend`만 Bash를 가진다 — 도메인별로 다르니 "developer는 Bash 있음"으로 뭉뚱그리지 마라.
 - 기준선 정보(`vitest N/N`, `vue-tsc 0건`)는 **참고로 전달해도 된다** — 구현 판단에 쓰인다. 금지되는 건 **실행 요구**다.
 - 근거: 8단계 위임 프롬프트에 `npx vitest run` 자가검증을 요구 → `developer-frontend`가 자기 md의 "빌드/실행 금지"를 근거로 정당하게 거부하고, 그 공백을 **수치적분 손계산**으로 메우는 우회 노동을 했다(2026-07-29). 2026-07-30 단순수정 트랙에서 `npx vue-tsc` 요구로 **재발** — 8단계 템플릿만의 문제가 아니라 위임 프롬프트 조립 습관 전반의 문제다. 이 패턴은 ① 에이전트가 "실행했다"고 거짓 보고할 유인을 만들고 ② 반환 체크리스트에 `❌`가 남아 orchestrator가 실패로 오독할 여지를 만든다.
@@ -70,5 +67,18 @@ orchestrator가 developer·tester에게 내리는 **접점계약**(argv 형태·
 
 - 근거: 한 세션에서 서브에이전트가 **3회 사망**(프론트 GREEN=세션 한도 / 백엔드 GREEN=`Connection closed mid-response` / tester-design 픽스처=API 끊김). **셋 다 디스크에는 완료**돼 있었다(컴포저블 56→161줄 + 3파일 실구현 / Admission·엔드포인트·감사 2메서드·정규식 제거 전부). 실측 판정으로 **재실행 3회를 아꼈다** — 순진하게 재발사했으면 대규모 중복 작업 + 파일 충돌이었다. 2026-07-30.
 - 세션 한도 자체는 외부요인이라 규칙화 대상이 아니다. **판정 절차**만 하네스 몫이다.
-- 백그라운드 **Workflow**(설계패널)의 세션 끊김 복구는 별도 절차다 — `orchestrator.md ### 세션 끊김 후 복구`(`journal.jsonl` 기반). 이 절은 일반 `Agent` 위임용.
+- 백그라운드 **Workflow**(설계패널)의 세션 끊김 복구는 별도 절차다 — 아래 `## 백그라운드 패널 세션끊김 복구`(`journal.jsonl` 기반). 이 절은 일반 `Agent` 위임용.
 - **백그라운드 codex도 같은 정신**: 끊김 통지(`stopped`)를 받아도 **로그 파일이 남아 산출을 회수할 수 있다** — 실측에서 통지는 `stopped`였는데 실제로는 정상 완주(`tokens used` + Stop hook 마커)해 findings를 온전히 건졌다. 재호출 전에 `.claude/tmp/codex-*.log`를 확인한다. 폴링 함정은 [[codex-background-polling-traps]].
+
+---
+
+## 백그라운드 패널 세션끊김 복구 (Workflow 전용 — 일반 Agent와 별개)
+
+설계패널은 백그라운드 Workflow라 호출 직후 세션이 끊기면(토큰·세션 한도) 재개 세션에서 산출을 **명시 절차**로 복구한다. `resumeFromRunId`는 same-session 캐시라 세션이 죽으면 무의미 — cross-session은 transcript 산출물로 판정한다.
+
+1. **완료 여부**: `subagents/workflows/wf_<runId>/journal.jsonl`에 `completed` 이벤트 있으면 산출 수령. 없으면 미완(아래 2).
+2. **부분 완주 판정**: 각 페르소나 `agent-*.jsonl`의 마지막 type + StructuredOutput 호출 유무로 페르소나별 완주를 본다.
+3. **부분 완주 처리 (2갈래)**:
+   - 기본 = **재실행**(부분 산출 신뢰 금지 — `orchestrator.md` 패널 반환 후 0번 "완전성 검사" 정신과 동일). 미완 페르소나만 부분집합 재런치.
+   - 또는 완주 페르소나의 StructuredOutput을 직접 추출해 합집합 게이트(dedup+코드대조)로 진행 가능(패널은 findings 생산만이라 가능). 단 **필수 페르소나(eng 항상·cso 보안태그) 누락이면 이 옵션 금지 → 재실행**.
+4. codex 형제도 같은 끊김에 노출 — 미완이면 `orchestrator.md ## codex 호출 가드` 폴백(패널 단독+태그) 또는 재호출.

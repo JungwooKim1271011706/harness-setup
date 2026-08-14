@@ -241,17 +241,49 @@ const failures = personas
 const tag = (sev) => results.flatMap(r =>
   r.findings.filter(f => f.severity === sev).map(f => ({ ...f, persona: r.persona })))
 
+const perPersonaOut = results.map(r => ({
+  persona: r.persona,
+  model: r.model, // 'fable' | 'opus(fable 폴백)' | 'sonnet' — 폴백 시 orchestrator가 승인화면 정보 태그
+  total: r.findings.length,
+  criticals: r.findings.filter(f => f.severity === 'critical').length,
+  passEvidence: r.passEvidence || [], // critical 0건 시 PASS 근거 ≥2 기계검증 소스
+}))
+
+// ── 계측 기록 (비차단·자동) ──────────────────────────────────────────────
+// ⚠ **여기서 찍는 이유 = 산문 규칙이 졌기 때문이다.** v4.7.0은 이 기록을
+//   `orchestrator.md`의 산문 절차(패널 반환 후 0-a)로 뒀는데, 7일간 **전 프로젝트
+//   8곳 전수 0건**이었다(패널은 그 사이 4라운드 돌았다). 스크립트는 정상 동작했고
+//   호출하는 쪽이 빠졌다 — "메커니즘은 있고 호출이 없는" 무음 실패다.
+//   Workflow 스크립트는 JS 샌드박스라 Bash를 직접 못 쓴다 → agent 1개로 대행한다.
+//   비용 ≈ 2~3k 토큰(패널 1회의 1% 미만). 어떤 실패도 게이트 판정에 영향 없다.
+// round는 워크플로가 모른다(재게이트 = 재호출이라 리셋된다) → orchestrator가 args로 주면 쓰고,
+// 없으면 스크립트 기본값 1. 핵심 파생지표 `ripplePersonas`는 priorPersonas ↔ perPersona 대조라
+// round 없이도 성립한다. priorPersonas는 priorCriticals에서 직접 유도한다(별도 args 불요).
+const metricsPayload = JSON.stringify({
+  round: Number.isFinite(_a.round) ? _a.round : (isReGate ? 2 : 1),
+  reGate: isReGate,
+  priorPersonas: [...new Set(priorCriticals.map(c => c.persona).filter(Boolean))],
+  perPersona: perPersonaOut, failures,
+})
+try {
+  await agent(
+    `아래 명령을 **그대로 1회** 실행하고 종료 코드만 보고하라. 다른 작업·파일 편집 금지.\n\n` +
+    "```bash\n" +
+    `printf '%s\\n' ${JSON.stringify(metricsPayload)} | bash .claude/scripts/panel-metrics.sh log\n` +
+    "```\n\n" +
+    `이 스크립트는 어떤 실패에서도 exit 0이고 stdout을 쓰지 않는다. ` +
+    `실패해도 재시도하지 마라 — 계측은 비차단이다. 반환은 "logged" 또는 "failed: <사유 1줄>" 한 줄.`,
+    { label: 'panel-metrics', phase: 'Review', model: 'haiku' }
+  )
+} catch (e) {
+  // 계측 실패가 게이트를 막지 않는다 — 기록만이 목적이다.
+}
+
 return {
   criticals: tag('critical'), // orchestrator: dedup by root → 인용라인 코드대조 → 생존>0면 차단
   majors:    tag('major'),    // 통과허용, 승인화면 노출
   minors:    tag('minor'),    // 기록만
   failures,                   // 스폰 실패·사망 페르소나 key[]. 非空이면 orchestrator가 그 페르소나만 1회 재런치
   reGate: isReGate,           // 이번 실행이 재게이트였나(초점 블록 적용 여부 — 산출 해석용)
-  perPersona: results.map(r => ({
-    persona: r.persona,
-    model: r.model, // 'fable' | 'opus(fable 폴백)' | 'sonnet' — 폴백 시 orchestrator가 승인화면 정보 태그
-    total: r.findings.length,
-    criticals: r.findings.filter(f => f.severity === 'critical').length,
-    passEvidence: r.passEvidence || [], // critical 0건 시 PASS 근거 ≥2 기계검증 소스
-  })),
+  perPersona: perPersonaOut,
 }
