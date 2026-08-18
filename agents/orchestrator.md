@@ -12,6 +12,7 @@ tools:
   - Bash
   - Workflow
   - WebSearch
+  - LSP
 permissionMode: default
 memory: project
 ---

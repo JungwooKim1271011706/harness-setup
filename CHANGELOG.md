@@ -3,6 +3,17 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.4.2 — 2026-08-18
+- **[실험] orchestrator `tools:`에 `LSP` 단독 추가 — PATCH. 검증용, 실패 시 즉시 revert.**
+- **목적**: deferred(플러그인) 도구를 agent frontmatter에 **이름으로 선언하면 붙는가**를 실측한다. 확정된 인접 사실 2개 위에 서 있다:
+  - **서브에이전트엔 안 붙는다(확정)**: `tools: [Read, LSP]`로 프로브 2회 — 런타임 주입은 `Read` 하나, LSP는 **무음 드롭**. 존재하지 않는 도구명을 넣어도 **로드는 통과**하고 레지스트리는 선언을 그대로 표기한다(`(Tools: Read, LSP, ThisToolDoesNotExist_XYZ)`). 스폰은 안 깨진다.
+  - **메인 스레드는 별개 축(미확정)**: 소비자는 `settings.json:2` `"agent": "orchestrator"`로 메인이 orchestrator 모드다. 그 세션 실측 도구셋이 선언과 **양방향으로 불일치**했다 — `Edit`은 선언에 없는데 있고, `Workflow`는 선언에 있는데 없다. 즉 `tools:` 목록이 그대로 권위를 갖지 않는다 → 이론으로 예측 불가, 실측만이 답.
+- ⚠ **`ToolSearch`는 일부러 넣지 않았다.** 그건 LSP 하나가 아니라 **deferred 도구 전체를 여는 마스터키**다(`WebFetch`·Cron 계열·MCP 도구 포함). orchestrator가 `WebSearch`만 갖고 `WebFetch`는 없는 현 경계가 의도된 선택일 수 있어, LSP 하나 얻자고 그 경계를 통째로 허무는 건 비용이 크다. **이름 단독 선언으로 붙으면 다른 건 안 열고 LSP만 얻는다** — 이 커밋이 그 가설을 시험한다.
+- **판정 절차**: 소비자(Java) 세션 재기동(autopull이 배달) → 아무 `.java`로 `operation=hover, line=1, character=1` 1회.
+  - 반환 오면 → 유지 + 사용 규칙 설계(7c.2 인벤토리·도달성 판정 축). ⚠ 그 경우에도 **서브에이전트는 여전히 불가**라 조회 주체는 orchestrator로 고정한다.
+  - 없으면 → **즉시 revert**. "deferred 도구는 선언으로 못 붙는다" 확정 후 wiki(`agent-tools-silent-drop`)로 정리.
+- **왜 LSP를 원하나(채택 시 근거)**: v5.2.0이 *"grep 매치는 하한도 상한도 아니다 — 단정 전 도달성을 소스로 판정하라"*를 **손으로** 하라고 시켰다. `findReferences`·`incomingCalls`가 그 기계 짝이다. 7c.2 stale 인벤토리 6회 재발 / grep binary 오탐 무음제외 / 시그니처 변경 호출처 11≠12 실측이 전부 같은 축. 단 **jdtls = Java 전용**이라 프론트(Vue/TS)엔 무효고, 최종 봉인은 여전히 `mvn test-compile`이다.
+
 ## 5.4.1 — 2026-08-14
 - **[보안·정합] v5.4.0 계측 payload의 셸 주입/손상 경로 차단 — PATCH.** 자동 보안리뷰가 push 전에 잡았다.
 - **무엇이 틀렸나**: payload를 `JSON.stringify`로 만들어 명령줄에 끼웠는데, 그게 만드는 건 **큰따옴표 문자열**이다. bash 큰따옴표 안에서는 `` ` ``·`$`가 **살아 있다** — JSON 이스케이프는 셸 이스케이프가 아니다.
