@@ -3,6 +3,20 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.5.0 — 2026-08-18
+- **[wiki] `agent-tools-silent-drop` 신설 — 도구 선언 무음 드롭 + 메인/서브 비대칭. MINOR.** v5.4.2 실험 종결.
+- **⭐ v5.4.2 실험은 성공했다 — 그리고 내 예측을 뒤집었다.** orchestrator `tools:`에 `LSP` **한 줄**을 넣자 소비자 세션에서 도구 부재가 아니라 **`LSP server 'plugin:jdtls-lsp:jdtls' timed out after 120000ms`**가 반환됐다. **도구가 없으면 그 에러 문자열 자체를 못 받는다** = 부착 증명. 앞서 세운 "메인 스레드도 서브에이전트와 같은 필터일 것"이라는 추론은 **기각**됐다.
+- **확정된 비대칭 (같은 세션 안에서 갈린다)**:
+  | 실행 주체 | 플러그인/deferred 도구 |
+  |---|---|
+  | 메인 스레드(`"agent": <name>` 모드 포함) | **붙는다** — agent 모드면 `tools:`에 이름 명시 필요 |
+  | 서브에이전트(`Agent` 스폰) | **안 붙는다** — 명시해도 드롭 |
+- **무음이 문제의 본체**: 존재하지 않는 도구명(`ThisToolDoesNotExist_XYZ`)을 넣어도 **로드는 통과**하고(에이전트 수 10→11) 레지스트리는 `(Tools: Read, LSP, ThisToolDoesNotExist_XYZ)`로 **선언을 그대로 표기**한다. 그런데 런타임 실제 도구는 `Read` 하나. 경고 0, 스폰도 정상 완주. [[gates-verify-present-code-only]] 클래스 — **부재가 통과처럼 보인다**.
+- ⚠ **`ToolSearch`는 주지 않았다.** 그건 LSP 하나가 아니라 deferred 도구 **전체**를 여는 마스터키다(`WebFetch`·Cron 계열·MCP 포함). orchestrator가 `WebSearch`만 갖고 `WebFetch`는 없는 경계를 LSP 하나 때문에 허물 값이 아니었고, **이름 단독 선언으로 충분함이 실측됐다**.
+- **LSP 사용 규칙은 0줄 쓴다 (의도적 결정)**: 규칙을 쓰면 **지킬 수 없는 규칙**이 된다 — ① 서브에이전트가 못 쓰는데 전수 인벤토리를 도는 주체가 정작 거기다 ② 그 코드베이스의 실제 참조 경로(MyBatis mapper statement id·FQCN 빈 이름)가 **XML 문자열이라 LSP도 못 본다**. 7c.2 누락이 6회 재발한 그 지점을 안 덮는다. → orchestrator가 필요할 때 쓰는 **보조 도구**로만 두고, 최종 봉인은 여전히 `mvn test-compile`.
+- **실사용은 아직 불가(환경)**: `jdtls-lsp` 플러그인은 **서버를 번들하지 않는다** — 캐시에 `LICENSE`·`README.md`뿐이고 README도 수동 설치를 안내한다. PATH에 `jdtls` 래퍼가 있어야 하고 없으면 120s 초기화 타임아웃. 설치는 **하네스 밖 환경 작업**으로 분리했다. 별개 결함 1건 발견: `JAVA_HOME`이 `...in`으로 끝나 JDK 루트 규약 위반(`$JAVA_HOME/bin/java` 조립 도구가 깨진다).
+- **교훈**: 검증 안 했으면 agent md에 `LSP`를 적고 → 레지스트리에 보이니 들어간 줄 알고 → *"LSP로 도달성을 판정하라"* 규칙까지 쓰고 → 서브에이전트는 조용히 grep으로 폴백하고 → **아무도 몰랐다**. `panel-metrics` 0건(v5.4.0)과 같은 클래스이고, 이번엔 넣기 전에 잡았다.
+
 ## 5.4.2 — 2026-08-18
 - **[실험] orchestrator `tools:`에 `LSP` 단독 추가 — PATCH. 검증용, 실패 시 즉시 revert.**
 - **목적**: deferred(플러그인) 도구를 agent frontmatter에 **이름으로 선언하면 붙는가**를 실측한다. 확정된 인접 사실 2개 위에 서 있다:

@@ -50,6 +50,7 @@
 - [[grep-binary-misdetect-touch-surface]] — ripgrep이 raw NUL 섞인 파일을 binary 오탐→무음 제외 → 시그니처 변경 회귀범위 grep 카운트 무음 누락(WI-C 11≠12파일) + **계획서 md 오염 시 developer가 오라클을 못 읽음**. 원인=대용량 Write의 NUL 주입(2026-07-30 규명). 판별=`file -b`(≠`iconv`), 카운트=하한·test-compile이 진실
 - [[java-unicode-escape-compile-trap]] — javac \u 치환은 렉싱 전 전처리(JLS 3.3) — 주석·문자열 어디든 \u+비hex면 컴파일 에러. mvn compile(main만)은 test 소스 못 잡음 → test-compile로 확인
 - [[codex-cjk-mojibake]] — codex가 CJK 소스·문서를 전반 mojibake로 읽음(라인병합 오독과 별개 모드) → 파일쓰기·문서독해 배제, 비평/consult만. 7.5는 tester-design 폴백+단일소스 태그
+- [[agent-tools-silent-drop]] — agent frontmatter `tools:` 선언이 **무음 드롭**된다(레지스트리엔 보이는데 런타임엔 없음). 플러그인/deferred 도구는 **서브에이전트에 안 붙고** 메인 스레드엔 이름 단독 선언으로 붙는다. 미지 도구가 있어도 스폰은 안 깨진다
 - [[vitest-clearallmocks-once-queue]] — `clearAllMocks`는 `mock.calls`만 지우고 `*Once` 구현 큐는 남긴다. RED서 미소비된 큐가 다음 테스트로 누출 → "단독 통과/전체 실패". `beforeEach`에 `mockReset()`+base 재설정
 - [[vitest-real-process-spawn-crash]] — 실 `git.exe` 대량 spawn 통합테스트가 전체 동시실행서 `STATUS_DLL_INIT_FAILED` 크래시(standalone은 전건 PASS). 회귀 아닌 부하 — 개발루프 제외 + 전체회귀는 별도 순차, 제외 사실 명시 필수
 - [[mock-substring-path-overmatch]] — 경로 `includes` 매칭 mock이 과잉 적중 → developer가 fail-closed 원안을 완화 → **조용한 under-deletion**(삭제 미전파 + 백업 게이트까지 눈멂). 구현 완화 말고 목을 정확매칭으로 좁혀라
