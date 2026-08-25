@@ -3,6 +3,22 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.6.0 — 2026-08-24
+- **회고 inbox 드레인 1파일(khnp-cme-9.3.1) → 4건 + wiki 신설1/통합2/reject2 — MINOR. 재시작 권장.**
+- **⭐ [승인 문서가 단언하는 *외부 사실*은 실측한다] 가장 비쌌다 — 3라운드 + 계획서 정정 7건.**
+  - code-reviewer가 게이트 설정 불일치를 발견하고 *"어느 쪽이 맞는지 **미확정**"*으로 **정직하게** 남겼다. orchestrator가 **계획서를 근거로** 판정해 developer가 넣은 **올바른 값을 뒤집었다**.
+  - 계획서 근거는 *"이 브랜치는 master로 머지되며 이 파일이 **타 고객사에도 나간다**"* — 실측하니 **거짓**이었다. `git remote`가 **고객사 전용 repo**였고 master 설정에 그 고객사 도메인이 **7회 하드코딩**돼 있었다. **커맨드 2개면 판명됐다.**
+  - **갭의 정체**: `## 사용자 의사결정 요청 형식`은 문서 **내부** 모순만 보고, `§0④`는 *"외부·런타임 데이터"*라 **계획서 서술의 사실 검증**으로 안 읽혔다. 두 규칙 사이에 **"승인 문서가 단언하는 형상 사실"** 축이 비어 있었다.
+  - **정정**: 머지 대상 브랜치·repo 성격/소유·배포 경로·고객사 범위가 **설계 결정 근거로 인용될 때**는 `git remote -v`/`git show <base>:<path>`/`.git/info/exclude`로 실측. ⚠ **서브에이전트가 "미확정"으로 남긴 항목을 판정할 때 근거가 문서면 실측을 1회 덧댄다** — 불가면 사용자에게 올린다(자기 판정으로 덮지 마라).
+- **[렌더 실측 불가는 면제가 아니라 이관이다]** JSP+순수 jQuery라 브라우저 자동화 인프라가 없자 orchestrator가 `실측 불가 = 사람 E2E 몫`으로 분류하고 **커밋까지 진행**했다. 게이트 **6종 전원 PASS**(정적 tld 대조·유닛 92·/review·/codex·/cso·워크스루) 뒤 사용자가 화면을 열자 팝업이 인라인 노출 → 수정 커밋 1라운드.
+  - 종전 문면이 실측만 말하고 **불가 시를 안 정해** 실무에서 면제로 읽혔다. → ① `⚠ 미검증 전제(렌더)`를 커밋 메시지·feature 문서에 남기고 ② 그 표면을 **사람 E2E 점검표에 항목으로 필수 기재**. ⚠ **비차단 불변식은 그대로** — 커밋을 막지 않는다(사용자 워크플로가 커밋→머지→테스트다).
+  - 신규 화면·팝업·오버레이는 **점검 항목을 구체적으로**("화면 확인" 같은 뭉뚱그림이 이번 결함을 못 잡았다). 예시의 `vue-tsc`는 SPA 편향이라 일반화.
+- **[산출 경로는 repo 루트 기준 — `cd` 후 상대경로 Write 금지]** 제품 소스 트리에 `.claude/`가 **7곳** 생겼고 **4곳이 WAR/JAR 패키징 경로**(`src/main/webapp/**`·`src/main/resources/**`). `.claude/`가 gitignore라 `git status`에 안 잡혀 **조용히 누적**, 수동 정리 2회, 1곳 재발. `mvn package`가 먼저 돌았으면 배포 산출물에 들어갔다. → `playbook-delegation.md ④ 산출 경로 규약` 신설 + **finalizer 커밋 직전 `find` 검사**(비차단). ⚠ **탐지는 `find`여야 한다** — git 계열로는 구조적으로 못 잡는다.
+- **[gstack 스킬 전제·폴백을 계약으로]** `/code-review`는 대상이 **비-PR 로컬 워크트리**라 `gh pr diff` 전제와 불일치해 **시도조차 못 하고 폴백**, `/cso`는 대화형·gstack bin 전제라 read-only 서브에이전트에서 성립 불가로 폴백. 커버리지는 확보됐으나 **폴백 여부·품질이 매번 서브에이전트 재량**이었고 orchestrator는 산출을 받고서야 알았다. → 라우팅표에 전제·폴백 명시 + **"폴백했으면 digest에 `스킬 미실행 → 폴백(사유)` 명시"** 계약. ⚠ `/review` 폴백 시 **untracked 신규파일 전수 Read 필수** — 이번에 신규 25파일 2,819줄이 `git diff`에 안 잡혔다.
+- **wiki**: 신설 [[jackson-fail-on-unknown-properties]](설정 XML에 POJO 없는 요소 → **기동 실패**, 반대 방향은 무음 기본값). 통합 2 — [[windows-path-jq]]에 *git-bash PATH는 `/c/...` POSIX 필수*(`C:/...`면 `which` 실패 → mvn 미검출), [[claude-rules-gitignore-local-only]]에 *`docs/*`도 `.git/info/exclude`면 **feature 문서 복구 불가***(RESUME 0바이트 파괴 실측 1회 — 하네스가 그 문서를 설계 SSOT로 쓰는데 git 이력에 없다).
+- **reject 2 (소비자 오염 금지)**: `consolemf.css` 팝업 ID 화이트리스트 → 제품 특화, 프로젝트 `rules/`로. `@{}` 클라이언트 바인딩 HTML 미이스케이프(**stored XSS 후보 43화면**) → 하네스 wiki 아님, `claude-security-guidance.md`(gitignore) + ⚠ **제품 WI 별도 등재 강력 권장**(하네스 결함이 아니라 **제품 취약점**이다).
+- 관찰 3건(codex 한도 소진·`memoryDir` drift·패널 LOOP3 성공사례)은 기록만. 📉 orchestrator 945→954줄(+9).
+
 ## 5.5.1 — 2026-08-24
 - **[revert] orchestrator `tools:`에서 `LSP` 제거 — 효용 부족 + 미설치 상태가 함정. PATCH.**
 - **철회 사유 (효용)**: 설치해도 노렸던 자리를 못 덮는다 — ① **7c.2 전수 인벤토리**(6회 재발한 진짜 통증)는 **서브에이전트가 도는데 거기선 LSP를 못 쓴다**(v5.5.0 확정) ② 그 코드베이스의 실제 참조 경로(MyBatis mapper statement id·FQCN 빈 이름)는 **XML 문자열이라 LSP도 못 본다**. 남는 건 orchestrator 위임 전 판정 몇 건인데 그건 grep + `mvn test-compile` 봉인이 이미 커버한다.

@@ -22,3 +22,14 @@ updated: 2026-07-01
 - **다른 머신·팀과 공유해야 하는 규칙**이면 rule이 아니라 추적되는 곳(`CONTEXT.md` 용어, `docs/` 설계, 또는 harness-setup에서 `rules/` gitignore 정책 재검토)에 둔다.
 - 위임 지시에 "rule은 추적됨/커밋 대상"이라 쓰지 말 것 — 실측(`git check-ignore -v <path>`)이 SSOT.
 - wiki/(여기)는 `rules/`와 달리 **추적됨**. 그래서 이 gotcha는 wiki엔 남는다.
+
+## 확장 축 — `docs/*`도 `.git/info/exclude` 대상이면 feature 문서가 복구 불가다
+
+같은 뿌리(gitignore/exclude로 산출이 어느 git 이력에도 안 남음)인데 **위험도가 다르다**. 하네스는 `docs/features/*.md`를 **설계 SSOT**로 쓴다 — planner가 쓰고, 설계패널이 `planPath`로 읽고, 7c 합의·워크스루가 대조하고, 다음 세션이 재개 근거로 삼는다.
+
+그런데 프로젝트에 따라 `docs/*`가 `.git/info/exclude`에 들어 있으면(로컬 전용 제외라 `.gitignore`와 달리 **커밋된 파일에도 안 보인다**) 그 문서는 **git 이력에 없다** → **파괴 시 복구 수단이 0**이다.
+
+- 실측(2026-08-24): 세션 중 RESUME 문서가 **0바이트로 파괴**됐고 git으로 되살리지 못해 컨텍스트에서 재구성했다.
+- 판별: `git check-ignore -v docs/features/<파일>` + `cat .git/info/exclude`. ⚠ `.gitignore`만 보면 못 잡는다.
+- 회피: ① feature 문서를 덮어쓰기 전 **파일 크기·끝 수 줄 확인**(0바이트·잘림 감지) ② 장시간 트랙이면 `.claude/tmp/`에 스냅샷 1부 ③ 애초에 exclude에서 빼는 게 가능한 프로젝트면 뺀다.
+

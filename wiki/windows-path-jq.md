@@ -24,3 +24,13 @@ jq-less 셸에서 검증 완료. 정말 못 찾을 때만 ASCII 폴백.
 - "winget 설치했으니 재시작하면 되겠지"는 자주 틀린다.
 - 적용 사례: [[slack-notify-hook]] (한글 요약은 [[jq-korean-encoding]] 때문에 jq 필요).
 - 같은 stale-PATH 패턴 재발: [[gstack-install-windows]] (bun이 설치돼 있어도 git-bash PATH에 없어 setup 실패).
+
+## 자매 축 — git-bash PATH는 `/c/...` POSIX 형식이어야 한다
+
+같은 "Windows PATH가 셸에서 깨진다" 클래스의 다른 얼굴이다. git-bash에서 `PATH`에 **`C:/...` 윈도 형식**이 섞이면 `command -v`/`which`가 그 항목을 해석하지 못해 **거기 있는 실행파일을 못 찾는다**(예: `mvn`이 "설치돼 있는데 없다"고 나온다).
+
+- 판별: `echo "$PATH" | tr ':' '
+' | grep -n '^[A-Za-z]:'` → 매치가 있으면 그 항목이 죽은 경로다.
+- 회피: git-bash 안에서 조립하는 PATH는 **`/c/...` POSIX 형식**으로 통일한다(`cygpath -u`로 변환).
+- 실측: 2026-08-24 세션에서 `mvn` 미검출로 빌드 단계가 막혔다.
+

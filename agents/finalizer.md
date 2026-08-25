@@ -137,6 +137,17 @@ memory: project
 - critical 스킬 자동 변경 금지(2번). 사람 검토 게이트 보존.
 - VERSION/CHANGELOG는 `.claude` repo 대상(제품 repo·서브모듈 미변경).
 
+## 제품 트리 `.claude/` 오염 검사 (커밋 직전, 비차단 경고)
+
+서브에이전트가 `cd` 후 상대경로로 Write하면 제품 소스 트리에 `.claude/`가 생긴다(`playbook-delegation.md ④ 산출 경로 규약`). **`.claude/`는 gitignore라 `git status`로는 절대 안 잡힌다** — `find`여야 한다.
+
+```bash
+find . -path ./.claude -prune -o -name .claude -type d -print
+```
+- 출력 0줄 = 정상(아무것도 쓰지 않는다).
+- 출력이 있으면 **경로를 그대로 보고**하고 정리 안내를 낸다. ⚠ `src/main/webapp/**`·`src/main/resources/**` 등 **패키징 경로면 우선 경고** — `mvn package`가 배포 산출물에 넣는다.
+- **비차단**: 커밋을 막지 않는다. 근거: 한 세션에 7곳 생성(4곳이 패키징 경로), 수동 정리 2회, 1곳 재발(2026-08-24).
+
 ## 전체회귀 부채 안내 + state 갱신 (커밋 직전 단일 지점, 필수)
 
 > 정의: CONTEXT.md ## 하네스 테스트 흐름 / ADR-0002 D3~D7. 이 안내는 **비차단 단방향 통지**다 — 출력 후 그냥 커밋한다.
