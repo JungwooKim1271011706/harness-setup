@@ -3,6 +3,18 @@
 semver `MAJOR.MINOR.PATCH`. `VERSION` 파일이 SSOT. 최신이 위.
 레벨 기준·bump 의식: `docs/harness-versioning.md`.
 
+## 5.7.0 — 2026-08-26
+- **[스크린샷을 찍고 안 봤다] design-reviewer·tester-frontend에 "PNG를 `Read`로 열어 육안 판정" 규칙 추가 — MINOR. 재시작 권장.**
+- **갭의 정체**: 스샷을 *찍는* 경로는 이미 3곳(design-reviewer 절차2, tester-frontend/-runtime `$B` 목록)에 있었고 `browse.exe`도 설치돼 있었는데, **찍은 PNG를 다시 읽으라는 지시가 `agents/` 전체에 0건**이었다. 실제 판정 근거는 전부 DOM geometry(`painted` 여부·비-0 크기·z-order)였다 → 스샷은 찍히고 버려졌다.
+- **왜 문제인가**: geometry는 "요소가 있다"만 보장하고 **"제대로 보인다"는 보장 못 한다.** 간격 리듬·정렬 밀림·색/대비 튐·위계 붕괴·텍스트 잘림은 그 축으로 구조적으로 안 잡힌다. design-reviewer는 문면상 "디자이너 시선 QA(루브릭)"를 하라고 돼 있는데 **눈이 없는 상태**로 그 판정을 내리고 있었다. 결과: 디자인 결함은 매번 사용자가 앱을 직접 띄워 말해줘야 발각 — 하네스가 라운드를 줄이는 게 아니라 사용자에게 미루고 있었다.
+- **정정**:
+  - `design-reviewer.md` 절차2 — 스샷 후 `Read /tmp/impl.png` 필수. **PNG를 안 읽었으면 루브릭 판정(절차4)은 성립하지 않는다** → blocking 0건이 아니라 "렌더 확인 불가"로 내린다(false PASS 금지와 같은 형태). 절차3 — 목업이 HTML이면 목업도 스샷 떠서 **두 이미지를 픽셀로 대조**(마크업 구조 diff보다 드리프트를 정확히 잡는다). 출력형식 `렌더:` 행에 육안판정 여부·읽은 장수 기재.
+  - `tester-frontend.md` — geometry·레이어링 두 룰 **다음에** 육안 룰 신설(둘의 공통 사각). 보는 대상 = **깨짐**(레이아웃 붕괴·겹침·텍스트 잘림·빈 화면·아이콘 깨짐)까지. ⚠ 미적 폴리시는 design-reviewer 몫 — **중복 지적 금지 불변식 유지**.
+- **⚠ 두 파일 모두 고친 이유**: design-reviewer는 **목업 게이트 발동(신규화면) 또는 렌더중심 기능**일 때만 돈다(orchestrator :563). **기존 화면 디자인 수정**은 design-reviewer가 아예 미발동 → tester-frontend 영역3가 유일한 육안 축이다. design-reviewer만 고쳤으면 정작 흔한 케이스가 안 덮였다.
+- **토큰 가드**: 스샷 1장 ≈ 1~2k 토큰. 두 파일 모두 스코프를 **변경 라우트만**으로 못박고, 페이지가 길면 `$B screenshot --viewport` / `--clip x,y,w,h`로 변경 영역만 잘라 읽도록 명시(전체 페이지 남발 금지).
+- **도구 선택 근거**: `browse.exe` + `Read` 경로를 쓴다. MCP `chrome-devtools__take_screenshot`은 **플러그인 도구라 서브에이전트 frontmatter `tools:`로 무음 드롭**된다([[agent-tools-silent-drop]], v5.5.0 실측) — 서브에이전트에서 성립 불가.
+- **미적용(사용자 보류)**: 스샷을 사용자에게 첨부 노출하는 축(orchestrator 게이트 `SendUserFile`). 서브에이전트엔 그 도구가 없어 메인만 가능 — 필요 시 별도 bump.
+
 ## 5.6.0 — 2026-08-24
 - **회고 inbox 드레인 1파일(khnp-cme-9.3.1) → 4건 + wiki 신설1/통합2/reject2 — MINOR. 재시작 권장.**
 - **⭐ [승인 문서가 단언하는 *외부 사실*은 실측한다] 가장 비쌌다 — 3라운드 + 계획서 정정 7건.**

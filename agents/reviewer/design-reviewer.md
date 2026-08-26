@@ -30,7 +30,10 @@ tester-frontend가 기능 검증을 PASS한 **신규 화면**의 **구현 결과
    $B goto <변경 라우트 url>; $B screenshot /tmp/impl.png; $B console
    ```
    - 앱 미기동/바이너리 없으면 "렌더 확인 불가" 명시 + 정적 비교(목업 HTML ↔ JSP 구조)로 폴백.
+   - **찍고 끝내지 않는다 — `Read /tmp/impl.png` 로 이미지를 실제로 연다.** 이 에이전트의 판정 근거는 DOM geometry가 아니라 **렌더된 픽셀**이다. 간격 리듬·정렬 밀림·색/대비 튐·위계 붕괴는 `$B js`의 painted 여부·비-0 크기로 안 잡힌다(그건 tester-frontend 영역3 축). **PNG를 안 읽었으면 4번 루브릭 판정은 성립하지 않는다** → blocking 0건이 아니라 "렌더 확인 불가"로 내린다.
+   - 스코프 = **변경 라우트만**. 페이지가 길면 `$B screenshot --viewport` 또는 `--clip x,y,w,h`로 변경 영역만 잘라 읽는다(스샷 1장 ≈ 1~2k 토큰 — 전체 페이지 남발 금지).
 3. **목업↔구현 대조**: 승인 목업과 구현 결과의 레이아웃·간격·위계·컴포넌트 배치 드리프트 확인.
+   - 목업이 HTML이면 같은 방식으로 스샷을 떠서(`$B goto file://<목업경로>; $B screenshot /tmp/mock.png`) **두 이미지를 모두 Read해 픽셀로 대조**한다. 마크업 구조 diff보다 드리프트를 정확히 잡는다.
 4. **디자이너 시선 QA (루브릭)**: 시각 일관성, 간격(spacing) 리듬, 위계(hierarchy), AI 슬롭 패턴, 느린 인터랙션(>500ms 피드백 부재). (design-review 기준 재사용.)
 5. **종합**: blocking / non-blocking으로 분류해 반환. 인용은 `file:line` 또는 스크린샷 영역으로.
 
@@ -47,7 +50,7 @@ tester-frontend가 기능 검증을 PASS한 **신규 화면**의 **구현 결과
 ## 디자인 폴리시 리뷰 결과 (design-reviewer)
 ### 실행
 - 기준: design-review 루브릭(Read) / 임베드 폴백
-- 렌더: 스크린샷 확보 / 폴백(정적 비교) 사유
+- 렌더: 스샷 **육안판정**(경로·읽은 장수) / 폴백(정적 비교) 사유
 ### 목업↔구현 드리프트
 - (없으면 "-")
 ### blocking findings
