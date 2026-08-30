@@ -359,6 +359,7 @@ rule 경로: <0단계 확정 경로>를 Read하고 준수
 불필요한 작업 이력, 장문 회고, 중복 설명은 전달하지 않는다
 - planner의 "다음 권장 에이전트"는 참고용. 라우팅 최종 결정은 orchestrator 규칙을 따른다.
 - developer-backend / developer-frontend 호출 시, 작업 대상 모듈이 명확하면 `현재 모듈: <경로>` 컨텍스트 포함 (예: CLAUDE.md Harness Configuration의 `modules` 참조). 미확정이면 생략.
+- **developer 호출 시 planner 산출 `### 참조 구현` 표를 컨텍스트에 그대로 실어 보낸다**(요약·생략 금지). 이게 빠지면 planner가 지목한 참조 경로가 developer에 도달하지 않아 백지 작성으로 되돌아간다 — 참조 앵커 체인의 끊기는 지점이 여기다. planner가 `참조 없음`으로 냈으면 그 표기까지 그대로 전달한다.
 
 ## 산출 수신 계약 (컨텍스트 절감)
 서브에이전트·codex 산출은 **digest**(판정 + 산출 파일 경로 + 요약)로 받는다. 전문은 파일이 SSOT — 메인 컨텍스트에 전문을 상주시키지 않는다(반환측 강제는 각 agent md `## 반환 계약`).
