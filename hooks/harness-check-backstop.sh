@@ -43,7 +43,14 @@ if [ -d "$CKPT_DIR" ]; then
   CKPT_FILES=$(find "$CKPT_DIR" -maxdepth 1 -name '*.md' -mtime -1 2>/dev/null)
   if [ -n "$CKPT_FILES" ]; then
     # xargs로 파일이 있을 때만 grep (stdin hang 방지). 최신 LOOP≥2 체크포인트 1개.
-    LOOP_HIT=$(printf '%s\n' "$CKPT_FILES" | xargs grep -lE '\[LOOP [23]/3\]' 2>/dev/null | head -1)
+    # ⚠ 앵커는 **전용 필드**여야 한다. 종전엔 본문 어디든 `[LOOP 2/3]` 리터럴을 grep했는데,
+    #   그 문자열은 상태 마커인 동시에 **산문 표기**라 둘을 구분할 수 없었다. 실측 오발 2종:
+    #   ① 예고 — "critical 있으면 tester-design 반환 [LOOP 2/3]" (실제 루프는 1/3)
+    #   ② 종결 기록 — "게이트3: ... → **통과** [LOOP 2/3]" (루프는 이미 끝났다)
+    #   둘 다 "루프 진행 중"이 아닌데 차단했다. 게다가 `## 작업 컨텍스트 보존`이 이 리터럴 기록을
+    #   의무화하므로 **규칙을 지키는 행위가 트리거를 생성**하는 구조였다.
+    #   → orchestrator가 체크포인트에 쓰는 전용 필드 `loop_status: n/3`만 신호로 센다.
+    LOOP_HIT=$(printf '%s\n' "$CKPT_FILES" | xargs grep -lE '^[[:space:]]*loop_status:[[:space:]]*[23]/3' 2>/dev/null | head -1)
   fi
 fi
 
@@ -70,7 +77,13 @@ PREV=""
 [ "$FP" = "$PREV" ] && exit 0
 
 # 신규 고통 → 지문 먼저 갱신(루프 방지: 모델 미준수해도 다음 Stop은 동일지문→허용) 후 1회 block.
-printf '%s' "$FP" > "$STAMP" 2>/dev/null || true
+# ⚠ 갱신 실패를 삼키면 안 된다. 스탬프가 안 써지면 다음 Stop에서 지문이 또 baseline과 달라
+#   **매 Stop마다 재차단** = turn 종료 불가에 빠질 수 있다(실측: 스탬프 mtime이 세션 시작에 멈춤).
+#   쓰기 실패 시에는 차단하지 않고 경고만 남기고 통과시킨다(fail-open).
+if ! printf '%s' "$FP" > "$STAMP" 2>/dev/null; then
+  printf '%s\n' "harness-check-backstop: 스탬프 갱신 실패($STAMP) — 무한 차단 방지로 block 생략" >&2
+  exit 0
+fi
 
 SIG=""
 [ "$FAIL_COUNT" -gt 0 ] && SIG="${SIG}실패패턴 ${FAIL_COUNT}건, "

@@ -173,7 +173,7 @@ update)
   SHA="$(git rev-parse HEAD 2>/dev/null)"
   if [ -z "$SHA" ]; then note "HEAD 산정 실패 — 갱신 생략"; exit 0; fi
 
-  FILES="$(git show --name-only --format= HEAD 2>/dev/null)"
+  FILES="$(git -c core.quotepath=false show --name-only --format= HEAD 2>/dev/null)"
   NEW_MODS="$(printf '%s\n' "$FILES" | derive_modules "$MODULE_DEPTH")"
   if [ -z "$NEW_MODS" ]; then
     note "코드 모듈 미터치 커밋 — 카운트 제외"

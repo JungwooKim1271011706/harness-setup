@@ -69,9 +69,23 @@ if [ -z "${SLUG:-}" ]; then note "slug 산정 실패(gstack 미설치?) — 생�
 STATE_DIR="$HOME/.gstack/projects/$SLUG"
 STATE="$STATE_DIR/red-baseline.json"
 
-# 현재 워킹트리의 테스트 파일 목록 (tracked + untracked, ignored 제외)
+# 현재 워킹트리의 테스트 파일 목록 (tracked + untracked + **ignored 포함**)
+# ⚠ ignored를 빼면 안 된다. `.gitignore`에 `*/src/test/`를 둔 프로젝트(테스트 추적 해제)에서
+#   수집이 0이 되는데, 이 스크립트가 "대상 0"과 "이탈 0"을 구분하지 않아 그 상태가
+#   `✅ 이탈 없음`으로 출력된다 = 워크스루 3.5(테스트 약화 탐지)가 통째로 무력화되고 경고가 없다.
+#   실측(2026-09-07): "61파일 해시 일치 — 이탈 없음"인데 그 61개가 전부 타 모듈이고
+#   이번 기능의 RED 6파일은 한 건도 안 들어 있었다. 벤더 산출물만 걷어내고 ignored는 포함한다.
+VENDOR_RE="${RED_BASELINE_VENDOR_RE:-(^|[/\])(node_modules|target|build|dist|out|vendor|coverage|\.git)([/\]|$)}"
 list_test_files() {
-  git ls-files -co --exclude-standard 2>/dev/null | grep -iE "$TEST_RE" | sort -u
+  { git ls-files -co --exclude-standard 2>/dev/null
+    git ls-files -o -i --exclude-standard 2>/dev/null
+  } | grep -iE "$TEST_RE" | grep -ivE "$VENDOR_RE" | sort -u
+}
+
+# 최상위 디렉터리별 수집 분포 — 총계만 보면 "우리 모듈 0"이 안 보인다
+dist_line() {
+  printf '%s\n' "$1" | sed 's#[/\].*##' | sort | uniq -c \
+    | awk '{printf "%s %s / ", $2, $1}' | sed 's# / $##'
 }
 
 case "$CMD" in
@@ -84,8 +98,10 @@ show)
 snapshot)
   FILES="$(list_test_files)"
   if [ -z "$FILES" ]; then
-    printf '%s\n' "📸 RED 기준선: 테스트 파일 0개 — 스냅샷 생략(대조 대상 없음)."
-    exit 0
+    printf '%s\n' "⚠ RED 기준선: 테스트 파일 수집 **0건** — 이 스코프는 미검증이 된다."
+    printf '%s\n' "  → \"대상 없음\"을 \"이상 없음\"으로 읽지 말 것. TEST_RE 불일치 또는 전량 제외 의심."
+    printf '%s\n' "  → 기능 문서·완료 리포트에 \`⚠ 미검증 전제: RED 기준선 대조\`로 태깅한다."
+    exit 3
   fi
 
   ENTRIES=""
@@ -110,6 +126,7 @@ snapshot)
   if printf '%s' "$MAP" | jq --arg ts "$TS" --arg head "$HEAD_SHA" \
        '{ts:$ts, head:$head, files:.}' > "$tmp" 2>/dev/null && mv -f "$tmp" "$STATE" 2>/dev/null; then
     printf '%s\n' "📸 RED 기준선 스냅샷: 테스트 ${N}파일 고정 (GREEN 이후 워크스루서 대조)"
+    printf '%s\n' "   모듈 분포: $(dist_line "$FILES")  ← 이번 변경 모듈이 0이면 수집 범위를 의심하라"
   else
     rm -f "$tmp" 2>/dev/null
     note "스냅샷 쓰기 실패 — 이 축은 미검증이 된다"

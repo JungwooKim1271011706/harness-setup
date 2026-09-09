@@ -686,7 +686,9 @@ wiki capture와 **같은 post_commit 시점**에 한 번 더 자가질문한다:
 ### 자동 save 시 컨텍스트
 - 현재 단계 (planner 출력 후·설계패널게이트 완료 후 / TDD 합의 완료 / tester FAIL 시)
 - 보관 중인 스킬 출력 (/office-hours, /grill-with-docs, /co-plan)
-- 현재 루프 카운트 `[LOOP n/3]`
+- 현재 루프 카운트 — **반드시 전용 필드 1줄로 쓴다**: `loop_status: 2/3` (행 선두, 루프가 **실제로 발생했을 때만**)
+  - ⚠ **본문 산문에 `[LOOP n/3]` 리터럴을 쓰지 마라.** `hooks/harness-check-backstop.sh`가 체크포인트를 결정적 신호로 grep한다 — 종전엔 이 리터럴을 통째로 세서 **예고문**("critical 있으면 반환 [LOOP 2/3]")과 **종결 기록**("→ **통과** [LOOP 2/3]")까지 "루프 진행 중"으로 읽고 turn 종료를 오차단했다(실측 2회). 설명이 필요하면 `LOOP 2-of-3`처럼 **표기를 바꿔** 쓴다.
+  - 루프가 없으면 `loop_status:` 줄 자체를 넣지 않는다(0/1은 신호가 아니다).
 - 직전 단계 산출물 요약
 - TDD 합의 완료 save 시: 7c 합의 diff 요약 + RED 스위트 파일목록 + 7.7 PASS 근거
 
@@ -867,7 +869,7 @@ tester → developer → tester 루프는 최대 3회로 제한한다.
   - 심각도 (critical / high / medium)
   - 계속 진행 or 중단 권고
 
-> **세션 경계 주의**: 루프 카운트는 tester FAIL 시 context-save 체크포인트(`~/.gstack/projects/{slug}/checkpoints/`)에 `[LOOP n/3]`으로 기록된다. 세션 재개 시 사용자 기억이 아니라 최근 체크포인트의 LOOP 값을 권위 소스로 삼아 그 값부터 재개한다. 체크포인트 없으면 1부터.
+> **세션 경계 주의**: 루프 카운트는 tester FAIL 시 context-save 체크포인트(`~/.gstack/projects/{slug}/checkpoints/`)에 **전용 필드 `loop_status: n/3`**으로 기록된다(`## 작업 컨텍스트 보존` — 산문 리터럴 금지: 백스톱 훅이 이 필드를 신호로 grep한다). 세션 재개 시 사용자 기억이 아니라 최근 체크포인트의 LOOP 값을 권위 소스로 삼아 그 값부터 재개한다. 체크포인트 없으면 1부터.
 
 ## 실패 패턴 기록 (ESCALATION/중단 시)
 
