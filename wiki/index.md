@@ -10,6 +10,7 @@
 - [[windows-path-jq]] — Windows에서 CC가 stale PATH를 상속 → 훅에서 jq 못 찾는 문제와 자가탐색 해법
 - [[jq-crlf-stdout-windows]] — 네이티브 jq가 stdout에 CRLF. MSYS가 대개 걸러줘서 평소엔 통과하나 `jq | sort` 처럼 중간 파이프가 끼면 CR 잔존 → `[ -f "$f" ]`·`grep -Fxq`가 무음 오판(게이트를 통과시키는 방향으로 틀림)
 - [[gstack-install-windows]] — gstack/setup이 브라우저 추출에서 hang → 스킬 미등록. 등록만 수동 재현 + bun stale PATH
+- [[orca-browser-e2e]] — 러너 없는 스택(JSP·jQuery)에서 렌더 E2E 실측하는 탈출구. Orca 내장 브라우저가 CLI라 Bash만 있으면 된다 + 사용자 로그인 세션 공유(MCP는 별도 프로필). 함정: snapshot 상시 실패→eval 대체 / screenshot 간헐 실패→재시도+JSON base64 / 프로그램적 setter가 이벤트 미발화=오히려 무기. 경로 하드코딩 금지 → scripts/browser-probe.sh 경유
 - [[surefire-nested-skip]] — Surefire 2.22.2 `-Dtest=클래스` 격리 실행이 JUnit5 @Nested를 무음 스킵 → 거짓 GREEN. 전체실행/`$Nested` 명시로 회피
 - [[surefire-it-naming-skip]] — `*IT` 명명 테스트가 surefire 기본 스캔에서 무음 누락(failsafe 미바인딩 pom) → `-Dtest=`만 PASS는 거짓 GREEN. *Test 명명/기본 include 매칭으로 회피
 - [[javac-diagnostic-locale-message-match]] — javac 진단을 로케일 메시지(`Locale.KOREAN` 렌더)에 영어 리터럴 contains로 매칭 → 영원히 false, 힌트 로직이 죽어도 무증상 GREEN. 판정은 `Diagnostic.getCode()`(`compiler.err.*`)로. classpath 통째 누락은 `doesnt.exist`(cant.resolve 아님) + getCode() 널가드

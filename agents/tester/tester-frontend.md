@@ -59,6 +59,27 @@ B=~/.claude/skills/gstack/browse/dist/browse  # gstack 글로벌(미설치 시 s
 - `$B console` — JS 콘솔 오류 확인
 - 바이너리 없으면 Bash curl/fetch로 대체
 
+
+### Orca 내장 브라우저 (러너 없는 스택 — JSP·jQuery·자체 컴포넌트)
+
+orchestrator가 `TOOL=orca BIN=…`을 주입했으면 `$B` 대신 이 경로를 쓴다(주입이 없으면 **탐지하지 마라** — 사람 E2E 이관이 확정된 것이다).
+
+```bash
+O="<orchestrator가 준 BIN>"
+"$O" tab create --url "<대상 URL>";  "$O" tab list
+"$O" eval --expression "JSON.stringify({url:location.href})"
+"$O" find --locator text --value "<메뉴명>" --action click
+```
+
+**최대 이점**: 사용자가 이미 로그인해 둔 세션을 **그대로 공유**한다. 사내 관리자 콘솔처럼 인증이 걸린 화면에 계정·쿠키를 주고받을 필요가 없다(`chrome-devtools-mcp`는 별도 프로필로 떠서 그게 안 된다).
+
+**함정 — 전문은 `wiki/orca-browser-e2e.md`. 최소 3개는 여기서 기억한다:**
+- **`snapshot`은 쓰지 마라.** 큰 페이지에서 **매번** `runtime_unavailable`로 실패한다(`orca status`는 그 직후에도 `ready`다 — 런타임은 멀쩡하다). `eval --expression`으로 DOM을 직접 질의한다. 필요한 값만 뽑아 반환도 작다.
+- **`screenshot`은 간헐 실패 → 재시도로 감싼다.** 같은 `runtime_unavailable`이 뜨고 1회차 실패·2회차 성공이 흔하다. 결과가 파일이 아니라 **JSON 안의 base64**다(`--filePath` 없음).
+- **프로젝트 자체 컴포넌트는 합성 `MouseEvent`를 무시할 수 있다.** 그 경우 컴포넌트 API를 직접 호출한다. 컴포넌트별 규약은 **프로젝트 `rules/`** 소관이다(하네스가 아는 축이 아니다) — 위임 컨텍스트의 rule 경로에서 확인한다.
+
+**판정 원칙**: `fetch`로 API를 직접 때리면 **UI 보정을 우회**한다. 서버가 별도 상계를 갖는 설계면 결과가 화면과 갈린다 → **테스트는 UI 경로로** 한다.
+
 ## 검증 영역 (3개, 각 0-10점)
 
 > 카테고리·페이지별 탐색 절차의 정본 = `gstack qa/references/issue-taxonomy.md`(검증 착수 전 Read). 아래 인라인은 그 파일에 하네스 코드매핑(CWE/KISA/WCAG)·심각도·YAGNI를 덧댄 스냅샷이다. `$B`로 변경 라우트를 돌 때 그 파일의 "Per-Page Exploration Checklist"(Visual scan→Interactive→Forms→Navigation→States→Console→Responsive→Auth)를 절차로 삼고, 점수/심각도/PASS·FAIL은 아래 하네스 규칙으로 판정한다. **스코프는 변경 라우트만**(전체앱 X — 그건 전체회귀/사람).
