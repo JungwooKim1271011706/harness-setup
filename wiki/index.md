@@ -25,6 +25,7 @@
 - [[codex-bash-heredoc-metachar]] — codex Bash직접호출 프롬프트에 셸 메타문자(백틱·`$`·`[]{}`) 있으면 double-quote 조기종료/명령치환 → EOF exit2(codex 호출조차 안 됨). single-quote heredoc 파일에 써서 `codex exec "$(cat "$PF")"`로 전달(리터럴 보존). /codex 스킬 경유는 무관
 - [[codex-review-mojibake-line-merge]] — codex review(PowerShell Get-Content)가 한글/혼합인코딩 파일서 인접 라인 병합 렌더 → 정상 코드를 "주석처리"로 오독, 거짓 P1 blocking. 출력 mojibake(`3?몄옄??`)가 신호. codex P1은 항상 디스크 직접 Read 인용라인 대조(receiving-code-review). python-shim·tmp-path와 별개 렌더축
 - [[claude-rules-gitignore-local-only]] — .claude/rules/ 는 양쪽 git서 gitignore(제품 repo .claude/ + harness-setup rules/) → rule 편집이 커밋 안 됨(로컬 전용). 편집=커밋 착각 금지, git check-ignore -v가 SSOT. 공유할 규칙은 CONTEXT/docs로
+- [[comment-style-purpose-first]] — 주석은 줄 단위로 방어하면 총량이 안 준다. 호출부는 "값의 정체 → 화면에서 뭘로 보이나" 순, 용어 던지기·계획서 조항번호·javadoc 중복 금지. UI 문구 인용은 verbatim 테스트로 잠겼을 때만. 실행 강제는 developer-*.md ## 주석 작성 관례
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[gates-verify-present-code-only]] — 기계 게이트(7.7·변경검증·/review·codex·/cso)는 전부 **있는 코드**만 본다 → 승인 항목 미구현이 전 게이트 무사통과(finalizer 직전 워크스루서야 발각). 게다가 그 부재가 codex finding 기각 근거로 쓰임. 부재를 보는 그물은 따로 — 8.0 위임 커버리지 대조 + 워크스루 양방향 + (v4.3.0) 약화 축 = RED 기준선 대조
 - [[claude-model-override-silent-downgrade]] — `Agent(model:'fable')`이 미가용 계정서 에러 아니라 **조용히 sonnet 강등**(정상 반환) → "실패 감지 후 폴백" 안전망 3곳 전부 무발동, 최고위험 게이트가 무음으로 기준 미달. 가용성은 요청 결과 아닌 transcript `"model"` 실측으로만 확인. 사전 probe는 오답(세션 중 계정 전환이 원인)
