@@ -59,7 +59,12 @@ if [ -f "$POM.harnessbak" ]; then
   mv -f "$POM.harnessbak" "$POM"   # 잔재 백업 = sed 전 원본(developer 정당 변경 포함) 복원
 else
   # ⚠ git checkout -- pom.xml 무차별 원복 금지: developer의 미커밋 pom/assembly 변경을 HEAD로 되돌려 소실시킨다(삭제된 descriptor 참조 → 거짓 BUILD FAILURE). harnessbak이 없는데 이전 크래시로 skipTests만 false로 더럽혀졌으면 그 줄만 원복(정당 변경 보존):
-  sed -i 's#<skipTests>false</skipTests>#<skipTests>true</skipTests>#g' "$POM"
+  # ⚠ 반드시 조건화한다 (v5.14.0). msys `sed -i`는 치환 대상이 없어도 파일을 다시 쓰면서 CR을 떼어낸다.
+  #   CRLF pom(`git ls-files --eol` = i/crlf)에 무조건 돌리면 줄끝이 통째로 LF가 되고, 그 손상본이
+  #   바로 아래 cp 로 harnessbak 이 되어 trap 원복까지 오염된다(한 세션 2회 + 다른 세션 1회 재발, 2026-09-11).
+  if grep -q '<skipTests>false</skipTests>' "$POM"; then
+    sed -i 's#<skipTests>false</skipTests>#<skipTests>true</skipTests>#g' "$POM"
+  fi
 fi
 # 백업 + 신호 전부 잡아 원복 (EXIT/INT/TERM; SIGKILL만 OS레벨이라 불가)
 cp "$POM" "$POM.harnessbak"
@@ -71,9 +76,19 @@ mvn test -DskipTests=false -Dsurefire.timeout=600 -Djunit.jupiter.execution.time
 - `-Dtest=`로 **변경 스코프만** 실행 (P1 레이어링: 단위+직접호출자). 전체·통합은 tester-runtime이 담당. **변경 스코프에 `@Nested`가 있으면 `-Dtest='클래스명$Nested클래스명'`로 명시 포함**한다(Surefire 2.22.2 무음 스킵 — 격리 PASS가 거짓 GREEN을 만든다. `.claude/wiki/surefire-nested-skip.md`).
 - 시작 시 자가치유는 **harnessbak 복원**(있으면) 또는 **skipTests 줄만 sed 원복**(harnessbak 없을 때 백스톱)으로 한다. **`git checkout pom.xml` 무차별 원복은 금지** — developer의 미커밋 product 변경(pom/assembly)을 HEAD로 되돌려 소실시킨다(삭제된 descriptor 참조 → 거짓 BUILD FAILURE 2회 재발). SIGKILL을 제외한 모든 종료(EXIT/INT/TERM)는 trap이 원복(harnessbak = developer 변경 포함 백업)한다.
 - pom이 이미 `<skipTests>${skipTests}</skipTests>` 변수형이면 sed는 no-op, `-DskipTests=false`로 충분 (포터블).
-- 실행 종료 후 `git status --porcelain pom.xml`이 비었는지 확인. 안 비었으면 원복 실패 → 수동 원복(`mv pom.xml.harnessbak pom.xml`) 후 FAIL 보고.
+- 실행 종료 후 `git status --porcelain pom.xml`이 비었는지 확인. 안 비었으면 원복 실패 → 수동 원복(`mv pom.xml.harnessbak pom.xml`) 후 FAIL 보고. ⚠ **원복 실패 시 유일한 예외**: `git diff --ignore-cr-at-eol --quiet -- <pom>` 이 **참**(= 내용 변경 0, 줄끝만 손상)일 때에 한해 `git show HEAD:<pom> > <pom>` 으로 원본 바이트를 복원해도 된다. 거짓이면(내용 변경 있음) 지금처럼 **금지** — developer 미커밋 변경 보호가 우선이다. 종전엔 금지만 있고 대안이 없어 tester가 금지된 `git checkout`으로 흘렀다(2026-09-11).
 - 테스트 클래스가 없으면 "단위테스트 없음" 명시하고 기존 시나리오/스모크 검증으로 보완.
 - 백업/임시변경분은 절대 stage·commit 금지.
+
+## 공유 아티팩트 저장소 (`~/.m2` 동일 GAV — 상위 모듈 install 시 필수)
+
+`~/.m2/repository`는 **머신 전역 하나**다. 워크트리는 소스·`target/`만 나눈다 — 고정 버전(비-SNAPSHOT) 같은 GAV를 여러 워크트리가 `install`하면 **마지막에 쓴 쪽이 이긴다**. 실측: 워크트리 5개가 `com.crinity:crinity-toc-core:9.3.1`을 공유, 10:46 install → 10:48 다른 세션 install로 교체 → 하위 모듈이 **이번 변경과 무관한 클래스**를 못 찾아 컴파일 실패. 같은 날 다른 워크트리에서 재발(2026-09-11, 2세션).
+
+- **install 직후 식별 표지를 확인하고 곧바로 하위 모듈을 빌드한다.** `jar tf <jar> | grep <이번 변경 클래스>`, 또는 새 메서드면 클래스 파일의 메서드명 문자열. **사이에 다른 작업을 끼우지 않는다** — 창을 좁히는 것이 유일한 회피다.
+- **하위 모듈 빌드가 "무관한 클래스 부재"(`cannot find symbol`)로 깨지면 소스 결함보다 공유 jar 덮어쓰기를 먼저 의심**한다. 재install 1회 후 표지 재확인 → 해소되면 **"환경 — 공유 jar 덮어쓰기"로 분류**하고 소스 결함으로 보고하지 않는다.
+- **반환 계약(필수)**: `install`을 했으면 *"공유 jar가 이 브랜치 버전이 됨 — 같은 GAV를 쓰는 다른 워크트리 영향 가능"* 1줄을 반드시 남긴다. 역방향 파급이 더 조용하다 — 내가 install한 뒤 **다른 워크트리**가 상위 모듈 install 없이 하위만 빌드하면 그쪽이 깨진다(내 브랜치에서 바뀐 시그니처를 그쪽 코드가 부른다). orchestrator가 이 줄을 사용자 통지로 올린다.
+- 워크트리별 `-Dmaven.repo.local` 격리는 원리상 답이지만 오프라인(`-o`) 의존성 사본 비용·디스크 용량이 **미검증**이라 권고하지 않는다.
+- 배경·상세: `.claude/wiki/shared-test-db-worktree-noop.md`(공유 상태 저장소 일반).
 
 ## 7.6 RED sanity 모드 (TDD 합의 구간 — 오케스트레이터가 명시 호출 시)
 

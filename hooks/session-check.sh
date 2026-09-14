@@ -38,7 +38,21 @@ fi
 CHECKPOINT_DIR="${HOME}/.gstack/projects/${GSTACK_SLUG}/checkpoints"
 if [ -d "$CHECKPOINT_DIR" ]; then
   # -mtime -1 = 24시간 이내 (GNU find, BSD find 모두 지원)
-  RECENT=$(find "$CHECKPOINT_DIR" -maxdepth 1 -name "*.md" -mtime -1 -type f 2>/dev/null | sort -r | head -1)
+  # ⚠ 파일명 정렬 ≠ 시각 정렬 (v5.14.0). /context-save 규약은 YYYYMMDD-HHMMSS- 이지만 수동 저장
+  #   파일은 HHMMSS가 빠진다 — `sort -r`에서 `20260911-w…` 가 `20260911-09…` 보다 앞서(문자 > 숫자)
+  #   00:10짜리 옛 체크포인트가 09:55 승인 체크포인트를 가렸다(재발 2회, 2026-09-11).
+  #   → frontmatter `timestamp:`를 숫자만 뽑아 14자리 우측 0패딩한 키로 정렬. 없으면 mtime 폴백.
+  #   (패딩 없으면 `2026-09-11T00:10`(12자리)이 `…095544`(14자리)와 자리수가 어긋나 또 오정렬된다.)
+  RECENT=$(find "$CHECKPOINT_DIR" -maxdepth 1 -name "*.md" -mtime -1 -type f 2>/dev/null | while IFS= read -r cf; do
+    CTS=$(sed -n '1,20{s/^timestamp:[[:space:]]*//p;}' "$cf" 2>/dev/null | head -1 | tr -cd '0-9' | cut -c1-14)
+    if [ "${#CTS}" -lt 8 ]; then
+      CE=$(stat -c %Y "$cf" 2>/dev/null || stat -f %m "$cf" 2>/dev/null)
+      CTS=$(date -d "@$CE" +%Y%m%d%H%M%S 2>/dev/null || date -r "$CE" +%Y%m%d%H%M%S 2>/dev/null)
+    fi
+    CTS=$(printf '%-14s' "$CTS" | tr ' ' '0')
+    printf '%s	%s
+' "$CTS" "$cf"
+  done | sort -r | head -1 | cut -f2-)
   if [ -n "$RECENT" ]; then
     # 파일명에서 제목 추출 (형식: YYYYMMDD-HHMMSS-제목.md)
     TITLE=$(basename "$RECENT" .md | sed 's/^[0-9]\{8\}-[0-9]\{6\}-//')

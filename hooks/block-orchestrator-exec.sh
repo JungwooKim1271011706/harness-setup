@@ -25,14 +25,36 @@ fi
 # 경계1 — 인용부호 '문자'만 제거(내용 보존): 셸과 동일하게 정규화해 따옴표 우회를 잡는다.
 #   "git" commit / m"v"n package 는 셸에선 정상 실행 → 문자만 떼면 git commit / mvn 으로 복원돼 차단.
 #   ⚠ 인용 '내용'을 통째 지우면 "git" commit → " commit" 으로 denylist 우회가 생김 → 내용은 안 지운다.
+# 경계1b — 인용 '구간 안'의 제어연산자(; & | 괄호)만 공백으로 치환한다(v5.14.0).
+#   종전 `tr -d` 는 따옴표만 떼서 인용된 정규식의 | 가 경계2의 '명령 위치'로 읽혔다:
+#   grep -E 'a|mvn install' → a|mvn install → `|mvn ` 매치 → 읽기전용 grep 2회 오차단(2026-09-11).
+#   인용 안 '단어'는 그대로 두므로 "git" commit 우회 차단(경계1)은 유지된다.
+#   ⚠ 이 awk 소스에 따옴표 리터럴을 쓰면 셸 single-quote가 조기 종료된다 → SQ/DQ를 sprintf("%c",39/34)로 유도.
 # 경계2 — '명령 위치'에서만 매치: 문자열 시작 또는 제어연산자(; & | 괄호) 직후만 실행 명령으로 본다.
 #   일반 공백(인자 구분)은 명령 위치 아님 → codex exec ... mvn package ... 의 프롬프트 인자 내부 mvn은 오탐 안 함.
-scan=$(printf '%s' "$command" | tr -d "\"'")
+scan=$(printf '%s' "$command" | awk '
+  BEGIN { SQ=sprintf("%c",39); DQ=sprintf("%c",34); q="" }
+  {
+    out=""; n=length($0)
+    for(i=1;i<=n;i++){
+      c=substr($0,i,1)
+      if(q==""){
+        if(c==DQ || c==SQ){ q=c; continue }
+        out=out c
+      } else {
+        if(c==q){ q=""; continue }
+        if(c==";"||c=="&"||c=="|"||c=="("||c==")") c=" "
+        out=out c
+      }
+    }
+    print out
+  }
+')
 # 경계3 — heredoc 본문 제외: `cat > f <<'EOF' … EOF` 본문 줄이 줄머리 mvn/gradle이면
 #   grep ^ 앵커가 데이터를 명령으로 오탐(체크포인트 heredoc·JSON payload 3회 실측). 본문 +
 #   종료구분자 라인을 스캔에서 제거한다. heredoc '밖' 진짜 명령(; mvn / 줄머리 mvn)은 남아
 #   차단 유지 → 오케스트레이터 직접실행 금지 불변식 보존, 데이터 오탐만 축소.
-#   (따옴표는 위 tr서 이미 제거 → <<'EOF' == <<EOF, 구분자 매칭 단순화)
+#   (따옴표는 위 경계1에서 이미 제거 → <<'EOF' == <<EOF, 구분자 매칭 단순화)
 scan=$(printf '%s' "$scan" | awk '
   d=="" && match($0, /<<-?[ \t]*[A-Za-z_][A-Za-z0-9_]*/) {
     t=substr($0,RSTART,RLENGTH); sub(/^<<-?[ \t]*/,"",t); d=t; print; next

@@ -50,7 +50,12 @@ if [ -f "$POM.harnessbak" ]; then
   mv -f "$POM.harnessbak" "$POM"   # 잔재 백업 = sed 전 원본(developer 정당 변경 포함) 복원
 else
   # ⚠ git checkout -- pom.xml 무차별 원복 금지: developer의 미커밋 pom/assembly 변경을 HEAD로 되돌려 소실시킨다. harnessbak 없는데 이전 크래시로 skipTests만 false로 더럽혀졌으면 그 줄만 원복:
-  sed -i 's#<skipTests>false</skipTests>#<skipTests>true</skipTests>#g' "$POM"
+  # ⚠ 반드시 조건화한다 (v5.14.0). msys `sed -i`는 치환 대상이 없어도 파일을 다시 쓰면서 CR을 떼어낸다.
+  #   CRLF pom(`git ls-files --eol` = i/crlf)에 무조건 돌리면 줄끝이 통째로 LF가 되고, 그 손상본이
+  #   바로 아래 cp 로 harnessbak 이 되어 trap 원복까지 오염된다(한 세션 2회 + 다른 세션 1회 재발, 2026-09-11).
+  if grep -q '<skipTests>false</skipTests>' "$POM"; then
+    sed -i 's#<skipTests>false</skipTests>#<skipTests>true</skipTests>#g' "$POM"
+  fi
 fi
 # 백업 + 신호 전부 잡아 원복 (EXIT/INT/TERM; SIGKILL만 OS레벨이라 불가)
 cp "$POM" "$POM.harnessbak"
@@ -60,7 +65,7 @@ mvn test -DskipTests=false -Dsurefire.timeout=1800
 ```
 
 - **폭주 테스트 백스톱**: `-Dsurefire.timeout=1800`(per-fork 30분)으로 무한루프 포크 JVM을 강제 종료한다 — 타임아웃 없으면 폭주 테스트가 수 GB 점유하며 머신을 무한 점유(GC 죽음나선). 전체회귀는 정당한 통합테스트가 느릴 수 있어 **Jupiter per-test 타임아웃(`junit.jupiter.execution.timeout.default`)은 쓰지 않는다**(느린 통합테스트 오탐 위험) — generous per-fork 백스톱만. 프로젝트 정상 전체스위트가 30분을 넘으면 이 값을 상향한다. 단위 스코프의 더 촘촘한 가드는 tester-backend 참조. 배경: `.claude/wiki/surefire-runaway-test-timeout.md`.
-- 실행 후 `git status --porcelain pom.xml` clean 확인. 안 되면 수동 원복 후 FAIL.
+- 실행 후 `git status --porcelain pom.xml` clean 확인. 안 되면 수동 원복 후 FAIL. ⚠ **원복 실패 시 유일한 예외**: `git diff --ignore-cr-at-eol --quiet -- <pom>` 이 **참**(= 내용 변경 0, 줄끝만 손상)일 때에 한해 `git show HEAD:<pom> > <pom>` 으로 원본 바이트를 복원해도 된다. 거짓이면(내용 변경 있음) 지금처럼 **금지** — developer 미커밋 변경 보호가 우선이다. 종전엔 금지만 있고 대안이 없어 tester가 금지된 `git checkout`으로 흘렀다(2026-09-11).
 - 빌드/기동/스모크 검증은 기존대로 병행.
 - 백업/임시변경분 stage·commit 금지.
 - 시작 시 자가치유는 **harnessbak 복원** 또는 **skipTests 줄만 sed 원복**(백스톱)으로 한다. **`git checkout pom.xml` 무차별 원복 금지** — developer 미커밋 product 변경(pom/assembly)을 소실시킨다(거짓 BUILD FAILURE). trap이 EXIT/INT/TERM 원복(harnessbak = developer 변경 포함).

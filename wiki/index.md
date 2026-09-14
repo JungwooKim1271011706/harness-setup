@@ -9,6 +9,8 @@
 - [[jq-korean-encoding]] — Slack 알림 한글이 깨지는 진짜 원인과 회피(파일 경유 vs curl 인자)
 - [[windows-path-jq]] — Windows에서 CC가 stale PATH를 상속 → 훅에서 jq 못 찾는 문제와 자가탐색 해법
 - [[jq-crlf-stdout-windows]] — 네이티브 jq가 stdout에 CRLF. MSYS가 대개 걸러줘서 평소엔 통과하나 `jq | sort` 처럼 중간 파이프가 끼면 CR 잔존 → `[ -f "$f" ]`·`grep -Fxq`가 무음 오판(게이트를 통과시키는 방향으로 틀림)
+- [[gitbash-grep-cr-count-noop]] — Git Bash `grep -c $'$'`가 CR 유무와 무관하게 **전체 줄 수**를 돌려줌 = 측정식 자체가 no-op. 틀린 전제("JSP는 CRLF")가 사용자 보고·tester 위임으로 전파. 판정은 `git ls-files --eol`/`tr -cd ''`. **판정용 측정식은 답을 아는 반례 1개에 먼저 돌린다**
+- [[msys-sed-inplace-crlf-strip]] — msys `sed -i`가 **치환 대상이 없어도** 파일을 다시 쓰며 CR을 떼어냄 → CRLF pom만 줄끝 손상. 자가치유 sed가 `cp` 백업보다 앞이라 **harnessbak까지 오염**(3회 재발). `grep -q` 조건화 + `--ignore-cr-at-eol` 참일 때만 `git show HEAD:` 복원
 - [[gstack-install-windows]] — gstack/setup이 브라우저 추출에서 hang → 스킬 미등록. 등록만 수동 재현 + bun stale PATH
 - [[orca-browser-e2e]] — 러너 없는 스택(JSP·jQuery)에서 렌더 E2E 실측하는 탈출구. Orca 내장 브라우저가 CLI라 Bash만 있으면 된다 + 사용자 로그인 세션 공유(MCP는 별도 프로필). 함정: snapshot 상시 실패→eval 대체 / screenshot 간헐 실패→재시도+JSON base64 / 프로그램적 setter가 이벤트 미발화=오히려 무기. 경로 하드코딩 금지 → scripts/browser-probe.sh 경유
 - [[surefire-nested-skip]] — Surefire 2.22.2 `-Dtest=클래스` 격리 실행이 JUnit5 @Nested를 무음 스킵 → 거짓 GREEN. 전체실행/`$Nested` 명시로 회피
@@ -29,6 +31,7 @@
 - [[comment-style-purpose-first]] — 주석은 줄 단위로 방어하면 총량이 안 준다. 호출부는 "값의 정체 → 화면에서 뭘로 보이나" 순, 용어 던지기·계획서 조항번호·javadoc 중복 금지. UI 문구 인용은 verbatim 테스트로 잠겼을 때만. 실행 강제는 developer-*.md ## 주석 작성 관례
 - [[agent-memory-overrides-rule]] — tester가 agent md 규칙 있는데도 codex 거짓 미가용 보고 → stale per-agent 메모리(`agent-memory/tester-*/feedback_codex_stdin.md`)가 규칙 덮어씀. 규칙은 "메모리 단정 비신뢰" 명시해야 휴대 효력
 - [[gates-verify-present-code-only]] — 기계 게이트(7.7·변경검증·/review·codex·/cso)는 전부 **있는 코드**만 본다 → 승인 항목 미구현이 전 게이트 무사통과(finalizer 직전 워크스루서야 발각). 게다가 그 부재가 codex finding 기각 근거로 쓰임. 부재를 보는 그물은 따로 — 8.0 위임 커버리지 대조 + 워크스루 양방향 + (v4.3.0) 약화 축 = RED 기준선 대조
+- [[gitignored-tests-invisible-to-glob]] — 테스트가 gitignore면 Glob·디렉터리 Grep이 **0건**(도구가 ripgrep 기반). 그 0건이 계획서 부재 근거로 인용됨(실제 13/3/11건). 파일경로 지정 Grep·Bash로 확인. 짝 증상: gitignore≠미추적이라 **rebase가 옛 브랜치 추적 테스트를 디스크에서 삭제** → `--diff-filter=D` 확인
 - [[claude-model-override-silent-downgrade]] — `Agent(model:'fable')`이 미가용 계정서 에러 아니라 **조용히 sonnet 강등**(정상 반환) → "실패 감지 후 폴백" 안전망 3곳 전부 무발동, 최고위험 게이트가 무음으로 기준 미달. 가용성은 요청 결과 아닌 transcript `"model"` 실측으로만 확인. 사전 probe는 오답(세션 중 계정 전환이 원인)
 - [[spring-profile-bean-eval-timing]] — @Profile은 빈 등록 시점 평가 → ApplicationContextRunner는 withInitializer 말고 withPropertyValues로 active profile 줘야 등록됨
 - [[springshell-noninteractive-runner-order]] — spring-shell 비대화형 배치(TTY 없음)서 셸 러너가 leftover 인자를 명령으로 해석→CommandNotFound. 커스텀 ApplicationRunner에 @Order(HIGHEST_PRECEDENCE) 줘야 먼저 실행. CLI 플래그로는 못 고침
@@ -57,7 +60,7 @@
 - [[vitest-clearallmocks-once-queue]] — `clearAllMocks`는 `mock.calls`만 지우고 `*Once` 구현 큐는 남긴다. RED서 미소비된 큐가 다음 테스트로 누출 → "단독 통과/전체 실패". `beforeEach`에 `mockReset()`+base 재설정
 - [[vitest-real-process-spawn-crash]] — 실 `git.exe` 대량 spawn 통합테스트가 전체 동시실행서 `STATUS_DLL_INIT_FAILED` 크래시(standalone은 전건 PASS). 회귀 아닌 부하 — 개발루프 제외 + 전체회귀는 별도 순차, 제외 사실 명시 필수
 - [[mock-substring-path-overmatch]] — 경로 `includes` 매칭 mock이 과잉 적중 → developer가 fail-closed 원안을 완화 → **조용한 under-deletion**(삭제 미전파 + 백업 게이트까지 눈멂). 구현 완화 말고 목을 정확매칭으로 좁혀라
-- [[shared-test-db-worktree-noop]] — `@ResourceLock`·`SAME_THREAD`는 프로세스 간 무효. mvn 2프로세스 동시실행 = 산발 DB 오염. **워크트리 분리로도 안 풀린다**(DB는 하나) — 순차만이 답
+- [[shared-test-db-worktree-noop]] — **공유 상태 저장소(테스트 DB · `~/.m2`)는 워크트리 분리로 안 풀린다.** DB: `@ResourceLock`·`SAME_THREAD`가 프로세스 간 무효 → 순차만이 답. `~/.m2`: 고정버전 동일 GAV install은 마지막에 쓴 쪽이 이김(워크트리 5개 공유, 같은 날 2세션 재발) → install 직후 식별표지 확인 + 즉시 하위빌드로 창 좁히기
 - [[vitest-mockresolvedvalue-microtask-flush]] — `vi.fn().mockResolvedValue()` await는 스파이 래핑 ~3 microtask tick. 고정 `await Promise.resolve()`×2 flush는 mocked 게이트 재개 못 기다려 GREEN서 undefined TypeError. flush-until-condition 상한 루프로 틱 비의존화(tester-design R16)
 
 ## 관련 (repo 내 다른 지식 — 중복 금지, 링크만)
